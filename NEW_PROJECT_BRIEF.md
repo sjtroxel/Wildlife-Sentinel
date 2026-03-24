@@ -10,7 +10,7 @@
 **Level:** Junior-to-mid developer, progressing rapidly through an advanced AI Masterclass curriculum.
 **Background:** Not a career developer by origin. Has been building a portfolio of increasingly sophisticated AI projects, each one targeting new curriculum concepts. Has strong TypeScript instincts now. Understands agent patterns, RAG, and vector databases from hands-on work.
 
-**Imposter syndrome note:** sjtroxel sometimes undersells their own progress. By the end of Asteroid Bonanza (see below), they had built a production-deployed, multi-agent AI swarm with dual RAG indices, confidence scoring, human handoff, real-time SSE observability streaming, and a Three.js orbital visualization. That is not junior work.
+**Imposter syndrome note:** sjtroxel sometimes undersells his own progress. By the end of Asteroid Bonanza (see below), he had built a production-deployed, multi-agent AI swarm with dual RAG indices, confidence scoring, human handoff, real-time SSE observability streaming, and a Three.js orbital visualization. That is not junior work.
 
 ---
 
