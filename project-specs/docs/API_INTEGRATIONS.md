@@ -1,93 +1,408 @@
 # API Integrations — Wildlife Sentinel
 
-*Stub — expand with exact endpoint details, response schemas, and error handling patterns during Phase 1–4 implementation.*
+This document is the reference for every external API the system calls — endpoint details, response schemas, auth, rate limits, and error handling patterns.
+
+---
+
+## Shared Error Handling Pattern
+
+All external API calls use `fetchWithRetry` from `BaseScout.ts`:
+
+```typescript
+// Retry logic:
+// - 429 / 503 (transient): retry with exponential backoff, max 3 attempts
+// - 400 / 401 / 403 / 404 (permanent): throw immediately, do NOT retry
+// - Circuit breaker: 5 consecutive failures → pause Scout for 30 minutes
+
+async function fetchWithRetry(url: string, options?: RequestInit, maxAttempts = 3): Promise<Response> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const res = await fetch(url, options);
+    if (res.ok) return res;
+    if ([400, 401, 403, 404].includes(res.status)) throw new Error(`HTTP ${res.status} — permanent failure`);
+    if (attempt < maxAttempts) {
+      await new Promise(r => setTimeout(r, Math.min(1000 * 2 ** (attempt - 1), 10_000)));
+    }
+  }
+  throw new Error(`Failed after ${maxAttempts} attempts`);
+}
+```
 
 ---
 
 ## Disaster Data APIs
 
-### NASA FIRMS (Phase 1)
-- Base: `https://firms.modaps.eosdis.nasa.gov/api/`
-- Key endpoint: `/area/csv/{KEY}/VIIRS_SNPP_NRT/{bbox}/1/{date}`
-- Auth: Free API key → `NASA_FIRMS_API_KEY` env var
-- Rate limit: generous, no documented hard limit
-- Response: CSV with lat, lon, bright_t31, frp, acq_date, acq_time, confidence, satellite
-- Pre-filter: FRP > 10 MW, confidence = 'nominal' or 'high'
+### NASA FIRMS — Wildfire
 
-### NOAA NHC (Phase 4)
-- Active storms JSON: `https://www.nhc.noaa.gov/CurrentStorms.json`
-- RSS Atlantic: `https://www.nhc.noaa.gov/nhc_at1.xml`
-- RSS E Pacific: `https://www.nhc.noaa.gov/nhc_ep1.xml`
-- Auth: None required
-- Response: Storm center, track, wind speed, forecast cone
+- **Base URL:** `https://firms.modaps.eosdis.nasa.gov/api/`
+- **Key endpoint:** `/area/csv/{KEY}/VIIRS_SNPP_NRT/{bbox}/1/{YYYY-MM-DD}`
+- **Auth:** Free API key → `NASA_FIRMS_API_KEY` env var
+- **Schedule:** Every 10 minutes
+- **Rate limit:** No documented hard limit; be polite (5 bboxes per poll cycle)
 
-### USGS NWIS (Phase 4)
-- Base: `https://waterservices.usgs.gov/nwis/iv/`
-- Key params: `parameterCd=00060` (discharge) or `00065` (gage height), `format=json`
-- Auth: None required
-- Trigger: gauge reading > flood stage threshold (per-site, in response metadata)
-- High volume — pre-filter by bounding boxes near IUCN habitats
+**Request example:**
+```
+GET https://firms.modaps.eosdis.nasa.gov/api/area/csv/MYKEY/VIIRS_SNPP_NRT/94,-11,145,25/1/2026-03-24
+```
 
-### US Drought Monitor (Phase 4)
-- Base: `https://droughtmonitor.unl.edu/DmData/GISData.aspx`
-- GeoJSON weekly: `?mode=table&aoi=county&statistic=0&date=YYYY-MM-DD`
-- Auth: None required
-- Update: Every Thursday ~10 AM CT
-- Trigger: County drought worsens to D3+ AND county contains IUCN habitat
+**Response:** CSV with columns:
+```
+latitude,longitude,bright_t31,scan,track,acq_date,acq_time,satellite,instrument,confidence,version,bright_t31,frp,daynight
+-3.421,104.213,298.5,0.38,0.38,2026-03-24,0732,S,VIIRS,h,2.0NRT,298.5,87.3,D
+```
 
-### NOAA Coral Reef Watch (Phase 4)
-- Product: 5km CoralTemp bleaching alert area
-- Auth: None required
-- Format: CSV / GeoJSON products
-- Trigger: Bleaching Alert Level 1+
+**Pre-filtering (before publishing to Redis):**
+- `frp < 10` → skip (agricultural/small burns)
+- `confidence === 'l'` → skip (low confidence)
+
+**Severity formula:** `Math.min(frp / 1000, 1.0)` (1000 MW = severity 1.0)
+
+**Dedup key:** `firms_{acq_date}_{acq_time}_{lat.3dp}_{lng.3dp}` — TTL 2 hours
+
+**Error cases:**
+- HTML error page returned instead of CSV when API key is invalid — check that response starts with `latitude` before parsing
+- Empty CSV (no fires) = only header row — check `rows.length <= 1`
+
+---
+
+### NOAA NHC — Tropical Storms
+
+- **Base URL:** `https://www.nhc.noaa.gov/`
+- **Key endpoints:**
+  - `CurrentStorms.json` — active storm list
+  - `nhc_at1.xml` — Atlantic RSS feed (advisory details)
+  - `nhc_ep1.xml` — Eastern Pacific RSS feed
+- **Auth:** None required
+- **Schedule:** Every 30 minutes
+- **Rate limit:** No documented limit; respectful polling is fine
+
+**`CurrentStorms.json` response structure:**
+```json
+{
+  "activeStorms": [
+    {
+      "id": "al022026",
+      "name": "Bertha",
+      "classification": "HU",
+      "intensity": "120",
+      "pressure": "952",
+      "latitude": "18.5N",
+      "longitude": "72.3W",
+      "movementDir": "315",
+      "movementSpeed": "12",
+      "lastUpdate": "2026-03-24T12:00:00Z",
+      "publicAdvisory": { "advNum": "14" }
+    }
+  ]
+}
+```
+
+**Coordinate parsing:**
+```typescript
+// NHC uses cardinal directions in coordinate strings
+const lat = parseFloat(coord.replace('N','').replace('S', match => '-' + match.slice(1)));
+// For longitude: NHC Atlantic/E Pacific storms are always W — negate
+const lng = -(parseFloat(coord.replace('W','').replace('E', match => '-' + match.slice(1))));
+```
+
+**Severity formula:** `Math.min(parseInt(intensity_knots) / 137, 1.0)` (137 knots = Category 5 max)
+
+**Event ID:** `{storm.id}_{advisory_number}` — new advisory = new event (tracks storm progression)
+
+**Seasonal behavior:** Off-season (Dec–May Atlantic), `activeStorms` is an empty array. Scout polls but publishes nothing. This is correct behavior.
+
+---
+
+### USGS NWIS — Flood Gauges
+
+- **Base URL:** `https://waterservices.usgs.gov/nwis/`
+- **Key endpoint:** `/iv/?sites={site_codes}&parameterCd=00060&format=json`
+- **Auth:** None required
+- **Schedule:** Every 15 minutes
+- **Rate limit:** No documented hard limit; query only the pre-filtered site list
+
+**Parameter codes:**
+- `00060` = discharge in cubic feet per second (cfs)
+- `00065` = gage height in feet (optional supplemental)
+
+**Request example:**
+```
+GET https://waterservices.usgs.gov/nwis/iv/?sites=02084469,02085070&parameterCd=00060&format=json
+```
+
+**Response structure (simplified):**
+```json
+{
+  "value": {
+    "timeSeries": [
+      {
+        "sourceInfo": {
+          "siteName": "NEUSE RIVER NEAR GOLDSBORO NC",
+          "siteCode": [{ "value": "02089000" }],
+          "geoLocation": {
+            "geogLocation": { "latitude": 35.38, "longitude": -78.02 }
+          }
+        },
+        "variable": { "variableName": "Streamflow, ft&#179;/s" },
+        "values": [{ "value": [{ "value": "12500", "dateTime": "2026-03-24T14:30:00.000-05:00" }] }]
+      }
+    ]
+  }
+}
+```
+
+**Flood stage thresholds:** Stored in `server/src/scouts/usgs-sites.json` — one object per pre-selected site with `{ siteCode, siteName, lat, lng, floodStageCfs }`.
+
+**Severity formula:** `Math.min((currentCfs - floodStageCfs) / floodStageCfs, 1.0)` — percent above flood stage, capped at 1.0
+
+**Pre-filtering:** Only query the ~50–100 sites in `usgs-sites.json`. Never query all 11,000 active gauges.
+
+---
+
+### US Drought Monitor
+
+- **Base URL:** `https://droughtmonitor.unl.edu/DmData/GISData.aspx`
+- **Key endpoint:** `?mode=table&aoi=county&statistic=0&date={YYYY-MM-DD}`
+- **Auth:** None required
+- **Schedule:** Thursday 10:30 AM CT (data releases ~10 AM CT each Thursday)
+- **Rate limit:** No documented limit; weekly requests are trivial
+
+**Response:** CSV with columns:
+```
+FIPS,State,County,None,D0,D1,D2,D3,D4,ValidStart,ValidEnd
+48113,TX,Dallas,0.0,0.0,0.0,0.0,100.0,0.0,20260320,20260326
+```
+
+**Columns D0–D4:** Percent of county in each drought category (sum = 100)
+- D0: Abnormally Dry
+- D1: Moderate Drought
+- D2: Severe Drought
+- D3: Extreme Drought ← trigger threshold
+- D4: Exceptional Drought ← trigger threshold
+
+**Trigger:** `D3 > 0 OR D4 > 0` AND FIPS code is in `server/src/scouts/drought-fips.json` (counties near IUCN habitats)
+
+**Severity formula:** `(parseFloat(D3) + parseFloat(D4)) / 100`
+
+**Date parameter:** Use the most recent Thursday's date. Find it with:
+```typescript
+const today = new Date();
+const dayOfWeek = today.getDay(); // 0=Sun, 4=Thu
+const daysToLastThursday = dayOfWeek >= 4 ? dayOfWeek - 4 : dayOfWeek + 3;
+const lastThursday = new Date(today.getTime() - daysToLastThursday * 86_400_000);
+```
+
+---
+
+### NOAA Coral Reef Watch
+
+- **Base URL:** `https://coralreefwatch.noaa.gov/`
+- **Key endpoint:** `vs/gauges/crw_vs_alert_areas.json` — current bleaching alert polygons
+- **Auth:** None required
+- **Schedule:** Every 6 hours
+- **Rate limit:** No documented limit
+
+**Response structure:**
+```json
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[136.0, 8.0], [138.0, 8.0], [138.0, 10.0], [136.0, 10.0], [136.0, 8.0]]]
+      },
+      "properties": {
+        "alert_level": 2,
+        "alert_label": "Bleaching Alert Level 1",
+        "max_dhw": 8.4
+      }
+    }
+  ]
+}
+```
+
+**Alert levels:**
+- 0: No Stress
+- 1: Bleaching Watch
+- 2: Bleaching Warning ← trigger threshold
+- 3: Bleaching Alert Level 1
+- 4: Bleaching Alert Level 2
+
+**Trigger:** `alert_level >= 2`
+
+**Severity formula:** `alert_level / 4`
+
+**Coordinates:** Use polygon centroid as the event coordinate:
+```typescript
+function computeCentroid(coords: number[][]): { lat: number; lng: number } {
+  const lng = coords.reduce((s, p) => s + p[0]!, 0) / coords.length;
+  const lat = coords.reduce((s, p) => s + p[1]!, 0) / coords.length;
+  return { lat, lng };
+}
+```
 
 ---
 
 ## Species / Habitat APIs
 
 ### IUCN Red List API
-- Base: `https://apiv3.iucnredlist.org/api/v3/`
-- Auth: Free token → `IUCN_API_TOKEN` env var
-- Key endpoint: `/species/category/{category}` — list by threat status
-- **Primary use: bulk shapefile download (pre-loaded into PostGIS)**
-- Live API: fallback for species metadata not in PostGIS
 
-### GBIF Occurrence API (Phase 2)
-- Base: `https://api.gbif.org/v1/`
-- Key endpoint: `/occurrence/search?decimalLatitude=&decimalLongitude=&radius=50000&limit=10`
-- Auth: None required for read
-- Response: Darwin Core occurrence records with coordinates + date + species name
+- **Base URL:** `https://apiv3.iucnredlist.org/api/v3/`
+- **Auth:** Free token → `IUCN_API_TOKEN` env var
+- **Primary use:** Bulk shapefile download (one-time, loaded into PostGIS)
+- **Live API use:** Fallback for species metadata not in PostGIS (optional)
 
-### Open-Meteo Weather (Phase 1)
-- Base: `https://api.open-meteo.com/v1/forecast`
-- Key params: `latitude=&longitude=&hourly=wind_speed_10m,wind_direction_10m,precipitation_probability&forecast_days=1`
-- Auth: None required
-- Response: Hourly forecast arrays
+**Key endpoints:**
+- `GET /species/category/{CR|EN}` — list all species by threat category
+- `GET /species/{name}` — species metadata by Latin name
+
+**Token in requests:** Append `?token={IUCN_API_TOKEN}` to every call.
+
+---
+
+### GBIF Occurrence API
+
+- **Base URL:** `https://api.gbif.org/v1/`
+- **Key endpoint:** `/occurrence/search`
+- **Auth:** None required for read access
+- **Rate limit:** Polite use, ~100ms between calls
+
+**Request parameters:**
+```
+decimalLatitude    <- center lat
+decimalLongitude   <- center lng
+radius             <- in meters (50000 = 50km)
+hasCoordinate      <- true (filter out records without coordinates)
+hasGeospatialIssue <- false (filter out known bad coordinates)
+year               <- e.g. "2024,2025" (last 2 years)
+limit              <- 10 is sufficient per species
+```
+
+**Response:**
+```json
+{
+  "results": [{
+    "key": 12345,
+    "scientificName": "Pongo abelii Lesson, 1827",
+    "decimalLatitude": 3.42,
+    "decimalLongitude": 97.12,
+    "eventDate": "2024-11-15",
+    "datasetName": "Global Biodiversity Facility",
+    "occurrenceID": "urn:uuid:abc123"
+  }],
+  "count": 1,
+  "endOfRecords": true
+}
+```
+
+---
+
+### Open-Meteo Weather
+
+- **Base URL:** `https://api.open-meteo.com/v1/forecast`
+- **Auth:** None required
+- **Rate limit:** No documented limit for free tier
+
+**Request:**
+```
+GET https://api.open-meteo.com/v1/forecast
+  ?latitude={lat}
+  &longitude={lng}
+  &hourly=wind_speed_10m,wind_direction_10m,precipitation_probability
+  &forecast_days=1
+  &wind_speed_unit=kmh
+```
+
+**Response:**
+```json
+{
+  "latitude": -3.42,
+  "longitude": 104.21,
+  "hourly": {
+    "time": ["2026-03-24T00:00", "2026-03-24T01:00", ...],
+    "wind_speed_10m": [12.3, 13.1, ...],
+    "wind_direction_10m": [225, 230, ...],
+    "precipitation_probability": [5, 5, 10, ...]
+  }
+}
+```
+
+Use index `[0]` for the current hour's values.
 
 ---
 
 ## AI APIs (all via ModelRouter.ts)
 
-### Anthropic (Claude Sonnet 4.6)
-- SDK: `@anthropic-ai/sdk`
-- Auth: `ANTHROPIC_API_KEY` env var
-- Used by: Threat Assessment, Synthesis, Refiner agents
+### Anthropic — Claude Sonnet 4.6
 
-### Google AI (Gemini 2.5 Flash / Flash-Lite + text-embedding-004)
-- SDK: `@google/generative-ai`
-- Auth: `GOOGLE_AI_API_KEY` env var
-- Gemini 2.5 Flash-Lite: Enrichment + Habitat agents (free tier: 1,000 RPD)
-- Gemini 2.5 Flash: Species Context agent (free tier: 250 RPD)
-- text-embedding-004: RAG embeddings (free tier)
+- **SDK:** `@anthropic-ai/sdk`
+- **Auth:** `ANTHROPIC_API_KEY` env var
+- **Used by:** Threat Assessment, Synthesis, Refiner agents
+
+**Key SDK call:**
+```typescript
+const response = await anthropic.messages.create({
+  model: 'claude-sonnet-4-6',
+  max_tokens: 1024,
+  system: systemPrompt,
+  messages: [{ role: 'user', content: userMessage }],
+});
+const text = response.content[0]?.type === 'text' ? response.content[0].text : '';
+const { input_tokens, output_tokens } = response.usage;
+```
+
+**Pricing (March 2026):** ~$3.00/M input, ~$15.00/M output tokens
 
 ---
 
-## Error Handling Patterns
+### Google AI — Gemini 2.5 Flash & Flash-Lite
 
-All external API calls:
-1. Retry with exponential backoff (max 3 attempts) for 429/503 errors
-2. Do NOT retry 400/401/404 — these are permanent failures
-3. On permanent failure: log to `pipeline_events` as 'error', post to #sentinel-ops, do NOT crash
-4. Circuit breaker: if 5 consecutive failures from same API, pause that Scout for 30 min
+- **SDK:** `@google/generative-ai`
+- **Auth:** `GOOGLE_AI_API_KEY` env var
+- **Flash:** Gemini 2.5 Flash — free tier 10 RPM / 250 RPD — Species Context Agent
+- **Flash-Lite:** Gemini 2.5 Flash-Lite — free tier 15 RPM / 1,000 RPD — Enrichment + Habitat agents
 
-*Detailed retry logic to be implemented in Phase 1 Scout agent base class.*
+**Key SDK call:**
+```typescript
+const model = genai.getGenerativeModel({
+  model: 'gemini-2.5-flash-lite',
+  systemInstruction: systemPrompt,
+  generationConfig: { maxOutputTokens: 256, responseMimeType: 'application/json' },
+});
+const result = await model.generateContent(userMessage);
+const text = result.response.text();
+const usage = result.response.usageMetadata;
+```
+
+**JSON mode:** Set `responseMimeType: 'application/json'` to get clean JSON without markdown fences. Essential for agents that parse LLM output as JSON.
+
+---
+
+### Google AI — text-embedding-004
+
+- **SDK:** `@google/generative-ai` (same SDK as Gemini)
+- **Auth:** Same `GOOGLE_AI_API_KEY`
+- **Dimensions:** 768
+- **Free tier:** Available via Google AI Studio key (confirm current rate limits)
+
+**Key SDK call:**
+```typescript
+const model = genai.getGenerativeModel({ model: 'text-embedding-004' });
+const result = await model.embedContent(text);
+const embedding: number[] = result.embedding.values; // 768 floats
+```
+
+**Critical:** Use the same model at both ingest time AND query time. If you ingest with `text-embedding-004` and query with anything else, similarity scores will be meaningless.
+
+---
+
+## Error Handling Summary
+
+| Error Type | HTTP Status | Action |
+|---|---|---|
+| Transient (overloaded) | 429, 503 | Retry with exponential backoff (max 3 attempts) |
+| Permanent (bad request) | 400, 401, 403, 404 | Log and throw — do NOT retry |
+| Network timeout | N/A | Treat as transient — retry |
+| Circuit open | N/A | Skip scout for 30 minutes |
+| All failures | Any | Log to `pipeline_events` as 'error', post to #sentinel-ops, do NOT crash process |

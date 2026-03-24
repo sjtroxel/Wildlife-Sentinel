@@ -50,7 +50,7 @@
 - [ ] Vitest configured
 - [ ] GitHub Actions CI (lint + typecheck + test)
 
-→ See [phase-0-foundation.md](roadmap/phase-0-foundation.md)
+→ See [PHASE_0_FOUNDATION.md](roadmap/PHASE_0_FOUNDATION.md)
 
 ---
 
@@ -68,7 +68,7 @@
 - [ ] HITL reaction collector for 'critical' alerts
 - [ ] End-to-end test: real fire event → Discord message
 
-→ See [phase-1-fire-scout.md](roadmap/phase-1-fire-scout.md)
+→ See [PHASE_1_FIRE_SCOUT.md](roadmap/PHASE_1_FIRE_SCOUT.md)
 
 ---
 
@@ -82,7 +82,7 @@
 - [ ] Species Context Agent (Gemini 2.5 Flash) — skeleton without RAG
 - [ ] `EnrichedDisasterEvent` enriched with GBIF + species data
 
-→ See [phase-2-full-habitat.md](roadmap/phase-2-full-habitat.md)
+→ See [PHASE_2_FULL_HABITAT.md](roadmap/PHASE_2_FULL_HABITAT.md)
 
 ---
 
@@ -98,7 +98,7 @@
 - [ ] Gemini 2.5 Flash-Lite confirmed working for enrichment agents
 - [ ] Gemini 2.5 Flash confirmed working for Species Context Agent
 
-→ See [phase-3-model-router.md](roadmap/phase-3-model-router.md)
+→ See [PHASE_3_MODEL_ROUTER.md](roadmap/PHASE_3_MODEL_ROUTER.md)
 
 ---
 
@@ -113,7 +113,7 @@
 - [ ] Event normalization to RawDisasterEvent schema for all types
 - [ ] Pipeline handles all five event_types correctly
 
-→ See [phase-4-all-disasters.md](roadmap/phase-4-all-disasters.md)
+→ See [PHASE_4_ALL_DISASTERS.md](roadmap/PHASE_4_ALL_DISASTERS.md)
 
 ---
 
@@ -128,7 +128,7 @@
 - [ ] #sentinel-ops observability log format (one line per agent action)
 - [ ] End-to-end test: raw event → threat assessment → Discord embed
 
-→ See [phase-5-full-swarm.md](roadmap/phase-5-full-swarm.md)
+→ See [PHASE_5_FULL_SWARM.md](roadmap/PHASE_5_FULL_SWARM.md)
 
 ---
 
@@ -145,7 +145,7 @@
 - [ ] Synthesis Agent uses RAG for "why this matters" framing
 - [ ] Both agents cite `source_id` in output — no uncited claims
 
-→ See [phase-6-rag.md](roadmap/phase-6-rag.md)
+→ See [PHASE_6_RAG.md](roadmap/PHASE_6_RAG.md)
 
 ---
 
@@ -161,7 +161,7 @@
 - [ ] `refiner_scores` table — score history per alert
 - [ ] Score trend verified: does the system improve after corrections?
 
-→ See [phase-7-refiner.md](roadmap/phase-7-refiner.md)
+→ See [PHASE_7_REFINER.md](roadmap/PHASE_7_REFINER.md)
 
 ---
 
@@ -178,7 +178,7 @@
 - [ ] Refiner score trend chart
 - [ ] Mobile review passes (375px, 768px, 1280px viewports)
 
-→ See [phase-8-frontend.md](roadmap/phase-8-frontend.md)
+→ See [PHASE_8_FRONTEND.md](roadmap/PHASE_8_FRONTEND.md)
 
 ---
 
@@ -197,4 +197,4 @@
 - [ ] Environment variables set on Railway + Vercel
 - [ ] End-to-end smoke test on production
 
-→ See [phase-9-hardening.md](roadmap/phase-9-hardening.md)
+→ See [PHASE_9_HARDENING.md](roadmap/PHASE_9_HARDENING.md)
