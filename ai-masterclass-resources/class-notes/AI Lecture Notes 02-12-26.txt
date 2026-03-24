@@ -1,0 +1,1300 @@
+Configuring Your AI Toolkit
+Week 1 Recap
+
+Quick hits from last week:
+
+    The landscape — Framework to evaluate tools and models, and the two pillars: tool orchestration and context management
+    The stats — 96% don't trust AI code, yet 42% of committed code is AI-generated.[^1] We're shipping code we don't trust.
+    The perception gap — devs were 19% slower with AI, even though they felt 20% faster.[^2]
+    The why — review bottleneck, overhead nobody talks about
+    The good news — When AI is used structurally (Rakuten, TELUS, Zapier), the gains are real
+    The framework — Evaluate tools by orchestration and context management, not hype.
+    Our tool — Claude Code. Best-in-class sub-agent system, 1M context (via API), terminal-native, plan mode. Now responsible for ~4% of all GitHub commits.[^10]
+
+VibeLabs check: Pull up vibelabs.replit.app — can everyone see the class? Check that you can view the Week 1 recording and notes. If you can't get in, let me know now and we'll get you sorted.
+
+Discord check: Is everyone in the Discord? That's where we share links, ask questions between classes, and help each other debug. If you're not in yet, grab the invite link from VibeLabs.
+
+Homework check: Did everyone get their coding tool set up? Try a test PRD? Any blockers?
+The Problem
+Your AI is a clueless new hire.
+
+Think about what happens when a brilliant new developer joins your team. Day one — they're smart, they're capable, maybe they even have more raw talent than anyone else on the team. But they don't know your codebase. They don't know your customers. They don't know that the payments module is held together with duct tape and nobody touches it on Fridays.
+
+So what do they do? They make confident, technically-correct decisions that are completely wrong for your project. They refactor code that didn't need refactoring. They build features that already exist somewhere else. They follow best practices that don't match your architecture.
+
+That's your AI right now. It's not stupid — it's uninformed. And uninformed intelligence is almost worse than no intelligence at all, because it looks right. It passes code review at a glance. It sounds like it knows what it's talking about. But it's solving a generic version of your problem, not your actual problem.
+
+Here's the question that matters: Who's driving?
+
+There are two ways to work with AI. One works. One will slowly make you worse at your job.
+
+AI-Driven Development — You open a chat, type something vague, take whatever the AI gives you, and move on. The AI picks the direction. You're a passenger. It feels fast, but you're not learning anything, and the AI is making decisions it's not qualified to make. You're essentially letting the new hire run the project on day one.
+
+Human-Driven AI Development — You set the destination. You give the AI context about your project, your constraints, your users. You review its work against your requirements. You stay in the driver's seat. The AI does the heavy lifting, but you decide where to go and when to course-correct.
+
+The difference isn't the AI's intelligence. It's whether you've set that intelligence up to succeed. An uninformed genius guesses. An informed genius executes.
+
+This course is about staying in the driver's seat. Last week we gave you a framework to pick out your car. This week we learn how to steer — context management, configuration, MCPs, skills, agents, commands. The stuff that turns a clueless new hire into someone who actually knows your project. Not by making the AI smarter — by making it informed.
+
+Two sides to this coin:
+
+    Use these tools and concepts WHILE you build with AI
+    Use these tools and concepts WITH the AI projects you build
+
+The Agitation
+
+Here's the data:
+
+    66% of developers say AI code is "almost right, but not quite"[^1]
+    AI-generated PRs have 1.7x more issues than human-written ones[^3]
+    Logic errors appear 1.75x more frequently in AI code[^3]
+    Models drop from 95%+ to 60-70% accuracy as context grows[^4]
+
+This is the 70% problem. AI excels at scaffolding — the first 70%. It struggles with edge cases, security, business logic, error handling — the last 30%. And that last 30% is where bugs live.
+
+That's the new hire without onboarding. Now multiply it across your product — bad context in your coding agent wastes your afternoon. Bad context in your product's AI costs real money and real trust.
+
+This class is about closing that gap and working with AI that brings real ROI.
+The Plan
+
+Here's the roadmap:
+
+Intelligence is not the bottleneck. Context is.
+
+That's the thesis. Everything we do today flows from that idea.
+
+Remember what I said — this problem hits in two directions. So everything we cover today, we'll look at through both lenses:
+
+    Using AI to build software — configuring your coding agent to understand your project
+    Building AI into software — designing context for AI features your customers will use
+
+Same principles, both directions. When you see a 🔄 today, that's us flipping to the product lens.
+What We'll Cover
+
+    Context Engineering — The Big Picture
+    Why context matters more than prompts, the new hire analogy, and what the research says
+
+    Context Window Economics
+    The 20/20/50 rule, what eats your context, the commands that save you (/context, /compact, /clear)
+
+    The Configuration File Landscape
+    CLAUDE.md deep dive, AGENTS.md, .cursorrules, the rules directory — and why fixing your docs matters more than any config file
+
+    MCPs, Skills, and Context Tools
+    Model Context Protocol, lazy-loaded skills, subagents as context-savers, custom commands, hooks
+
+    Plan-Driven Development (Formally Spec-Driven Development)
+    The Research → Plan → Implement → Verify → Test workflow
+
+    The 12 Factor Agent (quick reference)
+    How everything we learned maps to industry principles
+
+The Win
+
+By the end of today, your coding agent will know your project, your standards, and your preferences. You'll know how to keep it on track even in long sessions where most people's AI starts hallucinating. And you'll have a framework for plan-driven development that makes AI output predictable.
+Context Engineering — The Big Picture
+The Core Principle
+
+Intelligence is not the bottleneck. Context is.
+
+Write that down. It changes everything.
+
+Claude, GPT, Gemini — these models are smart enough. The raw intelligence is almost never what limits your output quality. What limits it is the information you give the model to work with.
+
+Every organization has unique workflows, standards, and knowledge. The AI doesn't inherently know any of it. Your job is to make it know.
+Context Engineering vs. Prompt Engineering
+
+Quick distinction:
+
+Prompt engineering = how you ask the question
+Context engineering = what the model knows when you ask it
+
+You could write the perfect prompt. But if the model doesn't have your project's architecture, your coding standards, your business rules — you'll get a technically impressive answer that's wrong for your project.
+
+Prompt engineering is a sentence-level skill. Context engineering is a systems-level skill.
+
+We're focused on the systems today.
+Why This Matters (The Evidence)
+
+From the METR study:[^2]
+
+    Devs were 19% slower — but one developer with 50+ hours of deliberate practice showed measurable speedup
+    The difference? They'd learned to manage context
+
+From Chroma's Context Rot study (18 current models tested):[^4]
+
+    Models scoring 95%+ on short prompts dropped to 60-70% on longer contexts
+    "Models do not use their context uniformly; performance grows increasingly unreliable as input length grows"
+
+Context engineering is the single highest-leverage skill you can develop for AI-assisted development.
+Two Directions, Same Skill
+
+Here's something most courses miss: context engineering isn't just a developer productivity skill. It's also a product design skill.
+
+When you build AI features into your product — a chatbot, a search assistant, an AI copilot for your users — you're making the same decisions:
+
+    What context does the model need to answer well?
+    How do I keep the context window lean?
+    What happens when context degrades over a long conversation?
+
+The difference is the stakes.
+
+As a dev tool: Bad context = annoying. You catch it, redo it, move on.
+In your product: Bad context = your customer gets a wrong answer. That's a support ticket, lost trust, or worse — legal liability when your AI confidently gives wrong information.
+
+Everything we cover today — context economics, configuration files, plans — applies in both directions. We'll keep calling that out.
+The New Hire Analogy
+
+This is the mental model that makes everything click.
+
+Think about onboarding a new developer:
+
+    Day 1: architecture, tech stack, "how we do things here"
+    Week 1: codebase structure, naming conventions, patterns
+    Ongoing: they ask questions, you give feedback, they learn your preferences
+
+Your AI agent needs the same onboarding. The difference:
+
+    A human absorbs culture, overhears conversations, picks up unwritten rules
+    An AI needs everything written down explicitly
+    But unlike a human, it can absorb it instantly — it just needs structure
+
+The tools we cover today are essentially the onboarding packet for your AI.
+Context Window Economics
+What Is the Context Window?
+
+The context window is the AI's total working memory. Everything the model can "see" at any given moment.
+
+Think of it as a whiteboard you share with the AI. Every message, every file, every command output takes up space on that whiteboard. When the whiteboard fills up, the AI starts losing track of what's on it.
+
+What counts as context:
+Item 	Token Cost
+Your CLAUDE.md file 	500–2,000 tokens
+MCP tool schemas (all loaded at once) 	5,000–50,000+ tokens
+Each message you send 	50–500 tokens
+Each file Claude reads 	200–15,000 tokens
+Command output (one-time) 	100–2,000 tokens
+Tool call records (cumulative) 	Compounds every action
+
+A note on that last row: command output is a flat cost — you run npm test, the result lands in context, done. Tool call records are different. Every time the AI uses a tool — reads a file, runs a search, edits code, executes a command — the full round-trip gets logged: what it asked to do, what came back, and its response to the result. All three stay in context for the rest of the session. By tool call #20, you've got 20 round-trips stacked up, and most of those results stopped being useful 15 turns ago. That's the compounding — intermediate results pile up whether they're useful or not.
+
+Quick math:
+
+    1,000 tokens ≈ 750 words ≈ 2-3 pages of text
+    Claude Code default: 200K token context window
+    Fresh session in a monorepo: ~20K tokens baseline (10%)
+    That leaves ~180K for actual work — fills faster than you think
+
+The 20/20/50 Rule
+
+This is the mental model for context quality:
+
+First 20% of context → Best results. The model pays the most attention to what it sees first. This is where your CLAUDE.md and rules live. Put the important stuff here.
+
+Next 20% → Good, reliable results. Your early conversation, initial file reads, problem setup.
+
+After 50% → Start summarizing and resetting. Quality degrades. The model loses track of earlier context, starts repeating itself, makes errors from stale information.
+Why the Middle Gets Lost
+
+Chroma's Context Rot study tested 18 current models (including GPT-4.1 and Claude 4) and confirmed what's called the "Lost in the Middle" problem: models pay disproportionate attention to the beginning and end of their context, and lose track of what's in the middle.[^4]
+
+The pattern: models that scored 95%+ on short prompts dropped to 60-70% on longer contexts. And it's not just about length — where information sits matters. Middle-positioned content gets the worst treatment.
+
+Even more interesting: when context is less than 50% full, the classic U-shape holds (beginning and end are best). When context is over 50% full, the pattern shifts — the model heavily favors recent tokens, then middle, then early. Either way, the middle loses.[^4]
+
+Practical takeaway: Where information sits in context matters as much as whether it's there at all. Put important stuff at the top (CLAUDE.md). Keep your context lean. And when it fills past 50%, compact.
+The Model Reality Check: Who Actually Uses Their Context?
+
+Every frontier model advertises a huge context window. The question is: does accuracy hold up when you actually fill it?
+
+The old test was Needle in a Haystack — hide one fact in a wall of text, ask the model to find it. Every model aces that now. It's too easy.
+
+The real test is MRCR v2 — hide 8 specific facts across a massive document and ask the model to find all of them. That's closer to what you're actually doing when you load a codebase.
+Closed Source — The Top 4
+Model 	Context Window 	Accuracy at 128K 	Accuracy at 1M
+Claude Opus 4.6 	1M tokens 	93% 	76%
+Gemini 2.5 Pro 	1M tokens (2M soon) 	93% 	~26% (drops hard)
+GPT-4.1 	1M tokens 	100% simple NIAH 	57% real-world tasks
+Grok 3 	1M tokens 	Strong 	Limited data
+
+The headline: Opus 4.6 is the first model to maintain usable accuracy across the full 1M window.[^5] At 256K tokens? 93%. At the full million? Still 76%. Sonnet 4.5 on that same test? 18.5%. That's a 4x improvement in one generation.
+
+GPT-4.1 aces the easy retrieval tests (100% on simple NIAH), but on realistic long-context tasks it drops to 57%. Gemini 2.5 Pro starts strong at 128K (93%) but falls off a cliff at 1M — users report significant degradation after using just 15-20% of the advertised window.
+
+The takeaway for you: The model you pick matters less at 32K tokens. They're all great there. The gap opens up at 128K+ — and that's exactly where a real coding session lives.
+Open Source — The Top 3
+Model 	Context Window 	Long-Context Performance
+Qwen 2.5-1M 	1M tokens 	80%+ accuracy at 1M — best open-source by far
+DeepSeek R1 	128K tokens 	"Flawless" NIAH, strong document analysis
+Llama 4 Scout 	10M tokens (claimed) 	15.6% accuracy on realistic tests
+
+The headline: Qwen 2.5-1M is the open-source long-context king. 80%+ accuracy at a million tokens, trained on only 32K-token sequences. That's remarkable engineering.
+
+DeepSeek R1 is rock-solid at 128K — flawless retrieval, strong reasoning. It just doesn't go further.
+
+Llama 4 Scout claims 10 million tokens. On paper that's industry-leading. In practice? 15.6% accuracy on real tasks. This is the poster child for "advertised vs. effective" context windows.
+The Honest Math
+
+Here's what the research actually shows about advertised vs. effective context:
+What They Claim 	What Actually Works
+1M tokens 	~300-600K (30-60% effective)
+200K tokens 	~100-130K (50-65% effective)
+128K tokens 	~80-100K (60-75% effective)
+
+"Context Rot" — Chroma Research's study of 18 models — found that "models do not use their context uniformly; performance grows increasingly unreliable as input length grows."[^4] This isn't a bug. It's a physics problem with how attention mechanisms scale.
+
+And it gets worse by task:
+
+    Simple retrieval (find this fact): Largest effective windows
+    Multi-hop reasoning (connect these 3 facts): Much smaller
+    Sorting/ordering tasks: Smallest effective windows
+
+Same model, same context length, wildly different performance depending on what you ask it to do.
+
+Why this matters for today: This is exactly why we're learning context management. You can't just dump everything into the window and hope. You need to be strategic about what goes in, where it sits, and when to clear it.
+
+🔄 Product Lens: This Hits Harder at Scale
+
+If you're building AI into a product, these numbers are your production reality:
+
+    At 200K context: ~4.1 seconds per response
+    At 1M context: ~12.8 seconds per response — 3x slower
+    Every token costs money. At scale, a bloated system prompt + RAG context + user history = thousands of dollars/day in wasted tokens
+
+The same "context rot" that degrades your coding session degrades your product's AI responses to customers. Except customers don't know to run /compact. They just leave.
+The Three Zones
+
+Think of context usage as traffic lights:
+
+🟢 Green Zone (0-70% used) — Optimal
+
+    Highest reasoning quality
+    Best accuracy
+    Most coherent multi-step work
+
+🟡 Yellow Zone (70-85% used) — Degradation Risk
+
+    5-15% accuracy decline
+    Token duplication starts
+    Information dropout
+
+🔴 Red Zone (85-100% used) — Critical
+
+    20-30%+ accuracy drop
+    Frequent repetition
+    Higher hallucination risk
+    "Maximum context reached" errors
+
+Key principle: A focused 10,000-token context often outperforms a bloated 100,000-token context filled with noise.
+What Eats Context Fastest
+
+In order of damage:
+
+    MCP tool schemas — Every MCP you install loads its entire schema on every session. 20 tools = 8,000-20,000 tokens before you've typed a word
+    Tool call records — Every file read, search, edit, and command leaves a full round-trip receipt in context. A 30-step debugging session can burn 40,000+ tokens of intermediate results you'll never look at again
+    Large file reads — 3,000-15,000 tokens per file. Reference 5 medium files and you've burned 30K tokens
+    Error stack traces — 500-2,000 tokens each. AI debugging sessions fill context fast
+
+The surprise for most developers: MCPs are the biggest upfront hog, but tool call records are the silent killer — they compound with every action the AI takes. This is exactly why subagents matter (we'll cover those shortly).
+The Commands That Save You
+
+Claude Code gives you four essential commands. Learn these.
+/context — Check Your Usage
+
+Shows current token usage and breakdown by component.
+
+→ Run this at least once per session. Build intuition about where your tokens go.
+/compact — Compress Conversation History
+
+Summarizes and compresses your conversation. Roughly 50% token reduction.
+
+→ Now instant in Claude Code. The system builds summaries continuously in the background — when you hit /compact, it just swaps in the pre-built summary.
+
+→ You can direct it: /compact Focus on the API changes
+
+→ Trigger at 70-75% capacity. Don't wait until 85%.
+/compact with Custom Instructions
+
+Add to your CLAUDE.md:
+
+When compacting, always preserve:
+- The full list of modified files
+- Any test commands and their results
+- Current task status and next steps
+
+This ensures critical context survives summarization. Without it, compaction might drop the details you need most.
+/clear — Full Reset
+
+Wipes conversation history. Keeps CLAUDE.md and rules intact.
+
+→ Use when switching to completely different tasks
+→ Use frequently. Clean context > stale context
+The Strategy Framework
+Context Level 	Action
+20% 	/context — audit and build awareness
+50% 	Evaluate approach. Plan for compact.
+70-75% 	/compact with instructions
+85%+ 	Too late for clean compaction. /clear for next task.
+Real Numbers
+
+Without context management:
+
+    3 sessions, 6 hours, $25 in token costs
+    Lots of re-explaining, context bloat, debugging noise
+
+With context management:
+
+    3 sessions, 5 hours, $8 in token costs
+    Clean starts, focused subtasks, persistent memory
+
+Result: 20% time savings. 68% cost reduction.
+
+The investment? Learning when to compact and when to clear. The ROI: longer productive sessions, lower token costs, and fewer "why did the AI forget what I told it?" moments.
+🔄 Product Lens: Token Economics at Scale
+
+Everything we just covered about context costs applies to your products too — but the math gets scarier.
+
+As a developer: You're paying for your own sessions. Maybe $5-25/day.
+
+In production: You're paying for every customer interaction.
+
+    1,000 requests/day × 100K tokens × $10/M tokens = $1,000/day
+    Output tokens cost 3-5x more than input tokens
+    A verbose system prompt wastes money on every single request
+
+Real pricing (2025-2026):
+
+    Claude: $5-10/M input tokens, $25-37.50/M output tokens
+    GPT-5: $2/M input, $8/M output
+    Average monthly AI spend per organization: $85.5K (up 36% from last year)[^6]
+
+The same principles save you money in both places:
+
+    Keep context lean (smaller CLAUDE.md = smaller system prompt)
+    Don't dump irrelevant info (same reason you don't embed full docs)
+    Compress conversation history (same as /compact but for your users)
+    Use caching (prompt caching can cut costs by 90% — we'll dig into this next)
+
+When you build AI features, context economics isn't a nice-to-know. It's your cost structure.
+🔄 Product Lens: Prompt Caching — The Biggest Cost Lever
+
+That last bullet deserves its own section, because prompt caching is probably the single highest-ROI optimization in production AI.[^11] And almost nobody uses it well.
+The Problem It Solves
+
+Every time you send a request to an LLM, the model processes every token through its neural network to create internal representations. That processing is the expensive part — it takes compute time and costs money.
+
+Without caching, your 5,000-token system prompt gets processed from scratch on every single request. If you get 10,000 requests a day, you're paying to process those same 5,000 tokens 10,000 times. That's 50 million tokens of redundant work.
+
+Prompt caching fixes this. The first request processes and stores the result. Every subsequent request that starts with the same tokens skips the processing. You only pay full price for the new, dynamic part.
+
+Think of it like compiled code. First build is slow. Subsequent builds only recompile what changed.
+The Core Design Pattern: Static-First, Dynamic-Last
+
+This is the fundamental principle. Arrange your prompt so everything that stays the same goes first, and everything that changes goes last:
+
+[CACHED — processed once, reused across requests]
+├── System prompt / instructions
+├── Tool definitions
+├── Knowledge base / reference docs
+├── Few-shot examples
+└── ← cache boundary here
+
+[DYNAMIC — processed fresh each request]
+├── Current user question
+└── Session-specific data
+
+Cache keys are prefix-based. The cache only works when your request starts with the same sequence of tokens. User question first, system prompt second = cache breaks on every request because the prefix is always different.
+
+This maps directly to what we covered about CLAUDE.md: stable instructions at the top, session-specific notes at the bottom. Same principle, different context.
+How the Big Three Handle It
+	Anthropic 	OpenAI 	Google
+Setup 	Manual (cache_control markers) 	Automatic (zero code changes) 	Both options
+Savings 	90% on cached tokens 	50% on cached tokens 	90% (Gemini 2.5)
+Cache write cost 	1.25x first time 	None 	Standard rate
+TTL 	5 min (refreshes on use) or 1 hr 	5-10 min 	3-5 min or 1 hr
+Min tokens 	1,024 	1,024 	1,024-2,048
+Control 	You choose what to cache 	Automatic, less predictable 	Your choice
+
+The trade-off is clear: Anthropic gives you 90% savings with explicit control. OpenAI gives you 50% savings with zero effort. Google gives you both options.
+
+For a high-volume production app, that difference between 50% and 90% is enormous. On $750/day in token costs, Anthropic's caching saves ~$630/day vs. OpenAI's ~$375/day. That's $7,650/month difference.[^11][^12]
+What It Looks Like in Code (Anthropic)
+
+# The cache_control marker tells Anthropic: cache everything up to here
+response = client.messages.create(
+    model="claude-sonnet-4-5-20250514",
+    system=[{
+        "type": "text",
+        "text": "Your 5,000-token system prompt...",
+        "cache_control": {"type": "ephemeral"}   # ← cache boundary
+    }],
+    messages=[{"role": "user", "content": "Dynamic user question"}]
+)
+
+# Check what happened:
+# cache_creation_input_tokens → tokens written to cache (1.25x cost, first time only)
+# cache_read_input_tokens    → tokens read from cache (0.1x cost, every time after)
+# input_tokens               → uncached tokens (1x cost, the dynamic part)
+
+First request: pays 1.25x on the system prompt (cache write). Every request after: pays 0.1x (cache read). The user's question is always fresh at 1x.
+The Five Patterns That Matter
+
+1. System prompt caching — Cache your instructions. Every product has a static system prompt. Cache it and stop paying to reprocess it on every request.
+
+2. Tool definition caching — If your AI uses 10-20 tools, those definitions are 2-5K tokens. Same on every request. Cache them. Gotcha: tool definitions sit at the top of the cache hierarchy — any change to tools busts the entire cache.
+
+3. Document Q&A caching — User uploads a contract. First question processes the full document. Every follow-up question about that same contract hits the cache. Each follow-up costs ~10% of the first.
+
+4. Multi-turn conversation caching — In a chatbot, previous turns are cached. You only pay fresh processing for the latest message. By turn 5, you're only processing the new message at full price — turns 1-4 are cached at 10%.
+
+5. Cache-Augmented Generation (CAG) — Instead of building a full RAG pipeline (chunking, embedding, vector DB, retrieval), stuff the entire dataset into the prompt and cache it. Works for datasets under ~500K tokens. Simpler architecture, no retrieval errors. Trade-off: doesn't scale to massive datasets, and you pay storage.
+What Breaks the Cache
+
+    Any change to tools — invalidates everything downstream
+    System prompt changes — even one character busts all message caching
+    Below minimum tokens — content under 1,024 tokens silently skips caching (no error)
+    Concurrent first requests — cache isn't available until the first response starts streaming. Send one request first, then batch the rest.
+    JSON key ordering — some languages randomize serialization, causing cache misses with identical data
+
+Real Cost Math
+
+Customer support chatbot — 10,000 conversations/day, 5 turns each:
+
+Without caching (Sonnet 4.5): ~$750/day
+With caching: ~$120/day
+Savings: $630/day → $18,900/month → ~84% reduction
+
+That's the difference between "AI features are a cost center" and "AI features have healthy margins."
+The Connection to Everything Else
+
+Prompt caching is the production equivalent of what we've been covering all class:
+
+    /compact for your users — both reduce what the model has to process
+    CLAUDE.md structure — a lean, well-organized system prompt caches better (one-character change busts the cache, so stability matters)
+    Subagents for tool call compounding — in production, tool definitions compound cost the same way tool call records do in development. Caching tool definitions is the production equivalent of using subagents for context isolation.
+    RAG (Week 5) — prompt caching makes RAG dramatically cheaper for repeated queries on the same documents
+
+We'll go deeper on building production AI in Weeks 5-6. But understanding prompt caching now — while we're talking about context economics — gives you the mental model for everything that follows.
+The Configuration File Landscape
+The Fragmentation Problem
+
+Every AI coding tool wants its own instruction file:
+File 	Tool
+CLAUDE.md 	Claude Code
+.cursorrules / .cursor/rules/ 	Cursor
+AGENTS.md 	Proposed universal standard
+.github/copilot-instructions.md 	GitHub Copilot
+.clinerules 	Cline
+.windsurfrules 	Windsurf
+
+If you use multiple tools, you're maintaining the same information in 3-4 different formats.
+CLAUDE.md — Deep Dive
+
+This is the most important file for your AI workflow. It sits at your project root. Claude reads it at the start of every conversation.
+The /init Command
+
+Run /init and Claude scans your project — build system, test framework, conventions — and generates a starter CLAUDE.md.
+
+Think of /init as a starting point, not a finished product. It captures obvious patterns but misses nuance. Review what it produces. Refine it based on your team's actual practices.
+What to Include
+
+Priority 1 — Essentials:
+
+    Project architecture overview (high-level structure, key directories)
+    Tech stack (framework, language versions, build tools)
+    Common commands (how to build, test, lint, run)
+    Code style conventions — specific and measurable ("2-space indentation," not "format nicely")
+    Critical gotchas and edge cases
+    Domain-specific terminology
+
+Priority 2 — Good to Have:
+
+    Architectural patterns (how components communicate)
+    File naming conventions
+    Testing requirements and frameworks
+    Integration points (external services, APIs)
+
+What NOT to Include
+
+    "Be a senior engineer" — Personality instructions waste tokens. Claude already has system-level instructions.
+    Full documentation — Reference docs, don't embed them. Embedding bloats context on every session.
+    Redundant info — If it's in package.json or .gitignore, Claude already sees it.
+    "Make beautiful code" — Motivational content doesn't guide behavior.
+    Rarely-used rules — Put those in scoped rules instead.
+
+Size Discipline
+
+Keep it under ~500 lines.[^13]
+
+This is counterintuitive — more instructions can actually mean worse results.[^13] Here's why: CLAUDE.md is for universally applicable instructions. If Claude decides a section isn't relevant to the current task, it may ignore it entirely. The more non-universal stuff you include, the more likely it ignores even the important parts. The docs call this the "over-specified CLAUDE.md" anti-pattern — important rules get lost in the noise.
+Nesting for Monorepos
+
+Claude discovers nested CLAUDE.md files automatically:
+
+my-monorepo/
+├── CLAUDE.md                 # Root: general monorepo guidance
+├── packages/
+│   ├── api/
+│   │   └── CLAUDE.md        # Loaded when working in api/
+│   ├── web/
+│   │   └── CLAUDE.md        # Loaded when working in web/
+│   └── shared/
+│       └── CLAUDE.md        # Loaded when working in shared/
+
+Root CLAUDE.md sets general standards. Subdirectory files add context-specific rules. Both available when working in nested directories. This is huge for monorepos — each package gets its own instructions without bloating the root file.
+The Rules Directory
+
+.claude/rules/ is the modular alternative:[^13]
+
+project/
+├── .claude/
+│   └── rules/
+│       ├── code-style.md        # Always loaded
+│       ├── testing.md           # Always loaded
+│       ├── react-patterns.md    # Scoped to *.tsx files
+│       └── api-patterns.md      # Scoped to src/api/**
+
+Rules can be scoped to file types. A rule scoped to *.ts won't consume any context when Claude is working on Python files.
+
+Compare:
+
+    A 1,200-token monolithic CLAUDE.md → loaded every session
+    Same content split into scoped rules → only the relevant 200-300 tokens load per task
+
+Less waste. More precision.
+AGENTS.md — The Unification Attempt
+
+Created by Sourcegraph's Amp team. Now stewarded by the Linux Foundation. The idea: one file, any agent.
+
+Current status (Feb 2026):
+
+    60,000+ repos on GitHub have adopted it[^7]
+    Cursor: full support (v1.6+)
+    Claude Code: no native support yet, but you can reference AGENTS.md from CLAUDE.md
+    Growing enterprise adoption
+
+The irony: AGENTS.md was designed to end config file fragmentation. Then OpenAI released their own competing AGENTS.md format. The standard that was supposed to unify everything... fragmented.
+
+The deeper point: Good tools should let you configure which context file to read. If a tool demands a specific filename with no configuration option, that's vendor lock-in, not standardization.
+The Real Insight: Fix Your Docs First
+
+Here's the surprising truth:
+
+The projects that succeed with AI aren't those with the best AGENTS.md — they're those with the best documentation, period.
+
+This explosion of config files revealed that most projects have terrible docs. A well-documented project helps humans AND AI equally.
+
+What actually helps AI understand your project:
+
+    A clear README explaining architecture and patterns
+    Consistent naming conventions (documented)
+    Comments that explain WHY, not WHAT
+    Small, focused modules with limited dependencies
+    Established patterns for common tasks
+
+Config files are important. But they're secondary to actual documentation.
+
+Mental exercise: If you had to explain your project to a new hire in under 3,000 tokens, what would you include? That's your CLAUDE.md.
+Hot Tip: Version Control Your Config
+
+Version track your global Claude settings — ~/.claude/ — commands, skills, configuration. git init that directory.
+
+This way you can freely experiment and edit without fearing you'll break something. If you mess up, just git checkout.
+🔄 Product Lens: System Prompts = Your Product's CLAUDE.md
+
+Your CLAUDE.md is a set of instructions that shapes how the AI behaves in your project. In a product, the system prompt is the same thing — but for your users.
+
+Everything we said about CLAUDE.md applies:
+CLAUDE.md (Dev Tool) 	System Prompt (Product)
+Keep it under 3,000 tokens 	Keep it lean — you pay per request
+Be specific and measurable 	Be specific about scope and boundaries
+Don't embed full docs 	Don't stuff entire knowledge bases in
+Reference docs, don't inline them 	Use RAG (and other tools) to pull relevant context per query
+Scoped rules for different files 	Different prompts for different features
+
+The product-specific additions:
+
+    Fallback behaviors: What should the AI do when it's not sure? ("I'm not certain — let me connect you with a human.")
+    Scope boundaries: What should the AI refuse to answer? (A product AI that answers off-topic questions confidently is a hallucination factory.)
+    Tone as a product decision: Friendly vs. professional, concise vs. detailed — this is product design, not engineering.
+
+The bad example:
+
+"Be helpful and answer any question."
+
+→ Will hallucinate, overstep, and make promises your product can't keep.
+
+The good example:
+
+"You are a support agent for [Product]. Only answer questions about
+features, pricing, and documentation. If the customer asks something
+outside this scope, politely redirect them. If you're not certain,
+say so rather than guessing."
+
+→ Bounded, more reliable, lower hallucination rate.
+
+When you practice writing good CLAUDE.md files, you're practicing system prompt design.
+MCPs, Skills, and Context Tools
+MCPs (Model Context Protocol)
+
+MCP is an open protocol that lets AI models connect to external tools and data sources. Think of it as a USB port for AI — a standardized way to plug in new capabilities.
+
+What MCPs give your AI:
+
+    Database access
+    GitHub integration (PRs, issues, code review)
+    Slack messaging
+    Browser automation
+    API calls to external services
+    And a growing ecosystem of community tools
+
+The three MCP primitives:
+
+    Tools — Functions the AI can call (query_database, create_pr)
+    Resources — Data the AI can read (docs, configs)
+    Prompts — Pre-built prompt templates
+
+The Context Cost Problem
+
+Every MCP you install loads its entire schema into your context window. On every session. Whether you use it or not.
+
+Real costs per tool:
+
+    Simple tool (1-2 params): 150-300 tokens
+    Moderate tool: 400-800 tokens
+    Complex tool: 1,000-2,000 tokens
+
+The math:
+
+    5 tools: 2,000-5,000 tokens
+    20 tools: 8,000-20,000 tokens
+    50+ tools: 25,000-50,000+ tokens
+
+At 50K tokens, you've burned 25% of your context window before asking a single question.
+How to Evaluate MCPs
+
+Before installing, ask:
+
+    How many tools does it expose? (fewer = better)
+    How often will I actually use these? (daily vs. occasionally)
+    Can I achieve this with a bash command instead?
+    What's the token cost vs. value?
+
+Rule of thumb: 5-15 high-quality, focused tools beats 50 "just in case" tools.
+Installing MCPs
+
+# Add an MCP server
+claude mcp add github --scope project
+
+# List installed MCPs
+claude mcp list
+
+# Remove an MCP
+claude mcp remove github
+
+MCPs can be scoped to a project or global across all your projects.
+Tool Search — The Context Pollution Fix
+
+As of January 2026, Claude Code has a built-in solution to the MCP context cost problem: Tool Search.[^14]
+
+Instead of loading every tool definition upfront, Claude Code builds a lightweight index of tool names and descriptions. Tools only load into context when Claude decides it actually needs them. Think of it like the skills pattern (which we'll cover next), but for MCP tools specifically.
+
+The numbers:[^15]
+
+    Before Tool Search: 50+ MCP tools consumed ~77K tokens before you typed a word
+    After Tool Search: ~8.7K tokens — 85% reduction
+    One user reported 144K tokens from MCP tools alone; another hit 134K tokens of tool definitions
+
+How it works:
+
+    Activates automatically when your MCP tool definitions would use more than 10% of your context window
+    Uses regex matching (when Claude knows what it's looking for) or semantic search (for exploratory queries)
+    Loaded tools stay cached for the session — no repeated lookups
+    The Tool Search tool itself adds only ~500 tokens of overhead
+
+What this changes for you: The "5-15 focused tools" rule of thumb still applies — fewer tools means faster, more accurate tool selection. But Tool Search means you're no longer punished for having specialized MCPs installed that you only need occasionally. The context cost problem shifts from "every tool always loaded" to "tools loaded on demand."
+
+This is also available at the API level for anyone building AI products — you mark tools with defer_loading: true and Claude discovers them on demand.[^14] Same principle, different context. We'll touch on this again in Weeks 5-6 when we build product features.
+Skills — Lazy-Loaded Context
+
+Skills solve the context hog problem from the other direction. They only load when relevant.
+How They Differ from CLAUDE.md
+Aspect 	Skills 	CLAUDE.md
+Loading 	On-demand when relevant 	Always loaded
+Scope 	Specific tasks/workflows 	Entire project
+Reusability 	Across projects 	Project-specific
+Context cost 	Near-zero until invoked 	Always consumes tokens
+The Progressive Disclosure Model
+
+    Frontmatter only (10-20 tokens) — name + description. Always visible. This is how Claude decides whether to load the skill.
+    SKILL.md content (100-500 tokens) — loaded only if Claude decides it's relevant
+    Helper assets (scripts, templates, references) — loaded only during execution
+
+A skill with 2,000 lines of instructions costs you essentially nothing until it's actually needed.
+Creating a Skill
+
+my-skill/
+├── SKILL.md           # Required: YAML frontmatter + instructions
+├── template.md        # Optional: templates Claude fills in
+├── examples/          # Optional: example outputs
+├── scripts/           # Optional: executable code
+└── references/        # Optional: docs loaded on-demand
+
+The SKILL.md needs YAML frontmatter:
+
+---
+name: "Test Generator"
+description: "Generates comprehensive test suites based on code analysis"
+---
+
+The description is critical — Claude uses it to decide when to invoke your skill. Make it clear and specific.
+Subagents — The Context-Saving Superpower
+
+Subagents are specialized AI assistants that handle tasks in their own separate context window.
+Why They Matter
+
+Remember the tool call compounding problem from context economics? Every file read, search, and edit leaves a receipt in your context that never goes away. Subagents are the solution.
+
+When you spawn a subagent, it gets a fresh context window. All those tool calls — the 10 file reads, the 5 API lookups, the 15 search results — pile up inside the subagent's context, not yours. When it's done, it comes back with a summary. Your main context pays for maybe 500 tokens instead of 50,000-70,000.
+
+Every tool call leaves a receipt in your context. Subagents let you run 50 tool calls and only pay for the summary.
+How to Use Them
+
+"Use subagents to investigate the authentication module"
+"Have a research subagent analyze the API documentation"
+"Spawn a subagent to review test coverage"
+
+Claude can run up to 7 simultaneous subagents.
+When to Use vs. Not
+
+Use subagents for:
+
+    Research and data gathering (parallel is great)
+    Codebase exploration
+    Documentation analysis
+    Multi-file review
+
+Don't use subagents for:
+
+    Parallel implementation work
+    Simple single-file changes
+    Tasks that depend on each other
+
+The Optimal Two-Phase Strategy
+
+    Parallel phase: Fan out subagents for research and data gathering
+    Sequential phase: Implement changes one at a time in your main session
+
+Speed of parallel research. Coherence of sequential implementation.
+
+Critical constraint: Parallel only works when agents touch different files. Same file = conflicts. Always ensure file isolation.
+Agent Teams — When Subagents Aren't Enough
+
+Subagents are contractors — you send them on errands and they report back. Agent teams are a project squad. Multiple full Claude Code instances working in parallel, coordinating through a shared task list and direct messaging.[^20]
+How They Work
+
+    Team Lead: Your main Claude Code session. Creates the team, assigns work, synthesizes results.
+    Teammates: Independent Claude Code instances, each with their own full context window. They load the same project context (CLAUDE.md, MCPs, skills) but work on separate tasks.
+    Shared Task List: All teammates see the same task list with dependency tracking. When a blocking task completes, downstream tasks automatically unblock.
+    Direct Messaging: Teammates can message each other — sharing findings, flagging conflicts, and coordinating without going through the lead.
+
+When to Use Agent Teams vs. Subagents
+	Subagents 	Agent Teams
+What they are 	Lightweight workers inside your session 	Full, independent Claude Code instances
+Communication 	Report back to you only 	Message each other directly
+Context 	Share your context window 	Each gets their own full context window
+Best for 	Research, quick parallel tasks 	Large features, cross-layer development
+Cost 	Low overhead 	3-4x a single session
+
+Use agent teams when:
+
+    Full-stack features where backend, frontend, and tests can develop in parallel
+    Code review across multiple concerns (security, performance, coverage)
+    Research with competing hypotheses that need to cross-reference
+    Anything where agents need to talk to each other, not just report to you
+
+Setting Up Agent Teams
+
+Agent teams are a research preview feature — you need to enable them:[^20]
+
+// Add to ~/.claude/settings.json
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  }
+}
+
+Then ask Claude Code to create a team in natural language:
+
+Create an agent team:
+- BackendAgent: API endpoints (focus: /src/api)
+- FrontendAgent: React components (focus: /src/components)
+- TestAgent: integration tests (focus: /tests)
+
+Delegate mode (Shift+Tab to cycle) restricts the lead to coordination only — spawning teammates, messaging, and task management. The lead can't edit code, forcing it to delegate all implementation. This is the ultimate "driver's seat" move.
+
+Navigate between teammates with Shift+Up/Down in your terminal.
+The Progression
+
+Think of it as a ladder:
+
+    Single agent — you and Claude, one conversation
+    Subagents — Claude fans out lightweight workers for research, results come back to your session
+    Agent teams — multiple full Claude instances working as a coordinated squad
+
+Most of your work will be single agent or subagents. Agent teams are for when you're ready to scale up — and when you understand context economics well enough to manage the cost.
+Plugins — Packaging It All Up
+
+Everything we've covered — skills, MCPs, hooks, slash commands — can be bundled into a plugin: a shareable, installable package.[^21]
+What Plugins Bundle
+
+my-plugin/
+├── .claude-plugin/
+│   └── plugin.json      # Required: plugin manifest
+├── commands/             # Slash commands
+├── agents/               # Subagent definitions
+├── skills/               # Skills (SKILL.md files)
+├── hooks/                # Event handlers
+├── .mcp.json             # MCP server configs
+└── scripts/              # Helper utilities
+
+One plugin can give someone a complete development environment — tools, knowledge, automation, and workflow — installed with a single command.
+The Plugin Marketplace
+
+Plugins are discoverable through marketplaces:[^21]
+
+# Browse available plugins
+claude plugin marketplace list
+
+# Install a plugin
+claude plugin install plugin-name
+
+# Add a third-party marketplace
+claude plugin marketplace add owner/repo
+
+The official Anthropic marketplace is auto-available. Community marketplaces add hundreds more. This is how you'd distribute a custom MCP, a set of skills, or an entire workflow to your team or the community.
+Creating Your Own
+
+You can build a plugin from scratch, or use Claude Code to build one for you. Want an MCP that connects to your company's internal API? A skill that knows your deployment workflow? Package it as a plugin and share it with your team.
+
+We'll build one during homework this week.
+Custom Slash Commands
+
+Create reusable commands for workflows you do constantly:
+
+project/
+└── .claude/
+    └── commands/
+        ├── review.md           # /review
+        ├── test-feature.md     # /test-feature
+        └── deploy-check.md     # /deploy-check
+
+Commands are markdown files with natural language instructions. They accept arguments with $ARGUMENTS or $1, $2, $3.
+
+Useful community commands:
+
+    /commit-ai — semantic commit messages from diffs
+    /security-audit — check for common vulnerabilities
+    /generate-tests — scaffold tests for a module
+    /pr-description — AI-generated PR summary
+
+Hooks — Automation Triggers
+
+Hooks run before or after Claude executes tools.
+PreToolUse Hooks — Before an Action
+
+    Validate file paths before edits
+    Block writes to sensitive files
+    Enforce naming conventions
+    Can return: allow, deny, or ask
+
+Example: Block production config changes
+
+PreToolUse:
+  - matcher:
+      tools: ["Write", "Edit"]
+      paths: [".env.production", "config/prod.json"]
+    decision: "deny"
+    message: "Production config cannot be modified by Claude"
+
+PostToolUse Hooks — After an Action
+
+    Auto-format code with Prettier or Black
+    Run tests on modified files
+    Log changes to audit trail
+
+Example: Auto-format after every edit
+
+PostToolUse:
+  - matcher:
+      tools: ["Edit", "Write"]
+      paths: ["**/*.{js,ts,jsx,tsx}"]
+    command: "npx prettier --write {file}"
+
+Result: Every file Claude touches is automatically formatted to your project's standards.
+Persistent Files — Context That Survives
+
+Chat history disappears or gets compressed. Markdown files persist.
+File 	Purpose 	Update When
+CLAUDE.md 	Project config for AI 	Patterns change
+research.md 	Investigation findings 	During exploration
+plan.md 	What you're building and how 	Requirements evolve
+progress.md 	What's done, what's next 	After each session
+
+These files form persistent memory your AI can reference across sessions. They don't degrade, don't cost tokens to maintain, and serve as documentation for humans too.
+🔄 Product Lens: RAG Is Context Engineering for Products
+
+Remember MCPs? They connect your coding agent to external data. In a product, the equivalent is RAG — Retrieval Augmented Generation.
+
+RAG is just context engineering at scale:
+
+    Instead of Claude reading your files → your product retrieves relevant documents for the user's query
+    Instead of CLAUDE.md giving project context → your system prompt gives product context
+    Instead of /compact compressing history → your product summarizes conversation history automatically
+
+The RAG pipeline is essentially:
+
+    User asks a question
+    System retrieves the 3-5 most relevant documents (like Claude reading your files)
+    Those documents get stuffed into the context window alongside the system prompt
+    Model generates an answer grounded in those documents
+
+RAG didn't come from nowhere. It's the latest chapter in a 50+ year story about representing information as vectors and searching by similarity. Understanding that lineage helps you make better architecture decisions — and honestly, it's just interesting.
+The Short History of Vector Search
+
+1968 — The Vector Space Model.[^16] Gerard Salton at Cornell built the SMART system and introduced the idea of representing documents and search queries as vectors, then measuring similarity with cosine distance. The embedding method was TF-IDF — sparse vectors based on word frequency. This is the direct ancestor of every vector database today.
+
+1984-1998 — Spatial indexes and nearest-neighbor algorithms. R-trees (1984) solved nearest-neighbor search for geographic data.[^16] Then Locality-Sensitive Hashing (1998, Indyk & Motwani) cracked approximate nearest-neighbor search in high dimensions — the foundational algorithm for modern vector databases. AltaVista used a related technique (MinHash, 1997) to detect duplicate web pages.
+
+1992-2000s — Recommendation systems. This is where vector search found its first massive real-world use case. Collaborative filtering (Xerox PARC, 1992) used cosine similarity between user preference vectors — the exact same operation modern vector databases perform.[^17] Amazon's item-based collaborative filtering pre-computed item similarity vectors offline, which is basically a pre-computed vector index. Netflix, Spotify, YouTube — all built on this pattern through the 2000s.
+
+2013-2014 — Dense embeddings. Word2Vec (Google, 2013) was the breakthrough — dense 300-dimensional vectors that captured semantic meaning.[^18] "King - Man + Woman = Queen" was the famous demo. GloVe (Stanford, 2014) improved on it. These were widely used for five years before transformers existed.
+
+2018 — Contextual embeddings. BERT (Google, 2018) introduced context-aware vectors — the word "bank" gets different embeddings depending on whether it's next to "river" or "account." This is what powers modern RAG retrieval.
+
+2019-2021 — The "vector database" product category. Pinecone and Weaviate (2019), Qdrant (2021). Elasticsearch didn't add proper vector/kNN search until 2022. The technology is 50+ years old, but the product category is only about 5-6 years old.
+
+2020 — RAG formalized. Patrick Lewis et al. published the paper that named the pattern: connect a retriever (vector search) to a generator (language model).[^19] This was the bridge between decades of vector search research and the LLM era.
+The Lineage
+Era 	Technology 	What It Did
+1968 	TF-IDF / Vector Space Model 	Sparse word-count vectors + cosine similarity
+1984-1998 	R-trees → LSH 	Spatial indexes → approximate nearest-neighbor
+1992-2000s 	Collaborative filtering 	User/item vectors for recommendations at scale
+2013 	Word2Vec / GloVe 	Dense semantic vectors (meaning, not just word counts)
+2016 	HNSW graphs 	Graph-based ANN search (current state-of-the-art)
+2018 	BERT 	Context-aware embeddings
+2019-2021 	Pinecone, Weaviate, Qdrant 	Vector database products
+2020 	RAG paper 	Retrieval + generation pattern formalized
+
+The point: vector search isn't new AI magic. It's a well-understood technology with deep roots. What changed is the quality of embeddings (from sparse word counts to dense semantic representations) and the pairing with LLMs for generation. When you build a RAG system, you're standing on 50 years of information retrieval research.
+
+Why this matters now: Understanding how context fills up, how the middle gets lost, and how irrelevant context causes errors — that's the same knowledge you need to build a good RAG system. Chunking strategies, embedding quality, retrieval precision — they're all about getting the right context to the model.
+
+We'll go deeper on RAG in Week 5 when we cover adding AI features to products. But the foundation you're building today transfers directly.
+Plan-Driven Development
+The Problem Without a Plan
+
+Without a plan, you get the "almost right" problem:
+
+    66% of developers report AI code is "almost right, but not quite"[^1]
+    Only 39% of AI suggestions are accepted without modification[^9]
+    AI-generated PRs have 1.7x more issues than human-written ones[^3]
+    Logic errors appear 1.75x more frequently in AI code[^3]
+    AI code shows 322% more privilege escalation paths[^3]
+
+This is the 70% problem from Week 1. AI excels at scaffolding (the first 70%). It struggles with edge cases, security, business logic, error handling (the last 30%).
+Why Plans Matter More Than Ever
+
+Six months ago, the advice was "write rigid BDD specs with Given/When/Then for everything." That made sense — the models needed that level of hand-holding to produce reliable output.
+
+The models have gotten dramatically better since then. You don't need to write formal Gherkin scenarios for every feature anymore. But you do still need a clear plan. The difference is the format has loosened up.
+
+Without a plan:
+
+    AI can't infer unstated business requirements
+    AI treats similar problems identically, missing nuance
+    "Almost right" code is dangerous because it passes surface-level inspection
+    You're debugging AI guesses
+
+With a plan:
+
+    AI has explicit guidance for edge cases and constraints
+    Business logic is documented, not assumed
+    The model's literal interpretation becomes an advantage — it does exactly what you describe
+    You're reviewing AI work against clear requirements
+
+The bar isn't "write a BDD spec." The bar is "would a smart new hire understand what to build from this plan?" If yes, the model will too.
+The Underrated Move: Make the AI Ask YOU Questions
+
+Here's a practical tip that keeps you in the driver's seat: prompt the AI to ask clarifying questions before it starts building.
+
+Instead of handing over a plan and saying "go," try: "Before you start, ask me any clarifying questions about the requirements, edge cases, or constraints." The AI will surface assumptions you didn't realize you were making. It's like a code review before the code exists.
+
+This works in both directions:
+
+    As a developer: Claude Code has this built in. Plan mode (Shift+Tab twice) puts Claude into a read-only research phase — it can explore your codebase, ask you clarifying questions with the AskUserQuestion tool, and build a structured task list with TodoWrite — all before it touches a single file. You review the plan, approve it, and then it executes. That's the difference between the AI guessing your intent and confirming it.
+    In your products: Build the same pattern into your AI features. A support chatbot that asks "Did you mean X or Y?" before answering gives better results than one that guesses. A code generation tool that confirms requirements before generating avoids the "almost right" trap.
+
+The models are smart enough to ask good questions. Let them. It's faster to answer three clarifying questions upfront than to debug three wrong assumptions later.
+The Workflow
+Research → Plan → Implement → Verify → Test
+
+Stage 1: Research
+
+    Discuss what you want to build with the AI
+    Ask it to research the codebase, dependencies, and patterns already in use
+    Let it ask clarifying questions until requirements are clear — this is where the "make the AI ask you" tip pays off. Don't rush past this stage.
+    The AI should understand the why, not just the what
+
+Stage 2: Plan
+
+    Document what you're building: requirements, constraints, edge cases, what NOT to do
+    Break implementation into logical, bite-sized tasks
+    Each task should be implementable and verifiable
+    Output: a plan.md (or spec.md — the name matters less than the clarity)
+
+Stage 3: Implementation
+
+    Work through tasks one at a time
+    Focused tasks, not monolithic prompts
+    Review and approve each change
+
+Stage 4: Verification & Testing
+
+    Run tests. Verify against the plan.
+    Use automated feedback loops for self-correction
+    Iterate until requirements are met
+    Tie into Implementation steps if you can
+
+Plan Mode
+
+Claude Code has a built-in plan mode: Shift+Tab twice.
+
+In plan mode:
+
+    Claude can read files, search, and research — but can't modify anything
+    Responses are faster (no file writes)
+    Creates a plan for your approval before implementation
+
+It's Factor 6 of the 12 Factor Agent: Launch/Pause/Resume. Think before you code.
+TDD and BDD — When You Want Extra Guardrails
+
+A clear plan is enough for most work. But when the stakes are high or the logic is complex, tests become your safety net. Two approaches worth knowing:
+TDD — Write Tests First
+
+    Write tests (describe desired behavior)
+    Confirm tests fail (proves they test real functionality)
+    Ask Claude to implement the feature to make tests pass
+    Claude iterates, runs tests, self-corrects
+    Refactor once tests pass
+
+Why TDD works especially well with AI: tests provide an automated feedback loop. Claude can self-correct without human intervention. You end up with code that's always covered by tests.
+
+Best practices:
+
+    Embed TDD guidance in your CLAUDE.md
+    One feature at a time
+    Use real test frameworks (pytest, Jest) not mock functions
+    Have Claude run tests after each implementation attempt
+
+BDD — Behavior Scenarios
+
+BDD uses Given/When/Then scenarios to describe expected behavior. A year ago, this was almost mandatory — the models needed that level of structure. Today's models can usually infer behavior from a good plain-English description.
+
+BDD is still valuable when:
+
+    Multiple stakeholders need to agree on behavior (non-technical people can read Gherkin)
+    You're building something with complex state transitions
+    You want acceptance criteria that double as automated tests
+
+When to Reach for These
+
+    Just a plan: Most features, bug fixes, refactors — clear requirements are enough
+    TDD: Complex algorithms, core logic, anything where "almost right" is dangerous
+    BDD: Multi-stakeholder features, user workflows, integration-level behavior
+    The principle: Give AI clear pass/fail criteria when the cost of "almost right" is high
+
+The 12 Factor Agent — Quick Reference
+
+The 12 Factor Agent is a set of engineering principles for building reliable AI applications. Created by Dex Horthy at HumanLayer. 10,000+ GitHub stars. Based on interviews with 100+ SaaS founders.[^8]
+
+Core insight: "A reliable agent is just well-engineered software that sprinkles an LLM only where probabilistic reasoning truly helps."
+
+Here are all 12 factors — what they mean, and where today's class connects:[^8]
+# 	Factor 	What It Means 	Today's Connection
+1 	Natural Language → Tool Calls 	Convert plain-English requests into structured function calls that deterministic code executes. The LLM decides what to do; your code decides how. 	MCPs, slash commands — structured tools the AI invokes
+2 	Own Your Prompts 	Take direct control of your prompts. Don't rely on framework defaults — write, version, and iterate on them yourself. 	CLAUDE.md, .claude/rules/, system prompts
+3 	Own Your Context Window 	Deliberately manage what goes into each request. Every token should earn its place. 	The 20/20/50 rule, /context, /compact, /clear
+4 	Tools Are Just Structured Outputs 	Tool calls are fundamentally JSON the model generates. Treat them like any other output — validate, log, handle errors. 	Tool definitions, MCP schemas
+5 	Unify Execution State & Business State 	Keep what your agent is doing in sync with your actual data. Don't let the AI's internal state drift from reality. 	Persistent files (plan.md, progress.md)
+6 	Launch / Pause / Resume 	Design agents to start, pause for input, and resume cleanly. No complex orchestration — simple, interruptible workflows. 	Plan mode, AskUserQuestion, TodoWrite
+7 	Contact Humans with Tool Calls 	Use the same tool-calling mechanism to request human input or approval when the AI hits a decision it shouldn't make alone. 	AskUserQuestion, plan mode approval
+8 	Own Your Control Flow 	Keep explicit, readable logic for how your agent moves between states. Don't let the LLM silently decide the workflow. 	Research → Plan → Implement → Verify → Test
+9 	Compact Errors into Context 	When things fail, summarize the failure concisely so the model can learn from it within token limits. Don't dump full stack traces. 	/compact, context economics
+10 	Small, Focused Agents 	Build specialized agents for specific tasks rather than one monolithic agent that tries to do everything. 	Subagents, skills, the two-phase strategy
+11 	Trigger from Anywhere 	Let agents activate through multiple channels — CLI, API, webhook, chat. Meet users where they already are. 	Hooks, custom commands, MCP integrations
+12 	Stateless Reducer 	Design agents as pure functions: input state → output state, predictably. No hidden state, no side effects the caller can't see. 	Markdown files as state, clean session starts
+
+The point isn't to memorize these. It's to notice that everything we covered today already follows these principles. You're not learning a toolkit and a set of principles separately — they're the same thing.
+What We Covered Today
+
+Quick recap — say what we said:
+
+1. Context engineering is the skill. Not prompt engineering. Not model selection. The single biggest factor in AI output quality is what the model knows when you ask it something. Intelligence is not the bottleneck — context is.
+
+2. Context windows have economics — and not all models are equal. The 20/20/50 rule: first 20% gives best results, next 20% is solid, after 50% start compacting. Monitor with /context, compress with /compact, reset with /clear. And remember: advertised context ≠ effective context. Most models only use 30-60% of their claimed window. Opus 4.6 at 76% accuracy across a full million tokens is the current benchmark. Context rot is real — manage it or it manages you.
+
+3. CLAUDE.md is your onboarding packet. Keep it under 3,000 tokens, make it specific and measurable, don't embed docs — reference them. Use /init to start, then refine. Scope rules to file types so you only load what's relevant.
+
+4. MCPs are powerful — and getting smarter about context. Tool Search (Jan 2026) dropped MCP context overhead by 85%, loading tools on demand instead of all at once. But fewer, focused tools still means faster, more accurate tool selection. Skills complement this — lazy-loaded, zero context cost until invoked.
+
+5. Subagents and agent teams scale your work. Subagents run tool calls in isolated context and return summaries — 50 tool calls → 500 tokens. Agent teams go further: multiple full Claude instances coordinating through shared task lists and direct messaging. Single agent → subagents → agent teams is the progression.
+
+6. Plans make AI predictable. Research → Plan → Implement → Verify → Test. The models are good enough now that you don't need formal BDD specs for everything — a clear plan with requirements, constraints, and edge cases is enough. Make the AI ask clarifying questions before it builds. Reach for TDD/BDD when the stakes are high. Persistent markdown files survive across sessions — chat history doesn't.
+
+7. Everything is packageable. Skills, MCPs, hooks, and commands bundle into plugins you can share with your team or the community. The skill-creator helps you build skills. Claude Code helps you scaffold MCP servers. The plugin marketplace makes distribution one command.
+
+8. This all applies to your products too. CLAUDE.md → system prompts. MCPs → RAG. /compact → conversation summarization. Prompt caching alone can cut production AI costs by 84% — static-first, dynamic-last, and know what breaks the cache. The context economics, the "Lost in the Middle" problem, the stakes of bad context — it's the same skill in both directions. When you build AI features for your users, you're doing context engineering at production scale.
+What's Next
+
+Next week — Week 3: AI Dev on Existing Projects. We take what you configured today and put it to work on real codebases. Your CLAUDE.md, your rules, your plans — they all become the foundation. That's why the homework matters.
+Discussion Questions
+
+    Context surprise — What surprised you about context management today? Did you realize how fast the context window fills up?
+
+    The 3,000-token challenge — If you had to explain your project to a new hire in under 3,000 tokens, what would you include? What would you cut?
+
+    Documentation reality check — How much of your project's documentation is actually good enough for AI to use? What's missing?
+
+    Plan vs. vibe — How would you plan a feature you're currently working on? What would you include so the AI knows exactly what to build?
+
+    Minimum viable context — What's the minimum context your AI needs to be useful in your project? What's the most important single piece of information?
+
+    The config file question — If your team uses multiple AI tools, how would you handle the fragmentation problem? AGENTS.md? Symlinks? Just pick one tool?
+
+Build-Time / Homework
+In-Class: Set Up Your AI Toolkit (30 min)
+
+The goal: apply at least one concept from today to a real project. Pick from the menu below based on where you are. Everyone should do Step 1. After that, pick one or more based on what's most useful for your work.
+Step 1: Generate a Starter CLAUDE.md (5 min) — Everyone
+
+/init
+
+Review what Claude generates. Refine:
+
+    Add your coding standards and workflow rules
+    Cut anything generic or redundant
+    Target: under 500 lines[^13]
+
+If you already have a CLAUDE.md, run /init anyway and compare — you might discover things Claude picked up that you missed.
+Step 2: Pick Your Path (25 min)
+
+Path A: Rules & Context (great starting point)
+
+Set up a scoped rule:
+
+mkdir -p .claude/rules/
+
+Create at least one rule scoped to your primary language (React patterns → *.tsx, API conventions → src/api/**, test standards → *.test.*). Then run /context before and after asking Claude to read files from your project — see how fast the window fills. Try /compact and observe the compression.
+
+Path B: Write a Plan and Use Plan Mode
+
+Pick a small feature or bug fix you're working on. Write a plan.md with: what you're building (2-3 sentences), requirements, edge cases (at least 2), and constraints. Then activate plan mode (Shift+Tab twice) and hand it to Claude. Let it ask clarifying questions (AskUserQuestion) and build a task list (TodoWrite) before it touches any code.
+
+Path C: Create a Skill
+
+Use the skill-creator (available in the Anthropic plugin marketplace) to build a custom skill for a workflow you do repeatedly — deployment, code review, documentation, testing patterns. A skill is a markdown file with YAML frontmatter that Claude loads on demand. Typical build time: 15-30 minutes.
+
+Path D: Create an MCP
+
+Build a custom MCP server that connects Claude to something useful for your project — your company API, a database, an internal tool. You can build it as a standalone MCP or package it as a plugin. Claude Code can help you scaffold the entire server:
+
+"Create an MCP server that connects to our PostgreSQL database
+with tools for querying users and inserting records"
+
+Package it as a plugin to share with your team:
+
+# Install from marketplace or build your own
+claude plugin install plugin-name
+
+Path E: Set Up Agent Teams (advanced)
+
+Enable agent teams and try a coordinated multi-agent task:
+
+// Add to ~/.claude/settings.json
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  }
+}
+
+Then ask Claude to create a team for a feature you're building — backend agent, frontend agent, test agent. Use delegate mode (Shift+Tab to cycle) to force the lead to coordinate without writing code directly.
+Homework
+
+Required (pick at least 2):
+
+    Create context files for your project — CLAUDE.md with your coding standards, workflow rules, and key commands. At least one scoped rule in .claude/rules/. Target: under 500 lines for CLAUDE.md. Version control it — commit it to your project.
+
+    Write a real plan — Pick something you're actually working on. Include: overview, requirements, edge cases, constraints. Write it so a smart new hire (or an AI) would know exactly what to build. Use plan mode to test it.
+
+    Context audit — Run at least one session with /context monitoring. What consumes the most tokens? Where does quality degrade? Write 3 bullet points about what you learned.
+
+Stretch goals (pick one):
+
+    Build a skill — Use the skill-creator to build a custom skill for your project. Something you explain to new developers repeatedly is a good candidate.
+
+    Build an MCP or plugin — Create a custom MCP server that connects Claude to a tool or data source your team uses. Package it as a plugin and share the repo.
+
+    Try agent teams — Enable the experimental agent teams feature and run a coordinated multi-agent task. Write up what worked and what didn't — this is bleeding edge and your experience is valuable to the class.
+
+Why This Homework Matters
+
+Next week (Week 3) we dive into AI on existing projects — your codebase, your workflow, your team. You'll need these context files configured to get the most out of the exercises. The plan you write this week becomes the foundation for Week 3's build activity. And if you build a skill, MCP, or plugin — bring it to class. We'll share what worked.
+Sources
+
+[^1]: Stack Overflow Developer Survey (2025) — 66% "almost right but not quite," 96% don't trust AI code, 84% use AI tools
+[^2]: METR Developer Productivity Study (2025) — 19% slower, 50+ hours for measurable speedup
+[^3]: State of AI vs Human Code Generation — CodeRabbit (Dec 2025) — 1.7x more PR issues, 322% more privilege escalation paths, 1.75x more logic errors
+[^4]: Context Rot — Chroma Research (2025) — 18 models tested, 95%→60-70% accuracy drop, U-shape behavior, "Lost in the Middle" confirmation
+[^5]: Claude Opus 4.6 Benchmarks — Anthropic — 76% accuracy at 1M tokens (MRCR v2), 4x improvement over Sonnet 4.5
+[^6]: The True Cost of AI in 2025 — Bitskingdom — $85.5K average monthly AI spend per organization, up 36% YoY
+[^7]: AGENTS.md — GitHub / Linux Foundation — 60,000+ repos adopted
+[^8]: 12 Factor Agent — HumanLayer — 10,000+ stars, 100+ SaaS founder interviews
+[^9]: IDC Research via Sonatype (2025) — 39% of AI suggestions accepted without modification
+[^10]: ~4% of GitHub Commits from Claude Code — SemiAnalysis (Feb 2026) — 135,000+ commits/day
+[^11]: Prompt Caching — Anthropic Docs — 90% cost reduction, 1.25x write / 0.1x read pricing, 5-min and 1-hr TTL options
+[^12]: Token-Saving Updates — Anthropic (Feb 2025) — cache reads no longer count against rate limits, simplified automatic prefix matching
+[^13]: Claude Code Best Practices + Manage Claude's Memory — ~500 line cap for CLAUDE.md, "over-specified CLAUDE.md" anti-pattern, .claude/rules/ directory with path-scoped rules via YAML frontmatter
+[^14]: Tool Search Tool — Claude API Docs — defer_loading for on-demand tool discovery, regex and BM25 search modes, requires Sonnet 4+ or Opus 4+
+[^15]: Introducing Advanced Tool Use — Anthropic Engineering (Jan 2026) — 77K→8.7K tokens (85% reduction), 500-token overhead, Opus 4 accuracy 49%→74% with tool search enabled
+[^16]: Vector Space Model — Wikipedia + SMART System — Wikipedia — Gerard Salton (1968), TF-IDF, cosine similarity; R-tree (Guttman, 1984); LSH (Indyk & Motwani, 1998)
+[^17]: Collaborative Filtering — Wikipedia + History of Amazon's Recommendation Algorithm — Amazon Science — Xerox PARC Tapestry (1992), GroupLens (1994), Amazon item-based CF
+[^18]: Word2Vec — Wikipedia — Mikolov et al. (Google, 2013), dense 300-dimensional semantic vectors, skip-gram and CBOW
+[^19]: Retrieval-Augmented Generation — Wikipedia — Lewis et al. (2020), formalized retrieval + generation pattern
+[^20]: Agent Teams — Claude Code Docs + Claude Opus 4.6 Announcement — Anthropic (Feb 2026) — research preview, shared task list, inter-agent messaging, delegate mode
+[^21]: Create Plugins — Claude Code Docs + Discover Plugins — Claude Code Docs — plugin manifest, marketplace system, bundles skills + MCPs + hooks + commands
+
+Official Docs:
+
+    Claude Code Best Practices
+    Context Windows — Claude API
+    Effective Context Engineering — Anthropic
+    Claude Code Skills
+    Claude Code Hooks
+    Prompt Caching — Anthropic
+    OpenAI Prompt Caching
+    Gemini Context Caching
+    MCP Architecture
+    Agent Teams — Claude Code
+    Custom Subagents — Claude Code
+    Create Plugins — Claude Code
+    Discover Plugins / Marketplaces — Claude Code
+    Epoch AI — Context Windows Analysis (2025)
+
+Articles:
+
+    Context Engineering for Coding Agents — Martin Fowler
+    How I Use Every Claude Code Feature — Shrivu Shankar
+    AGENTS.md: Why Your README Matters More — Upsun
+

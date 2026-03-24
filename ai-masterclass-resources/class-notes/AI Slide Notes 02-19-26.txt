@@ -1,0 +1,872 @@
+Class 3 Slideshow Outline
+AI-Assisted Development on Existing Projects
+
+AI for Devs — February 19, 2026
+
+    How to use this doc:
+    Each slide has a description (layout + visual content), an image prompt where AI-generated art is needed, and speaker notes pulled from the lesson plan. Image prompts are formatted for use with Nano Banana or similar.
+
+    Estimated slide count: ~42 slides for ~2 hours.
+
+OPENING — Slides 1–4
+Slide 1 — Title Slide
+
+Layout: Full-bleed illustration, centered title text overlay
+
+Content:
+
+    Headline: AI-Assisted Development on Existing Projects
+    Subtitle: AI for Devs — Week 3
+    Date: February 19, 2026
+
+Image Prompt (aspect ratio: 16:9 — full-bleed slide background):
+
+    Flat illustration, wide cinematic format. A developer in a modern open-plan office is onboarding a new teammate — but the new teammate is subtly robotic (glowing eyes, clean geometric features, no uncanny valley). The developer has an arm around the robot's shoulder, pointing at a large monitor showing a codebase. Warm lighting, blue and amber color palette, friendly and professional tone. No text in the image.
+
+Speaker Notes:
+Welcome everyone back. Tech check — can you see and hear clearly? Tonight we're getting into the part most of you actually asked for: existing codebases, existing teams, existing deployments. How do you bring AI into work that's already happening without breaking anything?
+Slide 2 — Tonight's Agenda
+
+Layout: Clean numbered list, two columns (Times + Topics)
+
+Content:
+
+0:00   Recap & Framing
+0:10   The Brownfield Reality Check
+0:25   Tell AI Who You Are
+0:40   Tell AI How You Work
+0:55   Break
+1:05   Tell AI What's Off-Limits
+1:15   AI-in-the-Loop CI/CD
+1:30   The Reveal
+1:40   Build Activity: Live ai-onboard Demo
+2:10   Discussion & Wrap-Up
+
+Speaker Notes:
+Here's our roadmap tonight. First third is lecture — concepts and data. Second third continues concepts. Then we hit The Reveal — I've been holding something back that ties it all together. Last 30 minutes is hands-on: we'll actually run the tool and evaluate its output together.
+Slide 3 — Week 2 Recap
+
+Layout: 4 bullet points with icons, clean minimal
+
+Content:
+
+    📐 Context window economics — the 20/20/50 rule
+    📄 Spec-driven development: research → plan → implement → verify → test
+    📁 Persistent markdown files for research, plans, and progress
+    🧪 TDD/BDD as AI guardrails
+
+Speaker Notes:
+Quick Week 2 recap — last week was about configuring your tools in general. The 20/20/50 rule: roughly 20% of your context is the system prompt you can't control, 20% is the context you build (your files, docs, conversation history), and 50% is where the actual work happens. Tonight we get specific: YOUR codebase, YOUR conventions, YOUR team. Everything we do tonight connects back to these four concepts.
+Slide 4 — Why This Week Is Different
+
+Layout: Two-column comparison, distinct left/right visual treatment
+
+Content:
+
+    Left (Greenfield): Clean whiteboard, blank slate, fresh project icon
+    Right (Brownfield): Complex wiring diagram, layered architecture, existing users icon
+    Headline below: "AI doesn't know what it doesn't know about your codebase."
+
+Image Prompt (aspect ratio: 16:9 — full-bleed slide background with text overlay space):
+
+    Split illustration, flat design, wide format. Left half: a blank whiteboard with a single seedling and a developer sketching a fresh blueprint — bright, open, optimistic. Right half: the same developer facing a towering wall of tangled wires, legacy servers, sticky notes, and a codebase printed on stacked paper. The contrast is dramatic but not scary — more like "this is the real challenge." Blue-green palette on left, amber-brown on right. No text.
+
+Speaker Notes:
+Starting from scratch is actually the easy case. You set up a new project with all the right conventions from day one. The hard case — and the one most of you are actually living — is existing code. Code written by different people, in different styles, over different years, with decisions made for reasons nobody fully remembers. Today we talk about how to give AI that institutional knowledge it's missing.
+SECTION 2: THE BROWNFIELD REALITY CHECK — Slides 5–12
+Slide 5 — Unguided AI on Existing Code
+
+Layout: Quote callout + 2 supporting bullets, dark background for emphasis
+
+Content:
+
+    Large quote: "An AI that writes beautiful code in a completely different style than your project is making things worse, not better."
+    Bullet: Without project context, AI generates code that looks right but doesn't match your patterns
+    Bullet: Every mismatched AI PR becomes a code review nightmare
+
+Speaker Notes:
+This is the core problem. AI isn't wrong — it's just operating on defaults. Its defaults are solid code, but they're not YOUR code. A new developer who ignores your team's conventions is a problem even if their code is technically correct. Same deal here. The solution isn't to use less AI — it's to give AI the right context upfront. Let's look at what happens when you don't.
+Slide 6 — AI PRs vs. Human PRs
+
+Layout: Bar chart, high visual impact — two bars side by side
+
+Content:
+
+    Chart title: Issues Per Pull Request
+    AI-authored PRs: 10.83 issues (tall bar, red/amber)
+    Human-authored PRs: 6.45 issues (shorter bar, blue)
+    Label: "1.7× more issues in AI-generated PRs" — CodeRabbit, Dec 2025
+
+Image Prompt (aspect ratio: 4:3 — chart inset, not full-bleed):
+
+    Clean bar chart visualization. Two vertical bars side by side. Left bar labeled "AI-Authored PRs" is tall, in muted red-orange (#E07B54), value label "10.83 issues/PR". Right bar labeled "Human-Authored PRs" is shorter, in cool blue (#4A90D9), value label "6.45 issues/PR". White background, sans-serif font, subtle gridlines. A callout bracket shows "1.7×" between the two bars. Minimal, professional data visualization style. No decorative elements.
+
+Speaker Notes:
+Here's the data. This is from CodeRabbit's December 2025 report — State of AI vs Human Code Generation. AI-authored PRs average 10.83 issues per PR versus 6.45 for human-written PRs. That's not a small gap. And if you look at what kinds of issues they are, it gets more specific.
+Slide 7 — What Kinds of Issues?
+
+Layout: 2×2 grid of stats, each in a card
+
+Content:
+
+    🔴 Logic/correctness errors: +75% vs. human code
+    🔴 Security vulnerabilities: 1.5–2× more
+    🔴 Readability problems: 3×+ (naming clashes, formatting)
+    🔴 Maintainability errors: 1.64× higher
+    Source: CodeRabbit & Qodo AI, "State of AI Code Quality," 2025
+
+Speaker Notes:
+Logic errors up 75%. Security up to double. Readability issues three times higher — that's the style mismatch problem we just talked about. Maintainability is 64% worse. Now I want to hear you ask: "Why are you telling us to use AI?" These numbers are measuring UNGUIDED AI. AI with no project context, no coding standards, no guardrails. That's what we're going to fix.
+Slide 8 — "71% Don't Merge Without Review"
+
+Layout: Large percentage + supporting quote, centered
+
+Content:
+
+    Huge number: 71%
+    Supporting text: "of developers do NOT merge AI code without manual review"
+    Source: NetCorp & Stack Overflow surveys, 2025
+    Callout box: "Smart. But if every AI PR needs heavy review — are you actually saving time?"
+
+Speaker Notes:
+71% of devs don't merge AI code without review. That's actually the right instinct. But here's the question: if every AI PR requires the same level of review you'd give a junior developer who doesn't know your codebase — what's the point? You want AI PRs that are lightweight to review because they follow your patterns. That's the goal tonight.
+Slide 9 — The Comprehension Gap
+
+Layout: Split diagram with icon-based visual
+
+Content:
+
+    Left: Developer with AI = ✅ passes more tests
+    Right: Developer with AI = ❌ does NOT understand the codebase better
+    Headline: "AI helps you ship faster. It doesn't help you understand more."
+    Source: arXiv, "Comprehension-Performance Gap in GenAI-Assisted Brownfield Development," 2025
+
+Image Prompt (aspect ratio: 16:9 — full-bleed illustration behind text callout at bottom):
+
+    Flat illustration, wide format. Split image. Left half: a developer triumphantly merges a PR — green checkmarks, passing tests, happy expression. Right half: the same developer stares at a legacy function with a confused look — question marks floating above their head, a dark void where the codebase knowledge should be. Subtle red warning icon in the center between the two halves. Clean flat vector style, muted blues and greens on left, amber and gray on right. No text.
+
+Speaker Notes:
+This one is brownfield-specific and it's important. Studies show developers pass more tests with AI assistance, but they don't demonstrate greater understanding of the legacy codebase. Think about what that means. You're shipping code in a system you understand less. That's how you build technical debt. The solution: AI researches and explains the code BEFORE it changes anything. We'll cover this in the workflow section.
+Slide 10 — Security: The Real Numbers
+
+Layout: Table with multipliers, dark background treatment
+
+Content:
+
+    Headline: "AI-generated code introduces security flaws in 45% of cases"
+
+    Table:
+    Vulnerability 	Multiplier
+    XSS vulnerabilities 	2.74×
+    Insecure object references 	1.91×
+    Improper password handling 	1.88×
+    Vulnerable to XSS 	86% of samples
+    Vulnerable to log injection 	88% of samples
+
+    Source: Veracode, "2025 GenAI Code Security Report," October 2025
+
+Speaker Notes:
+45% of AI-generated code introduces security flaws. XSS vulnerabilities at 2.74x the human rate. This isn't theoretical — these are production codebases. The brownfield-specific risk is that vulnerabilities in legacy code can be propagated and amplified if AI isn't given clear security boundaries. Which leads us to our third AI onboarding phase: guardrails. We'll get there. But first — the good news.
+Slide 11 — Context Engineering Changes Everything
+
+Layout: Three stats with large numbers, positive visual treatment
+
+Content:
+
+    Vercel: AGENTS.md (8KB) → 100% on Next.js eval suite (vs 79% without)
+    TELUS: 30% faster engineering code shipping, 500K+ hours saved
+    Rakuten: Claude Code ran 7 hours autonomously on a 12.5M-line codebase → 99.9% numerical accuracy
+    D³ Framework study: ~27% weighted avg productivity improvement
+    Pull quote: "The difference between these wins and the scary stats? Context. Structure. Guardrails."
+
+Speaker Notes:
+Same tool. Completely different results. The only difference is context. Vercel wrote an 8KB documentation index and went from 79% to 100% on their evaluation suite. TELUS saved half a million hours. Rakuten ran their AI on a 12-and-a-half million line codebase for seven hours and got 99.9% numerical accuracy. The framework study shows about 27% productivity improvement for teams using structured approaches. Context is the lever.
+Slide 12 — The AI Onboarding Mental Model
+
+Layout: Three-phase visual, horizontal flow with icons
+
+Content:
+
+    Phase 1 (person icon): Tell AI who you are — CLAUDE.md, project overview, architecture
+    Phase 2 (gear icon): Tell AI how you work — coding standards, conventions, rules
+    Phase 3 (shield icon): Tell AI what's off-limits — security boundaries, guardrails, anti-patterns
+    Tagline below: "Treat AI like a new developer joining your team."
+
+Image Prompt (aspect ratio: 16:9 — triptych fills the slide with text overlay for phase labels):
+
+    Flat illustration, horizontal triptych. Three panels connected by arrows. Panel 1: A developer handing a welcome packet to a geometric robot — labeled metaphorically "Who We Are." Panel 2: The robot at a desk reading documentation alongside a developer pointing at conventions on a whiteboard — "How We Work." Panel 3: A shield and a locked gate in front of sensitive files — "What's Off-Limits." Clean, professional, tech-forward aesthetic. Blue, teal, and amber color palette. No text in image.
+
+Speaker Notes:
+This is the mental model we'll use for the rest of class. Three phases of onboarding — for a human developer, you'd do this implicitly over weeks. For AI, you have to do it explicitly, in files, before every session. Phase 1 starts now.
+SECTION 3: TELL AI WHO YOU ARE — Slides 13–18
+Slide 13 — Section Header: Tell AI Who You Are
+
+Layout: Section break slide — large number + title
+
+Content:
+
+    Phase 1 (small label)
+    Tell AI Who You Are (large headline)
+    Subtitle: CLAUDE.md · Architecture Docs · AGENTS.md
+
+Speaker Notes:
+Phase one. This is about project identity — giving AI the context a new developer would get in their first day onboarding.
+Slide 14 — CLAUDE.md: Your Project's First Impression
+
+Layout: File icon prominent, 3 key facts as bullets
+
+Content:
+
+    📄 CLAUDE.md — Claude reads this at the start of EVERY session
+    🎯 Your single highest-impact file — Tier 1, Day 1
+    📏 Keep it under 300 lines — it eats your most valuable context real estate
+    Callout: "Think: what does a new dev need on day one to avoid embarrassing mistakes?"
+
+Speaker Notes:
+CLAUDE.md is Claude's first impression of your project. It reads this automatically at the start of every session — it's the system prompt you control. That means every single Claude session has your project context from the moment it starts. Keep it under 300 lines. Remember the 20/20/50 rule from last week — CLAUDE.md is in that 20% you control. Make every line count.
+Slide 15 — CLAUDE.md Anatomy: 8 Sections
+
+Layout: Numbered list, clean and readable
+
+Content:
+
+    Project Overview — 2-3 sentences: what is this, what domain?
+    Tech Stack — languages, frameworks, key libs, versions
+    Architecture — directory structure, main modules, key patterns
+    Development Commands — exact commands for dev, test, build, lint, migrate
+    Code Style & Conventions — naming, file organization, import patterns
+    Testing Requirements — frameworks, coverage thresholds, test structure
+    Git Conventions — branch naming, commit format, PR requirements
+    Guardrails — what NOT to do, deprecated patterns, sensitive areas
+
+Speaker Notes:
+Eight sections. You don't have to have all eight on day one — but this is the target. The key insight is section 8 — guardrails. Focus on what Claude repeatedly gets wrong on YOUR project, not generic advice. Include real examples from your codebase. And version it in git — when Claude makes a mistake, add a rule. Your team sees changes and can contribute. It's a living document.
+Slide 16 — Architecture & Documentation
+
+Layout: Two document cards side by side
+
+Content:
+@docs/ARCHITECTURE.md — The System Map:
+
+    Module responsibilities and boundaries
+    Data flow between modules
+    External integrations
+    Known constraints and historical decisions
+
+docs/AI_CONTEXT.md — The Gotchas Doc:
+
+    Where AI specifically makes mistakes in YOUR codebase
+    Pre-code questions (security paths, critical tables, idempotency)
+    Legacy inconsistencies ("we use snake_case but some legacy code uses camelCase")
+
+Speaker Notes:
+The implicit knowledge problem: AI struggles with the stuff a human absorbs through osmosis — the "we do it this way because of that incident in 2023" knowledge. You have to make it explicit. ARCHITECTURE.md is your system map — what can import what, where the data flows. Without module boundaries, AI will happily create circular dependencies. AI_CONTEXT.md is your gotchas doc — the stuff that only someone who's worked in this codebase would know.
+Slide 17 — Where Docs Live
+
+Layout: Directory tree visual, two columns
+
+Content:
+
+docs/                 ← humans AND AI read this
+  ARCHITECTURE.md
+  AI_CONTEXT.md
+  DEPENDENCY_MAP.md
+
+.claude/              ← AI-specific only
+  rules/              ← behavioral instructions
+    naming.md
+    anti-patterns.md
+    testing.md
+  settings.json       ← security deny rules
+  skills/             ← reusable tool scripts
+  commands/           ← custom slash commands
+
+    ⚠️ No .claude/context/ directory — not an official feature. Use docs/ or rules/ instead.
+
+Speaker Notes:
+Two places for documentation. docs/ is shared — humans and AI both read it. .claude/rules/ is AI-specific behavioral instructions — these only load when Claude is working with matching file paths. One thing I want to flag explicitly: there is no official .claude/context/ directory. You might see this in some tutorials or community repos — it's not a real Claude Code feature. If you put docs in .claude/context/, Claude might read them, but it's undocumented behavior you can't rely on. Use docs/ for shared reference material and .claude/rules/ for AI-specific instructions.
+Slide 18 — AGENTS.md: The Cross-Tool Standard
+
+Layout: Logo strip of tools + stat callout
+
+Content:
+
+    Logos (icons): Claude · Cursor · Copilot · Aider
+    What it is: Universal standard — same purpose as CLAUDE.md, tool-agnostic
+    Spec: github.com/agentsmd/agents.md
+    Stat card: "AGENTS.md (8KB) → 100% on Next.js eval vs 79% without" — Vercel, 2025
+
+Practical guidance (small bullets):
+
+    Team uses only Claude → CLAUDE.md is fine
+    Mixed AI tools → AGENTS.md as canonical source
+    Can have both → CLAUDE.md for Claude-specific config, AGENTS.md for universal standards
+
+Speaker Notes:
+If your team uses multiple AI tools — Claude for some things, Cursor for others, Copilot in the IDE — AGENTS.md is a universal standard so you only write the context once. The Vercel stat is worth repeating: 8 kilobytes of documentation index took them from 79% to 100% on their evaluation suite. Documentation that your AI tools can read is your highest-leverage investment.
+SECTION 4: TELL AI HOW YOU WORK — Slides 19–25
+Slide 19 — Section Header: Tell AI How You Work
+
+Layout: Section break slide
+
+Content:
+
+    Phase 2 (small label)
+    Tell AI How You Work (large headline)
+    Subtitle: .claude/rules/ · Research-First Workflow · Tests as Specs
+
+Speaker Notes:
+Phase two. Your conventions, your workflow, your quality standards. This is where you turn AI from a smart generalist into a specialist who knows your codebase.
+Slide 20 — .claude/rules/ Directory
+
+Layout: Feature highlight with key concept callout
+
+Content:
+
+    Path-specific rules — load only when Claude works with matching files
+    api/**/*.php
+    Frontend rules don't load during backend work → lean context window
+    Three files to start:
+        rules/naming.md — how you name things
+        rules/anti-patterns.md — what NOT to do
+        rules/testing.md — your test conventions
+    Optional: rules/security.md, frontend/backend domain-specific files
+
+Speaker Notes:
+This is where the real power lives. Rules files are path-specific — a frontend naming rule won't load when Claude is working on your database layer. This keeps your context window lean. The key thing with rules: include the WHY, not just the WHAT. "No SELECT star" is a rule. "No SELECT star — our query optimizer performs significantly worse with wildcard selects; always specify columns" is a rule that helps Claude reason correctly in edge cases.
+Slide 21 — Three Categories of Rules
+
+Layout: Three vertical cards
+
+Content:
+1. Naming Conventions
+
+    Database fields vs. JS variables vs. constants vs. booleans
+    File naming patterns (PascalCase components, camelCase utils)
+    Goal: AI-generated code looks like YOUR team wrote it
+
+2. Anti-Patterns
+
+    No SELECT * (specify columns)
+    No string concatenation for queries (SQL injection)
+    No API keys in client-side env vars
+    No generic Exception catches without logging
+
+3. Domain-Specific Standards
+
+    REST endpoint naming patterns
+    Standard response formats
+    Error handling conventions
+    Module-specific constraints
+
+Speaker Notes:
+Naming first — the most common reason AI code gets flagged in review is style mismatch, not logic. Anti-patterns second — these are literally the mistakes you'll catch in code review. Write them down so AI doesn't make them. Domain-specific third — these are module-level constraints that AI can't infer from the code. Start with 3-5 key principles per file. Include real examples from your codebase, not generic ones.
+Slide 22 — The Research-First Workflow
+
+Layout: Numbered vertical flow with arrows
+
+Content:
+
+    🔍 AI reads and explains the relevant existing code
+    📋 AI proposes a plan before writing a single line
+    👤 You review the plan — does it match your architecture?
+    💻 AI implements against the approved plan
+    ✅ Run tests. Review the diff. Verify.
+
+    Pull quote: "Remember the comprehension gap — AI can pass tests without understanding the codebase. Your job is to be the one who understands."
+
+Image Prompt (aspect ratio: 9:16 — tall portrait, used as right-panel inset beside bullet text on left):
+
+    Flat illustration, vertical flow diagram style. Five steps connected by downward arrows. Step 1: robot with magnifying glass examining code on a screen. Step 2: robot writing a document with checkboxes. Step 3: human reviewing the document with an approving nod. Step 4: robot typing code. Step 5: green checkmark and test passing indicator. Clean, minimal vector art, blue and green palette. No text in image.
+
+Speaker Notes:
+AI's default is to jump straight to implementation without understanding the codebase. That's the comprehension gap problem in action. The research-first workflow breaks that habit. AI reads first, explains what it found, proposes a plan. You review the plan — does it reference the right files, the right patterns? Then implement. This connects directly to Week 2's spec-driven development. For brownfield work, "research" means reading existing code. Plans should reference specific files and functions already in the codebase.
+Slide 23 — Tests Are Machine-Readable Specifications
+
+Layout: Concept explanation + code-like example
+
+Content:
+
+    Headline: "Tests tell AI exactly what 'correct' means"
+
+    BDD example box:
+
+    Given I'm a logged-in customer
+    When I place an order over $100
+    Then a 10% discount should be applied
+
+    Stat: "46% of teams have replaced over half of manual testing with automation. AI can draft 70% of happy-path tests."
+
+    Source: Qodo AI, 2025
+
+Speaker Notes:
+BDD scenarios are executable specifications — there's zero ambiguity about what correct means. AI reads "Given, When, Then" and implements correctly. This is why TDD works so well with AI: fast feedback loops, clear requirements, automatic hallucination catching. Tests are the best documentation AI can read. If your test coverage is low, improving it is actually a prerequisite for effective AI use on your project.
+Slide 24 — Pre-Commit Hooks: The Safety Net
+
+Layout: Before/after scenario visual
+
+Content:
+Without hooks:
+
+    AI writes code → commits → CI catches failures → you find out 5 minutes later
+
+With pre-commit hooks:
+
+    AI writes code → tries to commit → hook runs lint + unit tests → tests fail → Claude fixes automatically → tries again
+
+    Result: broken code never reaches the repo
+
+    💡 Sweet spot: fast lint + unit tests in the hook, full integration suite in CI
+
+    Why: slow hooks burn context — keep the feedback loop tight
+
+Speaker Notes:
+This is a small thing with a big impact. When you document test commands in CLAUDE.md, AI knows what to run. But if you put them in pre-commit hooks, AI LITERALLY can't commit code that fails tests or linting. Claude hits the hook, tests fail, Claude fixes the issue and tries again automatically. The sweet spot: fast lint and unit tests in the hook, full integration suite in CI. Don't make the feedback loop too slow or you'll burn through context on waiting.
+Slide 25 — Section Summary: Phase 2
+
+Layout: Clean three-column summary
+
+Content:
+What 	Where 	Why
+Naming conventions 	.claude/rules/naming.md 	Consistent style
+Anti-patterns 	.claude/rules/anti-patterns.md 	Prevent repeat mistakes
+Domain rules 	.claude/rules/[module].md 	Module-specific context
+Research workflow 	CLAUDE.md commands 	Reads before implementing
+Tests as specs 	CLAUDE.md + test files 	Defines "correct"
+Hooks 	.git/hooks/pre-commit 	Enforces before commit
+
+Speaker Notes:
+Quick summary of Phase 2. Three minutes until the break — any questions before we move to guardrails?
+Slide 26 — Break
+
+Layout: Break slide, relaxed
+
+Content:
+
+    ☕ 10-Minute Break
+    Back at [time + 10]
+
+Speaker Notes:
+Take 10. Grab water, stretch. When we come back: guardrails, CI/CD, and the reveal.
+SECTION 5: TELL AI WHAT'S OFF-LIMITS — Slides 27–31
+Slide 27 — Section Header: Tell AI What's Off-Limits
+
+Layout: Section break slide
+
+Content:
+
+    Phase 3 (small label)
+    Tell AI What's Off-Limits (large headline)
+    Subtitle: Security Layers · Deny Rules · CI/CD Scanning
+
+Speaker Notes:
+Phase three. Security and guardrails. This is where you tell AI where the danger zones are — and set up systems that enforce those boundaries automatically.
+Slide 28 — The .env Problem
+
+Layout: Warning-style slide, amber/red treatment
+
+Content:
+
+    ⚠️ Known issue: Claude Code can auto-load .env files even with deny rules
+    January 2026 report: "deny rules alone are NOT sufficient"
+    Source: Knostic, "Claude Loads Secrets Without Permission," Jan 2026
+    Implication: You need layered defense — no single mechanism is enough
+
+Speaker Notes:
+Let's start with the uncomfortable truth. There's a known issue: Claude Code automatically loads .env files, and deny rules in settings.json have documented bypass cases. A January 2026 report confirmed this. This isn't a reason to panic — it's a reason to use layered defense. Just like you wouldn't protect a production server with only a firewall, you don't protect a codebase with only deny rules.
+Slide 29 — 3 Security Layers
+
+Layout: Three-tier visual, layered depth diagram
+
+Content:
+Layer 1 — Deny Rules (.claude/settings.json)
+
+    Block .env*, secrets/**, *.pem, *.key, .aws/, .ssh/
+    First line of defense — has known bypass issues
+
+Layer 2 — File Structure Isolation
+
+    Secrets live OUTSIDE the project directory entirely
+    Project contains only .env.example with placeholder values
+    If it's not in the directory, Claude can't read it
+
+Layer 3 — CI/CD Scanning
+
+    gitleaks — scans for committed secrets (160+ types), runs as GitHub Action
+
+    Dependabot — flags vulnerable dependencies, auto-opens update PRs (free, built into GitHub)
+
+    SonarCloud — static analysis for security vulnerabilities + code quality (free for public repos)
+
+    Footer: "Defense in depth. No single layer is sufficient."
+
+Image Prompt (aspect ratio: 1:1 — square inset on right side of slide, concentric design works best in square):
+
+    Flat illustration, three concentric shield rings viewed from the front. Outermost ring labeled visually as "CI/CD Scanning" with small GitHub/scan icons. Middle ring: "File Isolation" with a locked folder icon. Inner ring: "Deny Rules" with a code file and red X. Center: a green lock indicating "protected." Clean vector style, cool blues and greens, professional security aesthetic. No text in image.
+
+Speaker Notes:
+Three layers. Layer 1: deny rules in .claude/settings.json. Block the obvious sensitive files. This is necessary but not sufficient. Layer 2: file structure isolation. Keep your actual secrets outside the project directory entirely. Your repo should only have .env.example with placeholder values. If Claude can't reach the file system location, it literally can't read it. Layer 3: CI/CD scanning. Gitleaks scans your git history for accidentally committed secrets — it uses regex and entropy analysis to catch 160+ secret types, runs as a free GitHub Action on every PR. Dependabot monitors your dependencies and auto-opens PRs when vulnerabilities are found — it's free and built into GitHub settings. SonarCloud does static analysis — free for public repos, about $32/month for private. Run all three. Defense in depth.
+Slide 30 — Start with Low-Risk Tasks
+
+Layout: Progression ladder / escalation visual
+
+Content:
+Start here ↓ (low risk, high learning)
+
+    Documentation generation — AI documents undocumented functions
+    Test generation — AI writes tests for existing untested code
+    Refactoring — rename variables, extract functions, reduce duplication
+    Bug triage — AI analyzes and explains a bug before you fix it
+
+Then escalate ↑
+
+    Bug fixes — small, well-scoped with clear test criteria
+    Feature additions — new endpoints following existing patterns
+    Architecture changes — only after trust is established
+
+    Callout: "You're reviewing PRs, not giving AI commit access. Start small, build trust, escalate."
+
+Image Prompt (aspect ratio: 16:9 — full-bleed or right-panel; diagonal staircase works well in wide format):
+
+    Flat illustration, diagonal staircase going upward from left to right. Each step has a small icon: document (step 1), test tube (step 2), wrench (step 3), magnifying glass (step 4). A dotted line separates steps 1-4 from steps 5-7. Steps 5-7 are slightly higher, with a small human checkpoint icon at the transition. A developer character climbs confidently at step 4, looking upward. Warm blue gradient background, clean vector style. No text.
+
+Speaker Notes:
+The question I always get: "Where do I start?" Here's the ladder. Documentation generation is the lowest risk possible — AI writes docs, worst case you throw them away. Test generation is also low risk and extremely valuable. Refactoring is low risk because you have tests to catch regressions. Bug triage — have AI explain the bug before you fix it. That alone will save you hours. Architecture changes are the last thing you let AI touch, not the first. Build trust through small wins.
+Slide 31 — Section Summary: Phase 3
+
+Layout: Quick three-bullet recap
+
+Content:
+
+    Layer 1: Deny rules in .claude/settings.json — first defense, not sufficient alone
+    Layer 2: Secrets outside project directory — structural isolation
+    Layer 3: gitleaks + Dependabot + SonarCloud in CI/CD
+    Start low-risk, build trust, escalate gradually
+
+Speaker Notes:
+Three phases complete. Tell AI who you are, tell AI how you work, tell AI what's off-limits. Now let's talk about what the full workflow looks like when you put this into a CI/CD pipeline.
+SECTION 6: AI-IN-THE-LOOP CI/CD — Slides 32–38
+Slide 32 — Section Header: AI-in-the-Loop CI/CD
+
+Layout: Section break
+
+Content:
+
+    Section 6 (small label)
+    AI-in-the-Loop CI/CD (large headline)
+    Subtitle: GitHub Actions · Automated Review · Specify → Plan → Develop
+
+Speaker Notes:
+This is where individual AI-assisted development becomes team infrastructure. Instead of each developer using AI manually, you build pipelines where AI participates automatically.
+Slide 33 — GitHub Actions + Claude Code
+
+Layout: Setup steps + benefit bullets
+
+Content:
+
+    anthropics/claude-code-action — official GitHub Action for AI code review
+    Setup: 1 YAML file in .github/workflows/ + 1 API key in repo secrets (~5 min)
+    What it does: AI reviews every PR automatically before human review
+    Comments inline on specific lines, catches issues before the human review
+
+Code snippet:
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+jobs:
+  claude-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: anthropics/claude-code-action@v1
+
+Speaker Notes:
+The official Anthropic GitHub Action gives you AI code review on every PR with about 5 minutes of setup. You add one YAML file and an API key to your repo secrets. After that, every PR gets an AI review before your team looks at it. It comments inline on specific lines. It doesn't replace human reviewers — it catches the stuff humans miss because they're tired at 4pm on a Friday.
+Slide 34 — AI Code Review: The Numbers
+
+Layout: Head-to-head comparison table with highlight
+
+Content:
+	Greptile 	CodeRabbit
+Bug detection rate 	82% 	44%
+Review time 	288 sec 	206 sec
+False positives 	11 	2
+Strength 	Full codebase context 	Speed + precision
+
+    Source: Greptile Benchmarks, July–September 2025; DevTools Academy, 2025
+    Callout: "Leading tools detect nearly half of real-world bugs in automated reviews"
+
+Speaker Notes:
+Two main players right now: Greptile and CodeRabbit. Greptile caught 82% of test issues but had 11 false positives and took 288 seconds. CodeRabbit caught 44%, but it's faster and has far fewer false positives. Which is better depends on your priorities. Greptile's big advantage: it has full codebase context, not just the diff. For brownfield work with complex interdependencies, that matters a lot. The takeaway: these tools aren't replacing human reviewers. They're catching the issues humans miss.
+Slide 35 — Specify → Plan → Develop: Overview
+
+Layout: Three-stage pipeline horizontal flow
+
+Content:
+
+    needs:specify → ✅ review:specify → needs:plan → ✅ review:plan → needs:develop → ✅ review:develop
+    Below each stage, a small icon: 📖 (read-only) · 📖 (read-only) · ✏️ (full access)
+    Tagline: "Humans approve at every gate. AI proposes. Humans decide."
+
+Image Prompt (aspect ratio: 16:9 — full-bleed or top-half banner; horizontal pipeline is naturally wide):
+
+    Flat illustration, horizontal pipeline flow. Three stages connected by arrows. Stage 1 "Specify": robot with read-only access (magnifying glass, gray tools). Stage 2 "Plan": robot drafting a blueprint (still gray, read-only). Stage 3 "Develop": robot at a terminal with green tools and full access. Between each stage, a human figure holds a green checkmark "approve" badge or red X "request changes" badge. Clean pipeline aesthetic, blues and teals, professional. No text in image.
+
+Speaker Notes:
+This is the system I run. Three stages. Human approval gates between every one of them. Specify first — AI reads the codebase, interviews you about requirements, creates a comprehensive spec with user stories and acceptance criteria. You review the spec and say "proceed" or "request changes." Plan second — AI creates a detailed technical implementation plan with numbered tasks and dependencies. You review and approve. Only then does AI get full file system access to actually write code. This is the key insight: broadest permissions only after you've approved both the spec and the plan.
+Slide 36 — Progressive Privilege Escalation
+
+Layout: Table with visual treatment for access levels
+
+Content:
+Stage 	Access Level 	What AI Can Do
+Specify 	🔍 Read-only 	Search, grep, read — NO code changes
+Plan 	🔍 Read-only + web 	Research + external docs — NO code changes
+Develop 	✏️ Full access 	Bash, edit, write — implements approved plan
+
+    Principle: "AI earns full access by demonstrating it understands your codebase first."
+
+Speaker Notes:
+Progressive privilege escalation. AI starts with read-only access and earns the right to write code by demonstrating it understands your codebase first. At the Specify stage, AI can research but not modify. At the Plan stage, same thing. Only at the Develop stage does AI get Bash, Edit, and Write access — and by that point, you've already approved what it's going to do. This is the trust-building model in practice.
+Slide 37 — The Full Picture
+
+Layout: Numbered list, arrows connecting each step
+
+Content:
+
+    Context — CLAUDE.md + rules + architecture docs
+    Research — AI reads and understands before it writes
+    Specify — AI proposes what it will build
+    Plan — AI details how it will build it
+    Develop — AI writes code following your patterns
+    Review — AI-powered code review (claude-code-action, Greptile, CodeRabbit)
+    Testing — Automated tests verify correctness
+    Human Approval — You review the PR and merge
+
+    Large callout: "Every step has a human checkpoint. AI proposes, you decide."
+
+Speaker Notes:
+This is the full picture. Context flows in from Phase 1 and 2 work we did earlier. Then research, spec, plan, develop — the pipeline. Then automated code review, tests, and finally you merge the PR. Notice what's at every stage: a human checkpoint. AI never autonomously ships to production. AI proposes and implements — you decide and merge. That's the "human-driven, AI-powered" philosophy.
+SECTION 7: THE REVEAL — Slides 38–41
+Slide 38 — So... That's a Lot of Files
+
+Layout: Directory tree visual, intentionally overwhelming
+
+Content:
+
+.
+├── CLAUDE.md
+├── AGENTS.md
+├── docs/
+│   ├── ARCHITECTURE.md
+│   ├── AI_CONTEXT.md
+│   └── DEPENDENCY_MAP.md
+├── .claude/
+│   ├── settings.json
+│   └── rules/
+│       ├── naming.md
+│       ├── anti-patterns.md
+│       └── testing.md
+└── .github/
+    └── workflows/
+        └── claude-review.yml
+
+    Large text below: "Wouldn't it be nice if one command created all of this?"
+
+Speaker Notes:
+Look at everything we've talked about. CLAUDE.md, AGENTS.md, architecture docs, AI_CONTEXT.md, rules files, settings.json with deny rules, GitHub Actions workflow. If you're doing this manually on an existing project, that's a lot of work. You'd spend hours reading the codebase, writing docs, figuring out conventions. Wouldn't it be nice if there was a single command that could analyze your project, discover your conventions, and generate all of this automatically?
+Slide 39 — Community Resources Worth Knowing
+
+Layout: Four link cards
+
+Content:
+
+    🔒 Trail of Bits Config — production-grade, security-focused Claude setup
+    github.com/trailofbits/claude-code-config
+    🏗️ ChrisWiles Showcase — complete setup with hooks, skills, agents, GitHub Actions
+    github.com/ChrisWiles/claude-code-showcase
+    📡 steipete/agent-scripts — "canonical source + pointer" pattern for multi-repo standards
+    github.com/steipete/agent-scripts
+    ⭐ awesome-claude-code — curated community collection
+    github.com/hesreallyhim/awesome-claude-code
+
+Speaker Notes:
+Before I show you what I built, here are four community resources worth bookmarking. Trail of Bits is a security firm — their Claude config is hardened for production. ChrisWiles has a complete showcase with every feature you'd want. Steipete uses an interesting pattern where rules are defined in one canonical repo and referenced from all your projects — one update propagates everywhere. awesome-claude-code is the kitchen sink — community contributions, a great starting point for exploration.
+Slide 40 — Introducing ai-onboard
+
+Layout: Feature announcement style, full emphasis
+
+Content:
+
+    Large headline: ai-onboard
+    Subtitle: A Claude Code skill that automates your entire AI onboarding setup
+    6-phase pipeline:
+        Preflight — checks what already exists
+        Discovery — 7 parallel agents analyze your codebase
+        Synthesis — unified report of findings
+        User Review — you choose what to generate
+        Generation — creates CLAUDE.md, settings.json, rules/, docs/
+        Validation — verifies generated files are correct
+
+Image Prompt (aspect ratio: 16:9 — full-bleed dramatic reveal; wide format amplifies the before/after contrast):
+
+    Flat illustration, dramatic reveal style. A developer pulls back a curtain to reveal a sleek dashboard with a terminal running a script. The terminal shows a progress bar with six completed checkpoints. Behind the curtain: a tangled mess of files and wires. In front of the curtain: clean, organized file structure. "Before and after" reveal aesthetic. Blue and green tech palette, golden light effect for the reveal moment. No text in image.
+
+Speaker Notes:
+This is the reveal. I built a Claude Code skill called ai-onboard. It runs a 6-phase pipeline. Phase 1: preflight — it checks what already exists so it doesn't overwrite your existing work. Phase 2: discovery — seven parallel agents simultaneously analyze your tech stack, architecture, naming conventions, test infrastructure, security posture, dev workflow, and dependency relationships. Phase 3: synthesis — it combines all the findings into a unified report. Phase 4: user review — you look at the synthesis and decide what you want generated. Phase 5: generation — it creates the actual files. Phase 6: validation — it verifies the generated files are correct. We're going to run it right now.
+SECTION 8: BUILD ACTIVITY — Slides 41–43
+Slide 41 — Build Activity: What We're About To Do
+
+Layout: Activity framing slide, energetic
+
+Content:
+
+    We're running ai-onboard on a real project — live
+
+    Watch what automated discovery catches
+
+    Then evaluate the output against a checklist
+
+    Goal: see what automation handles well vs. what still needs human judgment
+
+    On deck: demo project (truefrontierapps.com)
+
+Speaker Notes:
+Here's what's happening for the next 30 minutes. I'm going to run ai-onboard on a real existing project. As it runs, I'll narrate what it's doing. Then we'll look at the generated output together and go through a checklist — evaluating what it got right, what it missed, and what would require human judgment no tool could provide. Get ready to shout out what you notice.
+Slide 42 — [LIVE DEMO SLIDE — Fullscreen terminal]
+
+Layout: Minimal text — just a prompt at top
+
+Content:
+
+    Top banner: "Running ai-onboard on [project name]"
+    Rest of slide: blank white for screen share
+
+Speaker Notes:
+[Switch to terminal / screen share] Narrate as it runs: "It's reading package.json for the tech stack... now scanning directory structure for architecture patterns... checking naming conventions by analyzing existing code... scanning test files and coverage... running security audit... At the user review step, ask the class: which files should we generate? Let them vote."
+Slide 43 — AI Onboarding Review Checklist
+
+Layout: Checklist, large and readable (meant to be reviewed live)
+
+Content:
+CLAUDE.md Quality:
+
+    Project overview is accurate and concise (2-3 sentences)?
+    Tech stack complete — languages, frameworks, key libs, versions?
+    Architecture section matches actual directory structure?
+    Dev commands correct and complete?
+    Code style matches what you'd tell a new developer?
+    Testing requirements accurate?
+    Git conventions match your actual workflow?
+    Guardrails catch the real danger zones?
+    Under 300 lines? No fluff?
+
+Security (.claude/settings.json):
+
+    .env files denied? Secret dirs denied? Key files (*.pem, *.key) denied?
+    Cloud credential dirs (.aws/, .ssh/) denied?
+
+Rules Files (.claude/rules/):
+
+    Naming conventions match your actual patterns?
+    Anti-patterns cover your real pain points?
+    Rules include WHY, not just WHAT?
+
+What's Missing (always needs human input):
+
+    Legacy quirks, past incidents, tribal knowledge
+    Business logic AI can't infer from code
+    Team preferences not in the codebase
+
+Speaker Notes:
+Let's go through this together. [Walk through each section live] Where did the automated discovery nail it? Where did it get it wrong? What required human judgment? The "What's Missing" section at the bottom is the most important part — these are things no tool can automate. The AI can analyze your code all day and never know about the database migration that went wrong in 2023 that you never repeat.
+SECTION 9: WRAP-UP — Slides 44–46
+Slide 44 — Discussion Questions
+
+Layout: Five numbered questions, open and inviting
+
+Content:
+
+    What's the riskiest part of introducing AI into your existing codebase?
+    What low-risk task would you try first at work this week?
+    What would need to be true for you to trust an AI-generated PR?
+    What conventions did you realize existed only in your head — never written down?
+    How does the Specify → Plan → Develop workflow change your comfort level with AI PRs?
+
+Speaker Notes:
+Let's hear from you. [Pick 2-3 questions based on time and energy in the room.] Question 4 is my favorite — this happens every time. You start writing CLAUDE.md and realize you have a naming convention you've been following for three years that nobody ever documented. That's exactly the kind of thing that makes AI-generated code look wrong even when it's technically correct.
+Slide 45 — Homework for Week 4
+
+Layout: Two columns — Required and Optional
+
+Content:
+Required:
+
+    Run ai-onboard (or do it manually) on a real project — Tier 1 at minimum
+    Review output against the checklist — fix what's off
+    Run one AI-assisted task using the new CLAUDE.md and rules
+    Note what Claude got right and wrong — update rules accordingly
+
+Optional:
+
+    Set up claude-dev-workflow on a GitHub repo
+    Try Greptile or CodeRabbit on one PR
+
+Links to bookmark:
+
+    github.com/truefrontier/claude-dev-workflow
+    github.com/anthropics/claude-code-action
+    github.com/hesreallyhim/awesome-claude-code
+
+Speaker Notes:
+Four required things for next week. The most important: run the onboarding, then actually USE the CLAUDE.md and rules on a real task. Note what Claude gets right and wrong and update accordingly. That feedback loop — use it, observe, update — is how your CLAUDE.md gets good over time. The optional items are worth doing if you have time. Running the full Specify → Plan → Develop workflow at least once will teach you more than anything I can say tonight.
+Slide 46 — Week 4 Preview + Sign-Off
+
+Layout: Preview card + closing quote
+
+Content:
+Next Week: Greenfield Projects
+
+    Starting from scratch with AI as your co-builder
+    Spec-first vs. prompt-first approaches
+    The "restart is faster than debug" instinct
+    Live build: everyone starts a new project in 30 minutes
+
+    Closing quote: "AI on an existing codebase is only as good as the context you give it. The checklist is your guide. The skill automates the heavy lifting. But the human judgment that makes it actually work? That's all you."
+
+Image Prompt (aspect ratio: 16:9 — full-bleed closing slide with text overlay at bottom):
+
+    Flat illustration, forward-looking. A developer stands at the edge of a blank canvas — a huge white board with only a few starting blocks laid down. The developer has a pencil in one hand and a small AI assistant icon (glowing cube) floating beside them, both looking at the blank space with anticipation. Bright, open, optimistic tone. Greens and blues, clean vector style. No text.
+
+Speaker Notes:
+Week 4: greenfield. Everything we did tonight was about bringing AI into something that already exists. Next week, we start from nothing — and the playbook is completely different. Next Thursday, see you then. Remember — the checklist is your guide. The skill automates the heavy lifting. The human judgment that makes it all work? That's yours. Thanks everyone.
+Summary: Slide Count by Section
+Section 	Slides 	Duration
+Opening / Agenda / Recap 	1–4 	0:00–0:10
+Brownfield Reality Check 	5–12 	0:10–0:25
+Tell AI Who You Are 	13–18 	0:25–0:40
+Tell AI How You Work 	19–25 	0:40–0:55
+Break 	26 	0:55–1:05
+Tell AI What's Off-Limits 	27–31 	1:05–1:15
+AI-in-the-Loop CI/CD 	32–37 	1:15–1:30
+The Reveal 	38–40 	1:30–1:40
+Build Activity 	41–43 	1:40–2:10
+Wrap-Up 	44–46 	2:10–2:30
+Total 	46 slides 	~2 hours
+Images Needed (Summary)
+Slide 	Description 	Aspect Ratio 	Usage
+1 	Developer onboarding a robot teammate 	16:9 	Full-bleed title background
+4 	Greenfield vs brownfield split 	16:9 	Full-bleed with text overlay
+6 	AI vs human PR bar chart 	4:3 	Inset chart (not full-bleed)
+9 	Comprehension gap before/after 	16:9 	Full-bleed with quote at bottom
+12 	Three-phase AI onboarding triptych 	16:9 	Full-bleed with label overlay
+22 	Research-first workflow steps 	9:16 	Right-panel portrait inset
+29 	Three concentric security shields 	1:1 	Square inset, right side of slide
+30 	Low-risk task progression staircase 	16:9 	Full-bleed or right panel
+35 	Specify → Plan → Develop pipeline 	16:9 	Full-bleed or top-half banner
+40 	ai-onboard reveal "curtain pull" 	16:9 	Full-bleed dramatic reveal
+46 	Developer + AI at blank canvas 	16:9 	Full-bleed with quote overlay
+
+All others use data visualizations, directory trees, tables, or text-based layouts.
+
+Last updated: February 19, 2026

@@ -1,0 +1,486 @@
+Week 5: Adding AI Features to Existing Products
+90-Minute Lecture Outline
+
+Draft for Kevin's review — March 5, 2026
+Session Format
+Segment 	Time 	Duration
+Recap + Intro (4Cs) 	0:00–0:10 	10 min
+Section 1: The Stakes 	0:10–0:20 	10 min
+Section 2: AI Feature Patterns 	0:20–0:35 	15 min
+Section 3: RAG + Chunking 	0:35–0:55 	20 min
+Break 	0:55–1:05 	10 min
+Section 4: Human Handoff 	1:05–1:15 	10 min
+Section 5: Ship It Right 	1:15–1:35 	20 min
+Build Activity 	1:35–1:55 	20 min
+Discussion + Wrap 	1:55–2:10 	15 min
+
+    Note: This runs ~2:10 with full discussion. If trimming, shorten Section 5 or Discussion.
+
+Recap / Intro (0:00–0:10)
+
+Quick recap of Week 4 (Greenfield):
+
+    Greenfield = you control everything from the start
+    Spec-driven development, project scaffolding, AI-native structure
+    "Last week AI helped you BUILD the product. This week, AI IS part of the product."
+
+4Cs — Run the intro from the teacher guide:
+
+    Confirmation → Context → Curiosity → Credibility
+    Credibility anchor: a developer in this class built bank software replacing chatbots with RAG-backed agents + MCP + human handoff — the exact patterns we're covering today
+
+Section 1: The Stakes Are Different (0:10–0:20)
+
+Core message: Using AI as YOUR tool vs. shipping AI to YOUR customers are two completely different games.
+The Trust Gap
+
+When AI is your dev tool:
+
+    Wrong answer = annoying, you fix it
+    You know when to ignore it
+
+When AI is your customer's experience:
+
+    Wrong answer = support ticket, lost trust, churn
+    Customer doesn't know when to ignore it
+    Bad AI features are worse than no AI features
+
+The Production Reality Check
+
+    "95% of enterprise AI pilots fail to deliver measurable P&L impact." ² — MIT Media Lab, August 2025
+
+    What this means: MIT surveyed 150 executives, 350 employees, and analyzed 300 real AI deployments. "Measurable P&L impact" means the company could point to actual dollars — revenue gained or costs cut — six months after launch. 95% could not. Only 5% of companies could prove their AI investment worked financially.
+
+    Why it matters: This isn't saying AI doesn't work. It's saying most teams can't prove it worked — because they didn't instrument it. They shipped a feature and hoped. The failure is almost never the model; it's the missing measurement, evaluation, and iteration. As a developer, you're responsible for all of that.
+
+    "42% of companies scrapped most AI initiatives in 2025 — up from 17% in 2024." ³ — S&P Global Market Intelligence, May 2025
+
+    What this means: S&P Global surveyed 1,006 mid-to-senior IT and business decision-makers. In 2024, 17% of companies killed most of their AI projects before reaching production. In 2025, that jumped to 42% — 2.5x more companies pulling the plug, year over year. On average, each company scrapped 46% of its AI proof-of-concepts before they reached users.
+
+    Why it matters: More AI investment is producing more failures, not fewer. The industry hasn't figured this out yet. Also a practical note: if you ever need to pitch an AI feature internally, you're walking into a room where nearly half of similar initiatives just got cancelled. How you frame the business case — and the instrumentation behind it — matters.
+
+The gap between a working demo and a reliable product feature is enormous. The root cause is almost never the model — it's wrong pattern selection, skipped evaluation infrastructure, and zero failure planning.
+What This Week Is About
+
+Not "how do you add a chatbot" — anyone can do that in 30 minutes.
+
+It's: how do you add an AI feature that your customers will actually trust?
+Section 2: AI Feature Pattern Survey (0:20–0:35)
+
+Core message: "Add a chatbot" is the only AI feature most devs think of. There are seven patterns. Know them so you can match the right one to the right problem.
+The Seven Patterns
+
+1. Chatbot / Conversational Interface (12-Factor #1: Natural Language to Tool Calls)
+
+    Natural language → structured action or answer
+
+    Best for: customer support, onboarding, FAQs
+
+    Pitfall: open-ended questions → hallucination risk
+
+    Example: Intercom Fin — 66% average resolution rate across 6,000+ customers; 20%+ of customers exceed 80% ¹
+
+        What this means: "Resolution rate" means the percentage of customer conversations that start AND end with the AI — no human agent involved. 66% means roughly 2 out of 3 customer conversations are handled entirely by the AI. The 6,000+ customer sample means this is a real-world average, not a cherry-picked case study.
+
+        Why it matters: Two things. First, this is the benchmark for what "working" looks like — not "does it respond" but "does it actually resolve." Second, the flip side: the best AI support tool in production still fails to resolve 1 in 3 conversations. Build for that 34% from day one.
+
+2. Intelligent Search
+
+    Semantic understanding of user intent vs. keyword matching
+    Best for: knowledge bases, documentation, product catalogs
+    Pitfall: relevance is hard to measure, feels magical until it doesn't
+    Example: Notion AI search, GitHub code search
+
+3. Content Generation / Drafting
+
+    AI writes a first draft, human reviews
+    Best for: emails, reports, summaries, code suggestions
+    Pitfall: users accept bad output without reading → trust erodes when it ships
+    Example: GitHub Copilot, Cursor, email assistants
+
+4. Recommendations
+
+    Pattern recognition over user behavior or content
+    Best for: "you might also like," surfacing buried features, next-best-action
+    Pitfall: requires data; cold start problem
+    Example: Netflix, Spotify Discover Weekly
+
+5. Intelligent Routing
+
+    AI decides where to send a request — to a human, a department, a tool
+    Best for: support ticket triage, workflow automation, multi-agent orchestration
+    Pitfall: miscategorization is invisible until it causes a real problem
+
+6. Human Handoff
+
+    AI handles until it can't, then passes to a human WITH context
+    Best for: any high-stakes workflow (sales, healthcare, finance)
+    This is a pattern, not a fallback — design for it from day one
+    Example: bank software workflow — AI books meeting, generates summary for human rep
+
+7. Data Enrichment
+
+    AI automatically adds context, metadata, or intelligence to existing records — silently, in the background, at the data layer
+
+    Best for: CRM records (job title, company size, tech stack), support tickets (auto-tagging intent/sentiment/urgency), digital assets (keywords, summaries), product catalogs (descriptions, categories)
+
+    Key differentiator from the other six: users usually never see it directly — the enriched data just makes search, routing, and recommendations work better downstream
+
+    Pitfall: silent failure — a wrong chatbot answer is caught immediately; a wrong enriched field lives quietly in your database corrupting decisions for months ⁴
+
+    Example: Zendesk Intelligent Triage auto-enriches every ticket with intent, sentiment, and language on arrival — saves ~45 seconds per ticket; ~120 hours/month for an enterprise retailer ⁵. HubSpot Breeze Intelligence auto-fills contact and company records with firmographics, technographics, and buyer intent signals ⁶
+
+        What this means: Before AI triage, when a support ticket arrives, a human agent reads it, determines what it's about, how upset the customer is, and manually tags it before routing — 30–60 seconds of cognitive overhead per ticket. Zendesk's enrichment does all of that automatically at arrival. The ~120 hours/month figure assumes high ticket volume typical of an enterprise retailer.
+
+        Why it matters: 120 hours/month is roughly one full-time employee's time — and this is a feature the customer never sees. They submit their ticket, it gets routed faster and more accurately, and they never know an AI touched it before a human did. Invisible to users, concrete business value, measurable from day one. That's the enrichment pattern's signature.
+
+The Co-Pilot Principle
+
+The AI features that ship successfully share one trait: they embed into existing workflows instead of forcing users into new paradigms.
+
+Ask yourself: "Does this feature replace something the user already does, or does it add friction?"
+Section 3: RAG Fundamentals + Chunking (0:35–0:55)
+
+Core message: RAG (Retrieval Augmented Generation) is how you give AI access to YOUR product's knowledge. It's not complicated conceptually. But chunking strategy makes or breaks the whole system — and most teams get it wrong.
+
+    12-Factor #3: Own Your Context Window — RAG is fundamentally about deciding what information earns a spot in the LLM's context. Every chunking and retrieval decision is a context window decision.
+
+Why RAG Exists
+
+LLMs are trained on public data up to a cutoff. Your product has:
+
+    Your docs, knowledge base, pricing, policies
+    Customer history
+    Internal domain knowledge
+
+You can't fine-tune a model every time something changes. RAG solves this by retrieving relevant context at query time.
+The RAG Stack (Explain Each Step)
+
+User Query
+    ↓
+Embedding Model (converts query to vector)
+    ↓
+Vector Database (finds similar chunks)
+    ↓
+Retrieved Chunks (passed into LLM context)
+    ↓
+LLM generates answer grounded in YOUR content
+
+Key terms to define:
+
+    Embedding: converting text to a numerical representation that captures meaning
+    Vector: just an array of numbers — you've already used one. [255, 128, 0] is a vector that represents orange. Those three numbers are coordinates in color space. Colors that look similar have coordinates that are close together. An embedding works the same way, except instead of 3 dimensions capturing color properties, you have ~1,500 dimensions capturing meaning properties — topic, tone, formality, domain, sentiment. The dimensions aren't human-interpretable (you can't look at dimension 742 and call it "the formality axis" — the model learned them). But the geometry is real: similar meaning → similar coordinates → close together in vector space.
+    Embedding models and dimensions: different models use different numbers of dimensions — that's a design choice, not a flaw. RGB uses 3 dimensions; CMYK uses 4. Same colors, totally different coordinate systems — and you can't mix them. Embedding models are the same: qwen3-embedding (Ollama) uses 2,048 dimensions; nomic-embed-text uses 768. More dimensions = more expressive but more storage and slower search. The critical rule: you must use the same model for indexing and for querying. If you embed your docs with model A and your queries with model B, you're comparing RGB coordinates to CMYK coordinates — the math is meaningless. Switching models means re-embedding your entire corpus. The gains from higher dimensions are also not linear — think audio quality: too few dimensions and the model can't distinguish subtle meaning differences ("cancel my subscription" and "cancel before billing" land in nearly the same spot). The sweet spot for most use cases is 384–1,024 dimensions. Higher-dim models (2,048+) help most with edge cases: ambiguous queries, very short queries, or queries that straddle two topics. For clear, specific queries ("what's your return policy?"), a 384-dim model does just as well.
+    Vector database: a database optimized for similarity search on embeddings — "find the arrays that are closest to this array"
+    Retrieval: finding the chunks most similar to the user's query
+    Grounding: forcing the LLM to base its answer on retrieved content, not training data
+
+Chunking Strategies (The Part Teams Get Wrong)
+
+This is where most RAG implementations fail or succeed.
+
+Fixed-Size Chunking
+
+    Split every N tokens (e.g., 512 tokens), with overlap (e.g., 50 tokens)
+    Simple, fast, easy to implement
+    Problem: cuts mid-sentence, mid-paragraph — loses coherence
+    Good for: quick prototypes, evenly structured content
+
+Semantic Chunking
+
+    Split at natural breakpoints: sentences, paragraphs, sections
+    Preserves coherent units of meaning
+    Problem: chunks vary in size; can be expensive to compute
+    Good for: prose-heavy docs, knowledge bases
+
+Document-Structure Chunking
+
+    Respect document hierarchy: H1 > H2 > H3 > paragraphs
+    Keep headings attached to content
+    Problem: requires knowing your document structure
+    Good for: structured documentation, policies, product specs
+
+The Core Tradeoff:
+Chunk Size 	Retrieval Precision 	Context Quality
+Small 	High (specific) 	Low (loses context)
+Large 	Low (noisy) 	High (keeps context)
+
+There's no perfect chunk size — you tune it for your content type.
+Evaluating Retrieval Quality
+
+Don't just evaluate the final answer. Evaluate the retrieval separately:
+
+    Are the right chunks being retrieved?
+    Is the answer actually grounded in the retrieved chunks?
+    What happens when the answer isn't in the docs? (It should say "I don't know")
+
+Quick eval test: Take 20 real questions your users ask. Run them through RAG. Read the retrieved chunks. Do they contain the answer?
+Vector DB Options (Quick Survey)
+
+    Pinecone: managed, easy to start, scales well — production default for many teams
+    pgvector: if you're already on Postgres, add vector search without new infra
+    Chroma: local, open source, good for development
+    Weaviate, Qdrant: open source options with good self-hosting
+
+    Don't overthink the vector DB. Start with what integrates into your existing stack.
+
+BREAK (0:55–1:05)
+Section 4: Human Handoff Architecture (1:05–1:15)
+
+Core message: Most AI features are designed as all-or-nothing. That's wrong. Human handoff isn't a fallback — it's a first-class feature you design for from day one.
+The Three-Zone Model
+
+High Confidence → AI handles fully
+Low Confidence → AI + human review
+Out of Scope → Route to human with AI-generated summary
+
+Live Case Study: Bank Software (Real Architecture)
+
+Here's what the actual hard decisions look like.
+
+The agent topology: (12-Factor #10: Small, Focused Agents)
+
+Customer message
+    ↓
+Triage Agent (intent classification + complexity scoring)
+    ↓              ↓                    ↓
+Domain Agent   Booking Agent      Escalation Path
+(answers)      (MCP actions)      (handoff packet → human rep)
+
+Routing decision: LLM-based vs. code-based (12-Factor #8: Own Your Control Flow)
+The triage agent can route using LLM reasoning (flexible, but agents can hallucinate next actions or create circular dependencies) or using a deterministic state machine where the LLM only makes bounded decisions at explicit transition points (e.g., output "route_to_calendar_agent" — nothing else). Production reality: use code-based routing. Treat agent outputs as control instructions, not suggestions. Keep orchestration logic outside the model where it's verifiable and testable.
+
+Confidence thresholds — don't do this by feel:
+Self-reported LLM confidence ({"confidence": 0.85, "can_handle": true}) is a starting point, not a solution. LLMs are systematically overconfident due to RLHF — reward models during training bias toward high-confidence outputs regardless of correctness. Your 0.85 is not calibrated to reality. The fix: treat self-reported scores as qualitative signals, then empirically calibrate against real outcomes. Run the system, track escalation decisions vs. actual resolution success, adjust thresholds from data. A threshold of 0.70 means nothing until you've seen what 0.70 actually looks like in your domain. For static bounded tasks, temperature scaling post-hoc is a practical technique for restoring calibration (can achieve near-zero calibration error on classification tasks).
+
+    What "RLHF overconfidence" means: RLHF (Reinforcement Learning from Human Feedback) is how models are fine-tuned after initial training. Human raters score responses, and the model learns what gets rated highly. Problem: raters tend to prefer confident-sounding answers. So the model learns that sounding confident gets rewarded — regardless of whether it actually knows the answer. The confidence number it reports reflects learned signaling behavior, not a calibrated probability.
+
+    Why it matters: A model saying "confidence: 0.85" might mean it's right 60% of the time in your domain, or 95%. You don't know until you measure it. Designing handoff thresholds by feel — "0.7 seems right" — is how you end up with an AI that confidently handles things it gets wrong, and escalates things it would have resolved just fine.
+
+    What "temperature scaling" means: A post-processing technique that fits a single adjustment parameter to a small calibration dataset. You're not retraining the model — just rescaling its confidence outputs so they match empirical accuracy. "Near-zero calibration error" means if the model says 80% confident, it's actually right ~80% of the time.
+
+    Why it matters: Low effort, high payoff for any classification task (intent detection, routing, triage). You can take an overconfident model and make it reliably calibrated with a small calibration set and a one-line post-processing step.
+
+    Live example — the nuclear option: If you can't trust self-reported confidence, stop asking for it entirely. The vibeathon judging pipeline running in this class takes this approach: the LLM never produces a score. It only collects discrete evidence items (+3, -2, etc.) with file-level references. The final score is computed by a formula — net_impact / sqrt(total_items) — that the LLM has no input on. Confidence is derived from how much evidence was found, not from what the model says about itself. Sparse evidence → score gets pulled toward 50 (empirical Bayes shrinkage). This is a valid architectural pattern for any high-stakes LLM scoring decision: separate evidence collection from score computation, and derive confidence from evidence density rather than self-report.
+
+    What this means: The formula net_impact / sqrt(total_items) normalizes a score by how much evidence supported it. If the LLM found 4 evidence items adding up to +6, you get 6/√4 = 3. If it only found 1 item adding up to +6, you get 6/√1 = 6 — but that single item gets less weight elsewhere in the system because sparse evidence = lower confidence. "Bayesian shrinkage toward 50" means: when evidence is thin, the score gets pulled toward the midpoint (uncertain), rather than swinging to an extreme based on one data point.
+
+    Why it matters: The core architectural insight generalizes beyond judging: don't ask the LLM for one big holistic score — break the judgment into smaller, bounded decisions it can make more accurately, then aggregate mathematically. Asking a model to rate something 1–100 is a hard, unconstrained problem. Asking it "is this a +1, +2, or +3 impact item?" is a much smaller, more reliable judgment. The LLM is still scoring — just in increments where it's less likely to go wrong. The final number emerges from math, not from the model guessing at a total. This applies anywhere LLM scoring matters: content moderation severity, risk triage, diagnostic support, code review impact.
+
+MCP tool design — atomic, verifiable, idempotent: (12-Factor #4: Tools Are Structured Outputs)
+Three non-negotiables:
+
+    Atomic — one tool does one thing. BookMeeting(params) is a tool. HandleCustomerInquiry(params) is not.
+    Structured error returns (12-Factor #9: Compact Errors into Context) — errors go in the result object with isError: true and a human-readable message, not as protocol-level exceptions. The agent needs to see the failure to handle it. A bad error message (KeyError: 'id') makes recovery impossible. A good one ("No available slots found for requested date") gives the agent something to work with.
+    Idempotent — agents retry on timeout. If BookMeeting gets called twice because the first call timed out, it must handle the duplicate gracefully. Use idempotency keys. For anything with side effects (charges, calendar writes, CRM updates), use a transactional outbox pattern — write to an outbox table in the same transaction as the business logic; dispatch separately.
+
+The handoff packet is a product decision, not a technical one: (12-Factor #7: Contact Humans with Tool Calls — the escalation is just another tool call; the packet is its structured output. 12-Factor #6: Launch/Pause/Resume — the workflow pauses here and resumes when the human acts.)
+The two classic failure modes are "amnesia" (agent escalates, human rep has zero context, customer repeats everything) and "cold transfer" (rep gets a raw chat log, spends 3–5 minutes just orienting). The fix is a structured packet the rep can act on in 30 seconds:
+
+    Intent — what did the customer actually want?
+    Key entities — account number, issue type, dates mentioned
+    Attempted solutions + results — what was tried, what worked, what didn't
+    Escalation reason — why was this handed off? (confidence breach, explicit request, detected complexity)
+    Recommended next action — AI's suggested path forward
+
+Don't send the raw conversation log. Don't free-form it. The format is a conversation with your reps: "What's the minimum you need to walk in already briefed?" Klarna learned this the hard way — their initial AI-first approach had reps swimming in unstructured context before they moved to structured packets with real-time CRM data pulled at escalation time.
+
+    What the Klarna example means: Klarna (the buy-now-pay-later company) deployed an aggressive AI-first support strategy in early 2024. When escalation was needed, reps received the full, unstructured conversation log. They had to read through the whole thing to figure out what the customer wanted, what had been tried, and where things stood — 3–5 minutes of orienting before they could even start helping. They later rebuilt the handoff to deliver a structured summary with CRM context pulled at escalation time.
+
+    Why it matters: A raw conversation log is not a handoff packet. The packet format should answer one question: "What's the minimum a rep needs to walk in already briefed?" If they have to read more than 30 seconds to orient, the design has failed — and over time, they'll stop reading it at all, defeating the entire point of the handoff architecture.
+
+Where it actually breaks in production:
+
+    Triage agent mis-classifies edge cases → domain agent gets in over its head → customer gets a confident wrong answer
+    MCP tool fails without a structured error → agent assumes success → hallucinated confirmation sent to customer
+    Two agents write to shared state concurrently → race condition → final state depends on write timing, not logic (fix: single-writer patterns or distributed locks) (12-Factor #5: Unify Execution State and Business State)
+    Confidence threshold calibrated once at launch and never revisited → drifts as usage patterns change → silent degradation
+    Handoff packet too verbose → reps stop reading it → defeats the whole purpose
+
+The state machine test: (12-Factor #12: Make Your Agent a Stateless Reducer)
+If you can't draw the workflow as a state machine with explicit transitions and failure paths at every node, the design isn't done. Every state needs: what triggers it, what can go wrong, and where it goes when it fails. Partial success (steps 1–3 succeeded, step 4 failed) is a real state that needs an explicit recovery path.
+Section 5: Ship It Right — Flags, Gateways, and Monitoring (1:15–1:35)
+
+Core message: The difference between teams that ship AI features successfully and those that don't is eval infrastructure, feature flags, and monitoring — not the model.
+Feature Flags Are Non-Negotiable
+
+Every AI feature should be behind a feature flag.
+
+Why: AI features fail in unexpected ways in production. When something goes wrong, you need a kill switch that takes 30 seconds, not a deployment.
+
+Pattern: release to 5% → monitor → 25% → monitor → 100%
+The AI Gateway Layer
+
+An AI gateway sits between your application and the LLM provider. It handles:
+
+    Cost tracking — know what you're spending per feature
+    Rate limiting — protect against runaway costs
+    Model routing — fallback if your primary model is down
+    Guardrails — catch bad outputs before they reach users
+    Observability — log every request/response for debugging
+
+Options: LiteLLM (open source, easiest entry), Portkey (managed, 200+ LLMs), Cloudflare AI Gateway (free tier, Cloudflare ecosystem)
+
+    You don't need a gateway on day one for a side project. You do need one for anything customer-facing at scale.
+
+Eval-Driven Development
+
+The teams that ship reliable AI features do evals BEFORE launch and CONTINUOUSLY in production.
+
+Offline evals (before launch):
+
+    Build a test set of questions/expected answers from your domain
+    Run your RAG pipeline against it
+    Score: did it retrieve the right chunks? Did it answer correctly?
+
+Online evals (after launch):
+
+    Track thumbs up/down (underrated — users will use it)
+    Track fallback rate (how often does it escalate to human?)
+    Track latency (AI features often feel slow — acceptable threshold depends on context)
+    Track cost per query
+
+The Metrics That Matter
+Metric 	What It Tells You
+User satisfaction (thumbs) 	Is it actually helpful?
+Fallback rate 	Is confidence calibrated correctly?
+Retrieval precision 	Are the right chunks being surfaced?
+Latency 	Is it fast enough to feel useful?
+Cost per query 	Is it economically viable?
+Prompt Management (12-Factor #2: Own Your Prompts)
+
+Prompts are production code. Treat them that way.
+
+    Version control your prompts
+    Test prompt changes like you test code changes
+    Never push prompt changes to 100% without eval
+
+    A/B testing prompts is one of the highest-leverage things you can do once you're in production.
+
+Build Activity (1:35–1:55)
+
+Topic: Choose your AI feature
+
+Each student picks a product they're working on (or a hypothetical) and answers:
+
+    Which of the 7 patterns fits your use case? And why?
+    If it involves knowledge retrieval: what does your content look like, and which chunking strategy would you start with?
+    Where's the human handoff point? What's the confidence threshold?
+    What are the two most important metrics you'd track in the first 30 days?
+
+Optional: If there's a student who already has a product with an obvious AI feature opportunity, do a live walkthrough of the architecture decisions together.
+Discussion + Wrap (1:55–2:10)
+Discussion Prompts
+
+    "What AI feature makes the most sense for something you're currently building? Which pattern?"
+    "Where would you set the human handoff threshold — and how would you know if it's calibrated wrong?"
+    "What would make your users NOT trust the AI feature? How do you design against that?"
+
+Key Takeaways
+
+    Bad AI features are worse than no AI features — design for trust
+    Know the seven patterns before you pick one
+    RAG is architecture + data engineering, not just "connect to a vector DB"
+    Human handoff is a first-class feature, not a fallback
+    Ship behind a feature flag, eval before and after, instrument everything
+
+Preview of Week 6: AI-Native Thinking
+
+"We've used AI as a tool, shipped AI as a feature. Next week: what does it mean to build something that could only exist because of AI? Not AI added to a product — AI as the product."
+Homework
+
+    Identify one AI feature that would make sense in something you're building
+    Sketch the architecture: what pattern, what data, where's the handoff?
+    Optional: spin up a local RAG prototype with Chroma + a small doc set
+
+Supporting Materials Needed
+
+    Diagram: The RAG stack (query → embed → retrieve → generate)
+    Diagram: Three-zone confidence model (handle / review / escalate)
+    Slide: 7 AI feature patterns with examples
+    Slide: Chunking tradeoffs table
+    Slide: The metrics table
+    Live case study slide: bank software (RAG + MCP + human handoff)
+
+Cited Sources
+
+    Age policy: Stats no older than 5 months (i.e., Oct 2025 or later) unless they're illustrating a multi-year shift. Flagged below.
+
+¹ Intercom Fin resolution rate
+Intercom, "What's New with Fin 3", October 15, 2025
+https://www.intercom.com/blog/whats-new-with-fin-3/
+
+    Fin 2 averaged a 66% resolution rate across 6,000+ customers; 20%+ of customers exceed 80%. Fin 3 reframes the primary metric as "automation rate" (how much of overall workload Fin handles end-to-end). ✅ Within 5-month window.
+    Note: The earlier "51%" figure (rising from 41% to 51% with upgrades) is from an older Intercom metric — updated here to the October 2025 stat.
+
+² 95% of enterprise AI pilots fail to deliver measurable P&L impact
+MIT Media Lab / Project NANDA, "The GenAI Divide: State of AI in Business 2025", August 2025
+Primary coverage: https://fortune.com/2025/08/18/mit-report-95-percent-generative-ai-pilots-at-companies-failing-cfo/
+Full analysis: https://complexdiscovery.com/why-95-of-corporate-ai-projects-fail-lessons-from-mits-2025-study/
+
+    Based on 150 executive interviews, 350-person employee survey, and 300 public AI deployment analyses. Stat is real and widely reported.
+    ⚠️ 7 months old (August 2025 — just outside the 5-month window). Keep if the point is worth it; flag as "as of mid-2025" when presenting. No fresher equivalent found that's as credible.
+
+³ 42% of companies scrapped AI initiatives in 2025, up from 17% in 2024
+S&P Global Market Intelligence, "Voice of the Enterprise: AI & Machine Learning, Use Cases 2025", May 30, 2025
+https://www.spglobal.com/market-intelligence/en/news-insights/research/ai-experiences-rapid-adoption-but-with-mixed-outcomes-highlights-from-vote-ai-machine-learning
+Also covered: https://www.ciodive.com/news/AI-project-fail-data-SPGlobal/742590/
+
+    Survey of 1,006 mid-level and senior IT/business professionals across North America and Europe. Conducted October 21–November 25, 2024.
+    ⚠️ 9 months old (May 2025 publication, late 2024 survey). Qualifies for the "multi-year shift" exception — this stat's entire point is showing the YoY jump (17% → 42%). Present it that way and it holds.
+
+⁴ Enrichment silent failure / data quality
+Gartner, "Lack of AI-Ready Data Puts AI Projects at Risk", February 26, 2025
+https://www.gartner.com/en/newsroom/press-releases/2025-02-26-lack-of-ai-ready-data-puts-ai-projects-at-risk
+
+    "Gartner predicts that through 2026, organizations will abandon 60% of AI projects unsupported by AI-ready data." Used here to frame why enrichment failure is infrastructure-level, not just annoying. ⚠️ 12+ months old — use for framing context, not as a headline stat.
+
+⁵ Zendesk Intelligent Triage time savings
+Zendesk official documentation + blog, current
+https://support.zendesk.com/hc/en-us/articles/4964463770650-About-intelligent-triage
+https://www.zendesk.com/blog/intelligent-triage-smart-assist/
+
+    Auto-enriches tickets with intent, sentiment, language at arrival. Saves 30–60 seconds per ticket (avg ~45 sec); ~120 hours/month for enterprise retailer. ✅ Current product documentation — Zendesk's own claim, not a third-party study.
+
+⁶ HubSpot Breeze Intelligence enrichment
+MarTech, "December 2025 HubSpot Updates", December 2025
+https://martech.org/december-2025-hubspot-updates-smarter-segmentation-tighter-ai-control-less-crm-busywork/
+
+    Built-in AI enrichment engine auto-fills contact/company records with firmographics, technographics, and buyer intent signals. Property-level configuration: fill empty only vs. overwrite. ✅ December 2025 — within window.
+
+Tool references (official sites, no specific stat claimed)
+
+    LiteLLM: https://litellm.ai
+    Portkey: https://portkey.ai
+    Cloudflare AI Gateway: https://developers.cloudflare.com/ai-gateway/
+    Pinecone: https://www.pinecone.io
+    pgvector: https://github.com/pgvector/pgvector
+    Chroma: https://www.trychroma.com
+    Weaviate: https://weaviate.io
+    Qdrant: https://qdrant.tech
+
+12-Factor Agents Reference
+
+The 12-Factor Agents framework (humanlayer.dev / github.com/humanlayer/12-factor-agents) is analogous to the original 12-Factor App for web services — a set of principles for building reliable, production-grade LLM applications. 11 of the 12 factors are referenced throughout this outline. Worth assigning as optional reading.
+# 	Factor 	Where in this lecture
+1 	Natural Language to Tool Calls 	Section 2, Chatbot pattern
+2 	Own Your Prompts 	Section 5, Prompt Management
+3 	Own Your Context Window 	Section 3, RAG
+4 	Tools Are Structured Outputs 	Section 4, MCP tool design
+5 	Unify Execution + Business State 	Section 4, race conditions
+6 	Launch/Pause/Resume 	Section 4, handoff as pause/resume
+7 	Contact Humans with Tool Calls 	Section 4, handoff packet
+8 	Own Your Control Flow 	Section 4, routing decision
+9 	Compact Errors into Context 	Section 4, structured error returns
+10 	Small, Focused Agents 	Section 4, agent topology
+11 	Trigger from Anywhere 	(not directly covered)
+12 	Stateless Reducer Pattern 	Section 4, state machine test
+Internal Research Files (class_05/research/)
+
+    compass_artifact_wf-7d7f8011: Patterns and pitfalls — co-pilot principle, GitHub Copilot/Notion/Intercom case studies
+    compass_artifact_wf-590a3764: Practitioner's field guide — wrap/route/observe framing, eval-driven dev
+    compass_artifact_wf-1a823c59: Brownfield AI toolkit — gateway layer, LiteLLM/Portkey/Cloudflare options
+    compass_artifact_wf-b6d90b1b: Production toolkit — feature flags, prompt management, observability
+    compass_artifact_wf-1e99e8d6: Evaluating brownfield systems — 95% failure rate stat, readiness frameworks
+
+Draft outline — Kevin reviews and tweaks before lecture doc or slides are created.

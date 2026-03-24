@@ -1,0 +1,595 @@
+Class Overview
+
+Theme: Starting from scratch with AI as your co-builder — design, test, and deploy faster than you thought possible
+
+Key Message: Greenfield projects with AI are not "vibe coding with less friction." They're an intentional choice between two modes — spec-first (deliberate, structured) and prompt-first (fast, exploratory) — and knowing which to use, and when to switch, is the skill. We'll cover the design, testing, and deployment decisions that determine whether your greenfield project stays healthy or becomes a mess after week two.
+
+Core Counter-Intuitions (use throughout):
+
+    Restarting is often faster than debugging bad AI output
+    Sometimes you learn what you're building by building it wrong first
+    The best greenfield AI setup makes your project SLOWER in week one and MUCH FASTER in weeks 2–12
+
+Lecture Strategy: Three substantive sections (Design, Testing, Deployment) each anchored to one key insight. Keep each section tight — the goal is frameworks and decision tools, not exhaustive tool coverage. Students reference the research files for depth. The big "wow" moment is the Gemini Pro 3.1 live demo in Section 3 — build to that.
+Detailed Timeline
+SECTION 1: Recap & Framing (0:00–0:12)
+0:00–0:05 — Welcome & Week 3 Recap
+
+    Welcome back, quick tech check
+    Recap Week 3 key concepts:
+        The three-phase AI onboarding mental model (Tell AI who you are / how you work / what's off-limits)
+        CLAUDE.md, rules/, and architecture docs for project-specific context
+        The Specify → Plan → Develop pipeline — human approval gates at every stage
+        ai-onboard skill: what it found, what needed human judgment
+    Check in on homework: "Who ran ai-onboard on a real project this week? What did it catch? What did it miss?"
+
+0:05–0:12 — The 4Cs Opening
+
+Confirmation: "This week is for the builders. Last week we talked about making AI work with code that already exists. This week, the repo is empty. You've got an idea, an AI agent configured and ready, and 30 minutes. Let's see how far we can get."
+
+Context: "Starting a new project with AI is a completely different experience than adding it to an existing one. The rules change. On existing codebases, our job was making AI follow your patterns. On greenfield, YOU get to define the patterns — and AI can help you define them better and faster than you could alone. But here's the tension: the same blank-canvas freedom that makes greenfield exciting is exactly what makes AI go off the rails if you're not deliberate about it."
+
+Curiosity: "We're going to cover three things you need to get right on any new project: how you design it, how you test it, and how you deploy it — all with AI in the loop from day one. And then in 30 minutes, every one of you is going to start building something from scratch. We'll stop at the 30-minute mark, no matter where you are, and talk about what actually happened."
+
+Credibility: "The way I think about this: the best thing you can do for a new product is get it in front of real users as fast as possible. Not a polished version — a working version. Users will tell you things in 20 minutes of using your product that you'd never discover in 20 hours of planning. AI makes that 'get it in front of people' loop dramatically faster — which is why knowing how to start well matters so much."
+SECTION 2: The Greenfield Mindset (0:12–0:27)
+
+Spec-first vs. prompt-first, and the restart instinct
+0:12–0:20 — Two Modes, One Spectrum
+
+The core tension on greenfield projects:
+
+    Some devs over-spec and waste the speed advantage AI gives them. Others under-spec and end up with a mess that needs to be thrown away after two weeks.
+
+Both failure modes exist. The skill is choosing the right mode for the moment.
+
+Mode 1: Spec-First (Deliberate)
+
+Before any code is written, you define exactly what you're building:
+
+    Product vision → data architecture → design system → section-by-section requirements
+    Tools for this: Design-OS (Brian Casel / Builder Methods), superpowers:brainstorm (Claude Code plugin)
+    This is the "human-driven" part of human-driven AI-powered development — you're steering, AI is executing
+
+When spec-first wins:
+
+    You know the domain well (you've built something like this before)
+    You're working with other developers (shared spec = shared understanding)
+    The project has regulatory or compliance requirements
+    You need a specific UX — the product has opinions
+
+Mode 2: Prompt-First (Exploratory)
+
+Start generating and learn from what you see:
+
+    Write a rough prompt describing the idea → let AI build → evaluate the output → decide what you actually want
+    This changes how you THINK about the implementation in ways that require starting over with better context
+    3–4–5 complete restarts in a fraction of the time it would take to build one careful version
+
+When prompt-first wins:
+
+    You're not sure what the product should be yet
+    You're building alone or with a very small team
+    Speed of learning > quality of output
+    It's a landing page, prototype, or internal tool
+
+Meta prompting — a prompt-first power move:
+
+One underused technique in prompt-first mode: get the AI to write the prompt for you. Describe your rough idea in plain language, then ask Claude: "Write me a detailed prompt I can use to build this." The AI knows what context it needs and will ask for or assume things you wouldn't think to specify. The resulting prompt is often 10x more effective than what you'd write yourself.
+
+This compounds fast: meta prompt → first build → evaluate output → refine the meta prompt → better build.
+
+The key insight: These aren't opposing philosophies — they're different tools. Most good greenfield projects use BOTH: prompt-first to discover what you're building, spec-first to build it properly once you know.
+0:20–0:27 — The Restart Instinct
+
+Name it explicitly — because it feels wrong:
+
+Every experienced developer has a deeply ingrained instinct: if something isn't working, debug it. Find the root cause. Fix it. Don't throw away work.
+
+In AI-assisted development, this instinct is often wrong.
+
+    "Sometimes the faster path is not 'debug the AI's bad output' but 'regenerate everything with better context.'"
+
+Why this is true on greenfield:
+
+    The longer a bad AI implementation runs, the more debt accumulates
+    AI doesn't have emotional attachment to its output — it regenerates instantly
+    A regenerated version starts clean; a debugged version carries the scar tissue of the previous wrong direction
+
+How to recognize the restart moment:
+
+    You've spent >10 minutes trying to fix something the AI got fundamentally wrong
+    The AI's approach doesn't match your mental model of the architecture
+    You're in a "duct tape on duct tape" spiral — each fix requires another fix
+    The code is "working" but you don't understand why
+
+The practical move: Hit Escape. Open a new context window. Paste your notes on what went wrong. Say: "Here's what I tried and why it didn't work. Let's approach this differently." Regenerate.
+
+Git worktrees — the restart instinct at the filesystem level:
+
+Claude Code's --worktree flag (and vanilla git worktree) lets you run multiple implementations simultaneously in separate working directories — same repo, different branches, each with their own file state. No stashing, no branch-switching, no messing up a working experiment to try something else.
+
+Use case: You've got a prompt-first build going, but you're not sure the architecture is right. Spin up a second worktree, try a completely different approach, compare. Keep the best one. Neither approach touches the other.
+
+# Claude Code
+claude --worktree   # opens in a new isolated worktree
+
+# Or vanilla git
+git worktree add ../my-project-alt experiment-branch
+
+This connects to Week 2's parallel context windows: Restart doesn't mean restart your session or your project — it means open a clean context window (or a clean worktree) with better information and try again.
+SECTION 3: Design Phase — From Blank Canvas to Working UI (0:27–0:47)
+
+Three tools for three situations: one-shot, spec-driven, and component-first
+0:27–0:32 — The Commoditization of Design (Hook)
+
+Open with the provocative claim:
+
+    A former professional website designer watched a 16-year-old's prompt generate a better landing page in 5 minutes than he could build in 5 hours. His response: "I'm kind of pissed — that's my whole business commoditized."
+
+That's Nick Saraev, a 7-figure automation entrepreneur, talking about Gemini Pro 3.1 High — Google's latest model — running in Antigravity, Google's agentic IDE.
+
+The GEMINI.md prompt (which you can grab from the link in the video description) is a complete system: 4 aesthetic presets with hex codes and typography stacks, 7 fixed component architecture sections (Floating Island navbar, Opening Shot hero, Interactive Artifacts feature cards, The Manifesto, Sticky Stacking Archive, Pricing, Footer), specific GSAP animation specs, and a full tech stack (React 19, Tailwind CSS v3.4.17, GSAP 3, Lucide React).
+
+You answer 4 questions — brand name, aesthetic direction, 3 value props, primary CTA — and the agent builds a pixel-perfect, animated landing page in one shot.
+
+The implication for greenfield:
+
+Design for marketing sites and landing pages is essentially free now. That's not hype — it's reproducible with a specific prompt.
+
+But here's the important distinction: this is for landing pages, not for products. It doesn't address state management, data architecture, backend integration, or complex UX. For those, you need a different approach.
+
+[Optional live demo — drag GEMINI.md into Antigravity, run it live for a fake company, show the output. 3–5 minutes maximum.]
+0:32–0:40 — Design for Products: The Spec-Driven Approach
+
+The Design-OS framework (Brian Casel / Builder Methods):
+
+For anything beyond a landing page, the missing step is designing BEFORE you build. Design-OS is exactly that — a free, open-source, MIT-licensed workflow that takes you from product idea to a complete handoff package through four phases:
+
+    Product Planning — vision, roadmap, data architecture (/product-vision, /data-architecture)
+    Design System — colors, typography, application shell (/design-tokens, /design-shell)
+    Section Design — requirements, sample data, UI for each feature (/shape-section)
+    Export — complete handoff package ready for AI implementation
+
+Each command initiates a CONVERSATION — not a one-shot generation. You answer questions, validate decisions, approve the design at each step. The output is a design document that AI agents reference throughout the entire project.
+
+Why this matters:
+
+AI agents struggle when you ask them to simultaneously determine WHAT to build AND build it. Design-OS separates those concerns. You determine what to build (with AI's help, through structured conversation). Then AI builds it with precision.
+
+This is spec-driven development applied to design decisions.
+
+superpowers:brainstorm (Claude Code plugin) operates at the feature level:
+
+    Instead of asking Claude to build a feature, :brainstorm first asks clarifying questions to understand what you actually need, explores design alternatives, and presents the emerging approach in sections for your approval — before saving a complete design spec.
+
+Install: /plugin install superpowers in Claude Code. Then use /superpowers:brainstorm [rough idea] before any feature implementation.
+
+Together: Design-OS for product-level design → superpowers:brainstorm for feature-level clarification → AI implementation.
+0:40–0:47 — Component Libraries as AI Foundation
+
+The fundamental shift: code you own vs. packages you import
+
+Traditional libraries: npm install @mui/material → black box → AI can't see or modify internals.
+
+shadcn/ui: npx shadcn-ui@latest add button → source code copied into your project → AI can read, understand, and modify it directly.
+
+This is why shadcn/ui is the right foundation for AI-assisted greenfield development. When code lives in your project, AI has perfect context — it sees how components are used elsewhere, understands your patterns, and generates new components that fit.
+
+The critical first step: customize before you build
+
+Default shadcn ships with neutral grays and Vercel-inspired spacing. Don't ship a product with default shadcn — it screams "I used a template."
+
+Before writing a single component:
+
+    Run npx shadcn-ui@latest init (configures components.json)
+    Define your design tokens in globals.css — colors, typography, spacing, border radius — as CSS custom properties under :root and .dark
+    Set cssVariables: true in components.json (consistency; pick one approach and stick with it)
+    Install only your base 3–4 components first (Button, Card, Input, Dialog) and verify theming works end-to-end
+    Commit this as your design system baseline BEFORE generating components with v0 or AI
+
+Use tweakcn.com for an interactive CSS variable editor, or copy from ui.shadcn.com/themes.
+
+Why this matters for AI tools: When globals.css and components.json are clean and opinionated, Claude and Cursor understand your design system immediately. They'll suggest consistent variants and won't hardcode color values.
+
+The greenfield design toolkit — in order of setup:
+
+    Customize tokens first → set up globals.css design tokens before building anything (tweakcn.com, ui.shadcn.com/themes)
+    Tailwind users: npx @truefrontier/tailwind-for-agents → configures Tailwind so AI agents read and write it reliably (Kevin's tool)
+    Custom shadcn → follow the 5-step baseline above before generating anything
+    UI generation options (pick what fits):
+        superdesign.dev — open-source VS Code/Cursor extension; generates 10+ parallel UI variants from a prompt, no API key required
+        pencil.dev — design canvas inside VS Code; sketch → React/HTML/CSS, Figma import, Git sync; free in early access
+        v0 by Vercel → natural language to shadcn/ui component scaffolding
+        Figma MCP — official Figma MCP server; AI agents read component trees, layout constraints, and design tokens directly from Figma files (vs. guessing from screenshots)
+    shadcn/ui MCP server → gives Claude accurate component knowledge (prevents hallucinating props that don't exist)
+
+Nick Saraev's GEMINI.md prompt (see the Antigravity demo in Section 3) is the current ceiling of one-shot landing page generation. For anything beyond a landing page — state management, data architecture, complex UX — use the toolkit above.
+
+Key setup move: Add the shadcn/ui MCP server to Cursor or Claude Code on every new project. It gives AI real-time access to the component registry — accurate props, proper usage patterns, correct installation commands.
+☕ BREAK (0:47–0:57)
+SECTION 4: Testing Phase — Avoiding the Circular Validation Trap (0:57–1:12)
+
+The problem with AI testing AI's own code, and how TDD fixes it
+0:57–1:04 — The Circular Validation Problem
+
+The most important testing concept for AI-assisted development:
+
+    When AI writes code AND the tests for that code, the tests only verify that the code does what the code says — not whether it meets actual requirements.
+
+Concrete example:
+
+    An AI builds a tax calculator assuming a 7% US rate. It also generates tests that only verify the 7% calculation. Tests pass perfectly. The app breaks immediately for Canadian users (5% GST) and for any state with additional taxes. The AI never questioned its own assumption, and the tests validated the assumption instead of the requirement.
+
+This is circular validation — a closed feedback loop where the same mind that made the mistake also verifies it.
+
+It's not a bug in the AI. It's a fundamental property of any system that evaluates its own work.
+
+The fix: Spec-first, then verify with a fresh session
+
+The solution isn't to have humans write the tests manually (that's slow and doesn't scale). It's to break the circular loop at the spec level.
+
+The workflow:
+
+    AI writes a spec document first — before any code. A detailed requirements doc covering happy paths, edge cases, business rules, error conditions. Not a test file — a human-readable spec.
+    Human reviews the spec line by line — this is the critical step. You're not reviewing code; you're reviewing whether AI's assumptions about what you want are correct. This is fast and catches misaligned requirements before a single line of code is written.
+    AI writes code AND tests against the spec — now both are anchored to the agreed-upon spec, not to each other in a closed loop.
+    Run a separate post-implementation verification session — open a clean context, give Claude the spec and the running app, and ask it to verify the implementation using Chrome DevTools or Playwright. Fresh context = no anchoring to the original implementation assumptions.
+
+    A fresh session sees the app the way a user does — without the implementation context that might blind the original agent to its own mistakes.
+
+This is more effective than TDD in practice because it scales: the spec review is fast, the separate verification session is independent, and you're not responsible for writing every test by hand.
+
+What AI handles well vs. what humans must own:
+AI handles well 	Human must own
+Generating spec documents 	Validating spec assumptions
+Writing tests from a spec 	Reviewing spec line by line
+E2E flows from user stories 	Business rule edge cases
+Post-implementation verification 	Security and threat-model scenarios
+1:04–1:12 — Day 1 Testing Setup for Greenfield
+
+The Playwright MCP + Claude setup:
+
+The Playwright MCP server lets Claude directly control a browser — navigate, click, fill forms, take screenshots — and generate tests based on actual exploration of your UI. This is also what powers the separate verification session described above.
+
+Setup: Configure claude_desktop_config.json with the Playwright MCP server. Then:
+
+    Ask Claude to explore your app manually
+    Claude navigates the real UI and understands its structure
+    "Verify the implementation against this spec"
+    Claude outputs issues it finds + Playwright tests in @playwright/test format
+
+gh aw — GitHub Agentic Workflows (watch this space):
+
+GitHub launched gh aw in technical preview on February 13, 2026. Instead of writing complex YAML, you write workflows in Markdown describing outcomes you want — GitHub's AI agent handles execution.
+
+gh extension install github/gh-aw
+
+Key use cases: auto-triage new issues, keep docs aligned with code changes, investigate CI failures, continuously improve test coverage. You can configure it to use Claude as the engine (set ANTHROPIC_API_KEY in repo secrets).
+
+This is GitHub's answer to continuous AI-assisted repository maintenance. Worth watching — it shipped two weeks ago and is evolving fast.
+
+claude-code-action — @claude in GitHub issues:
+
+Anthropic's GitHub Action lets your team (or clients) mention @claude directly in GitHub issue and PR comments.
+
+Setup from Claude Code terminal:
+
+/install-github-app
+
+Use case Kevin mentioned: instead of doing small, tedious code tasks yourself, route them through GitHub. Someone drops @claude fix the button alignment on the auth page in an issue, Claude Code opens a PR. Keeps you out of pixel-pushing work.
+
+See also: github.com/anthropics/claude-code-action
+
+Day 1 testing checklist:
+
+    TESTING.md in root — document your testing philosophy, naming conventions, edge cases to always consider. Claude reads this before generating tests.
+    Test runner configured (Vitest for Vite, Jest for Node, pytest for Python)
+    GitHub Actions CI to run tests on every PR
+    Playwright MCP configured (for E2E + post-implementation verification)
+    claude-code-action installed if you want @claude routing in GitHub issues
+
+SECTION 5: Deployment Phase — Right-Sizing from Day 1 (1:12–1:27)
+
+A decision framework for where and how to deploy, and what you must set up before you launch
+1:12–1:20 — The 6-Question Decision Framework
+
+The most common greenfield deployment mistake: Picking infrastructure for the company you want to be, not the company you are.
+
+Kubernetes for an MVP is over-engineering. No logging in production is under-engineering.
+
+Work through these six questions before picking a platform:
+
+    What's the timeline to first paying customer?
+
+        <3 months → PaaS (Vercel, Railway, Render)
+
+        3–6 months → start on PaaS, plan for graduation
+
+            6 months → can invest in infrastructure upfront
+
+    What's the compute profile?
+        Stateless APIs / functions → serverless
+        Long-running processes → containers
+        Complex microservices → Kubernetes only if team has real expertise
+
+    How global is the user base?
+
+        <5% outside primary region → single-region PaaS is fine
+
+            30% outside primary region → plan for edge or multi-region
+
+    What's the data access pattern?
+        Mostly reads, small data → SQLite (Turso) or PostgreSQL (Neon)
+        Mixed reads/writes → PostgreSQL (Neon, RDS, PlanetScale)
+
+    How much DevOps expertise does the team have?
+        <1 year → PaaS (Railway, Render)
+        1–3 years → containers (ECS, Cloud Run)
+        5+ years → Kubernetes only if complexity is worth it
+
+    What's the biggest risk you're trying to avoid?
+        Vendor lock-in → containers + IaC + portable databases
+        Surprise costs → transparent usage-based pricing
+        Operational burden → managed services
+
+The platform landscape in one paragraph:
+
+For most greenfield MVPs in 2026, Railway is the standout recommendation — full-stack (database + backend + frontend in one platform), transparent usage-based pricing, no pricing cliffs. Vercel is excellent for Next.js but has a painful cliff: Free ($0) → Pro ($20/mo) → Enterprise ($20K+/year), with multiple meters compounding costs. One moderately-trafficked app can hit $500–800/month unexpectedly. Render and Fly.io are solid alternatives. Cloud Run is the right move when you need container-level control without Kubernetes complexity. Kubernetes almost never makes sense for a greenfield project unless you have a dedicated platform team.
+
+For databases: Supabase if you want all-in-one (auth + database + storage). Neon for Next.js projects with CI/CD iteration (its branching feature gives you instant database copies per branch). Turso for read-heavy content apps that need global low latency.
+1:20–1:27 — Five Things Experienced Devs Must Set Up Before Launch
+
+These are not optional retrofits. Each one is a time bomb if you skip it.
+
+1. Secrets management — not .env files
+
+Plain-text environment variables are not safe. In 2025, GitGuardian tracked a single attack campaign that leaked 3,325 secrets from PyPI, npm, and DockerHub.
+
+Day 1 setup: Doppler for local development (manages .env for your team without committing it), AWS Secrets Manager or HashiCorp Vault for production. Automated secrets scanning in CI with TruffleHog or GitGuardian.
+
+2. Observability via OpenTelemetry
+
+Datadog is powerful and expensive ($600–3,000/month). And it creates vendor lock-in through its proprietary SDK.
+
+Use OpenTelemetry from day 1 — the vendor-neutral standard for instrumentation. Once your code is instrumented with OpenTelemetry, you can send data to any backend (Grafana Cloud, Datadog, Jaeger, etc.) without re-instrumenting. This is your escape hatch.
+
+Minimum stack: Prometheus (metrics) + Grafana (dashboards) + structured JSON logging. Cost: ~$0 self-hosted, $50–100/month managed.
+
+3. CI/CD from commit one
+
+GitHub Actions or GitLab CI. This shouldn't be day 3 — it should be your second commit, right after the "hello world" commit. AI can scaffold the YAML for you in 2 minutes.
+
+4. Database backup strategy
+
+Know how your database backs up, and verify it. Every managed database platform has automated backups — turn them on and test a restore before you have real user data.
+
+5. Vendor lock-in awareness
+
+Containerize from the start (even if deploying to PaaS). Use a database-agnostic ORM. Instrument with OpenTelemetry instead of Datadog's SDK.
+
+Write down your exit path: "If we needed to leave [platform], here's how we'd migrate and roughly how long it would take." If you can't answer that, you're more locked in than you think.
+
+On AI-generated infrastructure code:
+
+79% of organizations are using AI to generate IaC. Only 13% feel "extremely prepared" for the security implications. AI generates syntactically correct Terraform that may put your RDS instance in a public subnet with 0.0.0.0/0 because it followed syntax patterns without security context.
+
+Treat AI-generated IaC as a first draft. Require human review before terraform apply. Scan with Checkov or similar before every apply.
+SECTION 6: Build Activity — 30 Minutes From Blank Repo (1:27–1:57)
+
+Everyone starts a new project from scratch
+The Build Loop (Frame Before You Start)
+
+Before the activity starts, give students this three-step loop. It's the repeating cycle that replaces "code and pray":
+
+1. Build it — let it run
+
+    Write a prompt. Give AI the context it needs. Let it build.
+    Don't over-supervise. Let the model finish before evaluating.
+    Adjust your prompts if the output isn't right — don't debug AI errors, fix the prompt.
+    And don't be afraid to start over. The restart instinct is a feature, not a failure.
+
+2. Test it
+
+    Automated spec verification — AI writes tests against the spec document (not its own code). This is the circular validation fix.
+    Automated browser testing — Playwright MCP + Claude, or a separate post-implementation session
+    Manual QA — actually click through the thing. AI misses things humans catch in 30 seconds.
+
+3. Iterate on feedback
+
+    Real feedback = users, tests, and your own eyes on the running product.
+    Get it in front of someone. Even if it's just you.
+    GitHub workflows with push-to-deploy (e.g., Laravel Forge, Railway deploy hooks, Vercel git integration) make iteration fast — commit, push, it's live, get feedback.
+
+The loop isn't linear. You'll jump between steps. The goal is to spend more time in step 1 and less time stuck between 1 and 2 because you're afraid to commit.
+1:27–1:32 — Setup & Instructions
+
+What's about to happen:
+
+    Everyone picks a simple project idea (or use the prompt below)
+    30 minutes on the clock. Build as far as you can.
+    Restarts are not just allowed — they are encouraged
+    Stop at the 30-minute mark regardless of where you are
+    This is a learning exercise, not a completion exercise
+
+Suggested project prompt (or students choose their own):
+
+    "Build a simple [task management app / link-in-bio page / personal finance tracker / recipe manager]. It just needs to work — don't try to make it perfect."
+
+Two modes to try:
+
+    Prompt-first: Write a single prompt describing your idea, let Claude Code or Antigravity build it, evaluate the output, iterate
+    Spec-first: Start with /superpowers:brainstorm or Design-OS, define what you're building, then implement
+
+The instructor's role during the build:
+
+    Circulate (in breakout rooms or via Discord chat) — help students who are stuck
+    Watch for: students debugging AI errors for >5 minutes without restarting (prompt the restart instinct)
+    At ~15 minutes: check in with the group. "Anyone at a wall? Try restarting with better context."
+
+1:32–1:57 — Build Time
+
+Students build. Instructor available for questions.
+
+At 1:55 — 2-minute warning: "Wherever you are, stop. The goal wasn't to finish — the goal was to experience something. We're about to debrief what that experience was."
+SECTION 7: Discussion & Wrap-Up (1:57–2:25)
+1:57–2:17 — Cohort Debrief
+
+Structured debrief — these questions in order:
+
+Round 1: What happened?
+
+    "Who got something working? Show it off for 30 seconds."
+    "Who hit a wall? What kind of wall — AI going off the rails, unclear requirements, tech stack issues?"
+    "Who restarted? How many times?"
+
+Round 2: The restart question
+
+    "For those who restarted: was it faster than trying to debug? What triggered the restart?"
+    "For those who didn't restart: was there a moment where you probably SHOULD have restarted?"
+    "What made restarting feel uncomfortable? Was that discomfort justified by the outcome?"
+
+Round 3: The mode question
+
+    "Who went spec-first? How far did you get before you started building?"
+    "Who went prompt-first? Did seeing the output change what you wanted to build?"
+    "If you were going to do this for real — a project that needed to survive month two — which mode would you choose? Why?"
+
+Round 4: Design / Testing / Deployment
+
+    "What design decisions did you make in the first 5 minutes? Were they the right ones?"
+    "Did anyone write a test before writing implementation code? Why / why not?"
+    "What would it have taken to deploy what you built today? Did you think about that while building?"
+
+Round 5: The meta question
+
+    "What would you do differently in the first 30 minutes of your next greenfield project?"
+
+2:17–2:25 — Homework & Preview
+
+Homework for Week 5:
+
+    Pick one real greenfield project (personal, side project, or work) and run it through Design-OS's first two phases — product planning and design system. Bring the output to class next week.
+    On any project, write the tests first for one feature — even a simple one. Note whether it changed how you thought about the implementation.
+    Optional: Try the GEMINI.md prompt in Claude Code or Antigravity for a landing page. Share your output in Discord.
+    Optional: Set up Checkly on an existing project for monitoring-as-code.
+
+Preview of Week 5: Adding AI Features to Existing Products
+
+    The stakes shift: it's not you using AI anymore, it's your customers experiencing AI
+    RAG fundamentals: how you chunk content determines retrieval quality
+    Human handoff patterns — knowing when AI should step aside
+    UX is still vital: making AI features feel helpful, not creepy
+    Nathan Toombs' production architecture as a reference
+
+Sign off:
+
+"Here's the Week 4 takeaway: Greenfield with AI is fast. Dangerously fast. You can spin up something that looks like a product in an afternoon. The discipline is knowing whether what you built is actually what you meant to build — and having the setup (design doc, tests, proper deployment) that lets it stay healthy when you're working on it six weeks from now. See you next Thursday."
+
+-------
+
+
+RESOURCES:
+
+Class 4 Resources — Greenfield Projects with AI
+AI Coding Tools
+
+    Claude Code — Anthropic's CLI-based coding agent
+    Cursor — AI-powered code editor
+    Windsurf — VS Code-based AI IDE by Codeium
+    Replit — Browser-based collaborative development platform
+    Antigravity (Google) — Google's agentic IDE for multi-agent workflows
+
+Spec-Driven Development
+
+    Design-OS — Free, open-source product planning tool (MIT license)
+    Design-OS GitHub Repo — Source code and docs
+    Agent OS — Companion tool for spec-driven codebase development
+    Builder Methods — Community and resources from the Design-OS creator
+    GitHub Blog: Spec-Driven Development with AI — "Get Started with a New Open Source Toolkit"
+
+Design-to-Code Tools
+
+    Figma Make — AI-powered prototype generation within Figma
+    Figma MCP Server — Lets AI agents read Figma designs directly
+    Figma Code Connect — Links Figma designs to your production component code
+    Figma Dev Mode — Developer-focused view in Figma
+    Pencil.dev — AI-native design-to-code tool inside VS Code
+    superdesign.dev — Open-source AI design agent for IDEs (MIT license)
+    superdesign GitHub Repo — Source code
+    superdesign VS Code Extension — Install from VS Code Marketplace
+
+UI Component Libraries
+
+    shadcn/ui — Copy-paste React components built on Radix UI + Tailwind CSS
+    shadcn/ui MCP Server — Gives AI real-time access to the component registry
+    shadcn/ui Themes — Pre-built design token themes
+    tweakcn.com — Interactive CSS variable editor for shadcn/ui
+    v0 by Vercel — Natural language → shadcn/ui component generation
+    Aceternity UI — 70+ animated React components (Framer Motion)
+    Magic Patterns — AI design tool with design system integration
+
+Supporting Libraries
+
+    Tailwind CSS — Utility-first CSS framework
+    Radix UI — Unstyled, accessible component primitives
+    Framer Motion — React animation library
+    @truefrontier/tailwind-for-agents — Configures Tailwind for reliable AI agent usage
+
+Testing & QA
+
+    Playwright MCP — MCP server enabling Claude to control browsers for testing
+    Qodo — AI test generation platform (formerly CodiumAI)
+    Qodo Cover — Autonomous regression testing agent
+    Checkly — Unified testing + production monitoring as code
+    George Tsiokos: Circular Validation — The Hidden Risk in AI Testing — Why AI writing tests against its own code is risky
+    Allen Helton: TDD with AI — Test-driven development workflow using AI
+    Builder.io: TDD with AI — Practical guide to AI-assisted TDD
+
+Deployment Platforms
+Platform 	Best For 	Pricing Model
+Railway 	Full-stack apps 	Usage-based, transparent
+Render 	Containers 	Flat/predictable
+Fly.io 	Docker + global edge 	Usage-based
+Vercel 	Next.js / frontend 	Free tier → pricing cliff
+Google Cloud Run 	Serverless containers 	Massive free tier
+Laravel Forge 	PHP / managed servers 	Flat monthly
+Laravel Vapor 	Serverless Laravel on AWS 	Usage-based
+Databases
+
+    Supabase — PostgreSQL + Auth + Storage + Edge Functions
+    Neon — Serverless PostgreSQL with per-PR branching
+    Turso — Global SQLite at the edge
+    Convex — Real-time database with TypeScript schema
+
+Secrets Management
+
+    Doppler — Developer-friendly secrets management
+    TruffleHog — Automated secrets scanning in CI
+    GitGuardian — Secrets leak detection
+
+Observability
+
+    OpenTelemetry — Vendor-neutral standard for tracing/metrics/logs
+    Grafana — Dashboards and visualization
+    Prometheus — Time-series metrics database
+    Jaeger — Distributed tracing
+
+AI-Assisted Greenfield Demos & Workflows
+
+    Gemini 3.1 Pro Landing Page Demo (Nick Saraev) — "Gemini 3.1 Pro + Antigravity Destroys Every Site Designer"
+    GEMINI.md Prompt File — Complete system prompt for Gemini landing page generation
+    obra/superpowers GitHub Repo — Superpowers plugin for Claude Code
+    Superpowers on Claude Plugin Marketplace
+    claude-code-action — GitHub Action for @claude mentions in issues/PRs
+    Trevor Lasn: How to Add Skills That Plan Before Code
+
+Further Reading
+
+    Simon Willison: Playwright MCP + Claude Code
+    Alex Oppenheimer: Building an AI QA Engineer with Claude + Playwright MCP
+    Figma 2025 AI Report
+    State of React 2025 — UI Libraries
+    Flexprice: Breaking Down Vercel's 2025 Pricing
+    Bytebase: Neon vs Supabase
+    Composio: Figma MCP + Claude Code Guide

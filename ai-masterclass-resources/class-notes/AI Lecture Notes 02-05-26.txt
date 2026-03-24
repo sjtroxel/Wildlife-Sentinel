@@ -1,0 +1,365 @@
+The AI Landscape
+Why you're here
+→ AI Noise
+
+FT = no time to explore
+
+Worse: AI hype is out of control
+
+    Make 100k overnight
+    Launch a new startup every weekend
+    This new model is mind-blowing
+    This tool changed my life
+
+    Summer 2024 Copilot and Cursor came
+    End of Feb 2025 Claude Code
+    Claude 3.7 was good but
+        Gemini 2.5 in March
+        Claude 4 in May
+        GPT 5 in Aug
+        Claude 4.5 Sonnet in Sep, Opus in Nov
+        GPT 5.2 Codex in Dec
+        Gemini 3
+        Claude Opus 4.6 TODAY (1M context, agent teams, adaptive thinking)
+        Claude Sonnet 5?
+
+Good models, but what framework/scaffolding do we have?
+
+    Rag
+    Files
+    Agents
+    Agent Teams (NEW — Opus 4.6: a team lead coordinates multiple teammates, each with their own context window, working in parallel)
+    Commands
+    MCPs
+    Skills
+    Scaffolding
+        BMAD
+        SpecKit
+        OpenSpec
+        Agent-OS
+        Humanlayer Agents
+
+The Stats from METR, SonarSource, LinearB, and Anthropic
+
+Sources:
+
+    METR Study (July 2025)
+    Anthropic: Eight Trends Defining How Software Gets Built in 2026
+    SonarSource 2026 State of Code Survey
+    LinearB analysis of 8.1M pull requests
+
+According to SonarSource's 2026 State of Code Survey: 96% of developers don't trust AI-generated code. And yet, that same survey found that 42% of committed code is now AI-generated.
+
+Think about that. We're shipping code we don't trust. That's not sustainable.
+The Perception-Reality Gap (3-4 min)
+
+The stat that still defines this moment:
+
+The METR study from mid-2025 tested 16 experienced open-source developers on 246 real tasks. Before starting, they predicted AI would make them 24% faster. After finishing, they believed it made them 20% faster.
+
+The actual result? 19% slower.
+
+That's a 43-point gap between perception and reality—one of the largest ever recorded in software engineering research.
+
+(Source: METR Study, July 2025)
+
+Why this happens (2026 breakdown):
+
+    The delegation ceiling: According to Anthropic's 2026 trends report, developers use AI in about 60% of their work—but can only fully delegate 0-20% of tasks. AI is a collaborator, not a replacement. It still requires constant supervision and validation.
+    Review bottleneck: LinearB analyzed 8.1 million pull requests and found that AI-generated PRs wait 4.6x longer for review and have an 84% lower acceptance rate than human-written code.
+    The overhead nobody talks about: The METR study found developers spent 9% of their time reviewing and cleaning AI outputs, plus 4% waiting for generations. That overhead erases gains.
+
+The Real Stakes
+
+The quality gap is measurable:
+
+    66% of developers say inaccurate code suggestions are their biggest AI challenge
+    45% report longer debugging times with AI-generated code
+    GitClear's data shows sharp declines in code quality metrics even as AI adoption rises
+
+What this looks like in practice:
+
+Early studies from GitHub, Google, and Microsoft found developers completing tasks 20-55% faster. But a Bain & Company report called real-world savings "unremarkable." Why? Productivity gains at the front end get erased by downstream bottlenecks—bugs, security exposure, rework.
+
+The Anthropic insight:
+
+    "The organizations pulling ahead aren't removing engineers from the loop—they're making engineer expertise count where it matters most."
+
+(Source: Eight Trends Defining How Software Gets Built in 2026)
+The Good News
+
+When AI is used structurally, the results are real:
+
+    Rakuten: Claude Code completed a 12.5-million-line codebase task in 7 hours with 99.9% numerical accuracy
+    TELUS: 30% faster engineering code shipping, 500,000+ hours saved
+    Zapier: 89% AI adoption with 800+ agents deployed internally
+
+The difference? These organizations didn't just adopt AI—they built systems around it. Human oversight, structured workflows, AI-automated review.
+Why This Course Exists
+
+The problem isn't AI. The problem is that nobody taught you how to use it.
+
+Junior developers and those new to a language see the highest gains—21-40% productivity boosts. Why? Because for them, the bottleneck is syntax and API discovery, which AI handles well.
+
+For experienced developers, the bottleneck is architecture, edge cases, and production concerns—and that's where AI creates overhead unless you know how to direct it.
+
+"I'll spend more time fix AI that if I would have just coded it myself." — comment from https://youtu.be/ts0nH_pSAdM
+
+MY TAKE: It takes roughly 200 hours to get fluent-enough with AI tools. That's the awkward phase where you're slower, not faster. Most developers never push through it.
+
+This course compresses that curve.
+The Course Promise
+
+By the end of 6 weeks:
+
+    Clear mental model for when and how to use AI
+    Your tools configured—not just installed, but tuned to your workflow
+    A framework for any project: brownfield, greenfield, or AI-native
+
+We're not doing "vibe coding." We're doing human-driven, AI-powered development.
+
+1. Understand what this course IS and ISN'T
+
+    This is about human-driven, AI-powered development, not vibe coding
+    Not "AI does the work for me" shortcuts
+    Leverage your existing dev skills so AI makes their code better and faster, not worse and slower.
+    it takes about 200 hours of AI development to get the hang of it — like working with a new pair programmer
+        You learn its strengths and weaknesses.
+        Then adjust how it works for you.
+
+2. Counter-intuitions
+
+    Workflows may feel "wrong" to experienced devs
+    Experienced devs have strong habits and instincts about how development should work
+    eg. Sometimes restarting is better than hacking through bad AI edits
+    eg. Sometimes you ask AI to architect a plan
+    → Your cheese will be moved.
+
+Introductions
+Disclaimers
+
+1. I am not your typical developer.
+
+I don't have a CS degree. I wanted to be a designer—but I got hired to code. That tension has shaped how I work ever since.
+
+I often look at solutions from an unconventional angle. I prioritize user experience and speed to market over absolute stability and unbreakability. I believe there's more value in faster shipping than forever shaping.
+
+Would you be ok if your first MVP embarrassed you? This is the line I walk.
+
+I don't choose between quality and speed—I look for the unconventional approach that gets both. That's what this course teaches.
+
+2. I'm more a practitioner than educator
+
+I may not have all the answers. There's no way anyone can be an expert in ALL the things AI right now. It's just moving too fast. But here's what I can say, if you have a specific problem you need to solve, I'm confident I'll be able to help point you in the right direction with various approaches to try.
+
+I'm more of a "let's find a way to think about this" and less of "this is the only absolute best way to do this"
+About Me — The Long Road
+
+    2006: Joomla
+    2008: WordPress
+    2009: Magento
+    2010s: Laravel 3/4, then all the JS frameworks
+    2018: Started True Frontier—custom web apps for agencies, 30-day MVPs
+    2021: Early adopter of Copilot
+    2024: Pivoted to AI-first development with Cursor + Claude
+    2025: in Spring trained Classy Llama's team on Claude Code; in Fall Joined Codefi;
+    2026: Teaching you
+
+The through-line: Speed obsession. Every evolution compresses timelines further. AI is just the latest—and most powerful—accelerant.
+Your Turn
+
+    Name
+    How long in tech?
+    Favorite stack and/or AI tool(s)?
+    What do you hope to learn from this course?
+
+VibeLabs Setup
+Getting Access
+
+    Go to vibelabs.replit.app
+    At the bottom, click Enroll for "AI Masterclass"
+    I'll approve you—then you can view course resources and recordings
+
+[Live: Walk through enrollment, approve in real-time, have everyone refresh]
+Course Overview
+
+AI is not a guaranteed productive tool for everyone (yet).
+
+It will amplify your strengths and your weaknesses (eg. not finishing side project ideas.)
+
+But if we take the time to hone our skills...
+
+Again — After this course, you'll understand the AI coding landscape, know how to evaluate the best tools, and have a repeatable framework for approaching any project with AI — existing, new, AI-decorated, or AI-native
+1. The AI Landscape
+
+    Problem: Too many tools, too much hype, no time to evaluate — and it changes weekly
+    Plan: Framework for evaluating any tool or model, including ones that don't exist yet
+    Win: You're never starting from zero when the next "game-changer" drops
+
+Homework
+
+        Research which AI-assistant coding tool you'd like to use for this class
+        Try a test PRD with a few different tools and/or a few different models
+
+2. Your AI Toolkit
+
+    Problem: Out-of-the-box AI is a clueless new hire — doesn't know your codebase, your standards, or your preferences
+    Key insight: The biggest factor isn't the model — it's the context you give it
+    Plan: Configure MCPs, agents, skills, commands, workflows for persistent project-aware context
+    Also: Context window economics (when to summarize, when to reset, why AI hallucinates mid-session) + spec-driven development
+    Win: Your toolkit is tuned to how YOU work, not just installed
+
+Homework
+
+    Plan out your desired dev workflow end to end and find/architect the needed assets to make that happen.
+
+3. AI Dev on Existing Projects
+
+    Problem: AI generates code that looks right but doesn't match your project's conventions → every PR is a review nightmare
+    Plan: Give AI project-specific context (CLAUDE.md, coding standards) so it follows your patterns
+    Also: Make AI research the codebase before touching anything; set up automated workflows where AI opens PRs you review — not code you babysit
+    Win: Start with low-risk wins (docs, tests, refactoring) → build toward full AI-in-the-loop CI/CD
+
+4. AI Dev on New Projects
+
+    Problem: Your dev instincts (over-plan, debug don't restart, never throw away code) actually slow you down here
+    Counter-intuition: Sometimes scrapping and regenerating with better context IS the faster path
+    Plan: When to spec-first vs. prompt-first; embracing the restart mindset
+    Live build: Everyone builds from scratch in 30 min — restarts encouraged
+    Win: Comfortable with the full greenfield cycle — build, evaluate, learn, iterate — at impossible speed
+
+5. Add AI Features to Existing Projects
+
+    Flip: We've used AI to help us code — now we're coding AI into the product itself
+    Problem: Wrong answer as a dev tool = annoying; wrong answer for your customer = support ticket or lost customer
+    Plan: AI feature patterns (chatbots, search, recommendations, human handoff) + RAG fundamentals + chunking strategies + monitoring
+    Win: Know which AI features make sense, how to architect them, and how to track if they're helping
+
+6. Thinking AI-Native
+
+    Reframe: Menus, forms, buttons, dropdowns — all designed around the machine's limitations, not yours. Now machines understand language.
+    Problem: Hard to think from first principles when you've spent your career inside existing paradigms
+    Plan: Structured exercises — take real products, sketch what they'd look like if AI was the foundation, not the feature
+    Also: Agent architecture patterns, build-vs-buy math flipped on its head
+    Win: Look at anything in your industry and ask: should this exist differently?
+
+Tools & Models
+The Wrong Question
+
+"What's the best AI coding tool?"
+
+By the time I answer that, it'll be wrong. The landscape shifts every few months. Claude 4 in May, GPT 5 in August, Claude 4.5 in September, Gemini 3 in December, Claude Opus 4.6 literally today... and by the time you watch this recording, there's probably something new.
+
+The right question: How do I evaluate tools so I can pick the right one for my workflow—and keep picking the right one as things change?
+The Two Things That Actually Matter
+
+Every AI coding tool has to solve the same problem: How does the AI understand your codebase well enough to make useful changes?
+
+Two systems determine the answer:
+
+1. Orchestration — How the tool breaks down tasks, plans work, and coordinates execution.
+
+2. Context Management — How the tool feeds the right code into the model's limited attention window.
+
+These matter more than which model is under the hood. A great orchestrator with smart context management will outperform a better model with dumb context management every time.
+Models
+
+When comparing models, look at:
+
+    Context window — How much code can it "see" at once?
+    Speed (TPS) — Tokens per second. Matters for iteration speed.
+    Experience over benchmarks — Benchmarks lie. Test on YOUR codebase.
+    Instruction following — Does it respect your AGENTS.md / CLAUDE.md / .cursorrules?
+
+Tools (Orchestration)
+
+When comparing tools, look at:
+
+    Built-in agent tools — What can it do? (file ops, terminal, browser, search)
+    Terminal access — Can it run commands and see results?
+    Extensibility — MCP, Skills, custom agents, slash commands
+    Context management — Sub-agents? Compacting? Persistent files?
+    Parallel execution — Can multiple agents work at once? Can they coordinate with each other (agent teams) or only report back to a lead (sub-agents)?
+    Self-verification — Does it check its own work? (lint, test, screenshot)
+    Observation & Interruptability — How easy is it for you to peek in on what it's actually doing, and can you message individual agents directly?
+
+Evaluating Orchestration (The Framework)
+
+When you're looking at any tool, ask these six questions:
+
+    Context gathering — How does it learn your codebase? Embeddings? Repo maps? Sub-agents?
+    Context isolation — Can it explore 50 files without polluting your main conversation?
+    Planning — Can it break a big task into steps before diving in?
+    Parallel execution — Can multiple agents work without conflicts? Sub-agents (report back to lead) vs. agent teams (coordinate directly with each other)?
+    Self-correction — Can it run tests, see errors, and fix them?
+    Persistence — Does it remember what it learned between sessions?
+
+The Landscape Today (Feb 2026)
+Tool 	Type 	Orchestration Style 	Context Approach
+Claude Code 	CLI 	Sub-agents + agent teams (NEW) 	CLAUDE.md, per-agent context isolation
+Cursor 	IDE 	Multi-agent (up to 8) 	Embeddings, .cursorrules
+Codex App 	Desktop 	Thread-based, skills 	AGENTS.md, cloud sandboxes
+Antigravity 	IDE 	Mission-based 	"Brain" directory
+OpenCode 	CLI 	Single agent, 75+ models 	LSP, CLAUDE.md compatible
+Aider 	CLI 	Single agent, git-first 	Tree-sitter repo map
+Gemini CLI 	CLI 	ReAct loop 	1M context, GEMINI.md
+
+This table will be outdated. The framework won't be.
+The "Master One Tool" Argument
+
+My take: for most dev tasks, learning one tool deeply beats juggling models.
+
+    Orchestration is tool-specific. Learning Claude Code's sub-agent patterns compounds. Same for Cursor's agent sidebar.
+    Context management is where expertise matters. Knowing when to add files, how to structure context, when to compact—this is the skill that makes "19% slower" go away.
+    Model swapping is secondary. Once you've mastered orchestration, experimenting with models is low-effort.
+
+Why Claude Code for This Course
+
+    Best-in-class sub-agent system — Parallel exploration, isolated context windows. Opus 4.6 (released today) adds "agent teams" — multiple agents splitting a task and coordinating directly with each other.
+    1M token context window — Opus 4.6 is the first Opus model to support 1M tokens. That's a massive codebase in a single context.
+    Terminal-native — Fits existing dev workflows
+    CLAUDE.md pattern — Simple, portable project context
+    Plan mode — Forces "think before you code"
+
+The principles transfer. Master context engineering here, and you'll know what to look for in any tool.
+Resources for Staying Current
+
+    Artificial Analysis (artificialanalysis.ai) — Independent benchmarks
+    LM Arena — Blind model comparisons
+    The actual docs — Claude Code, Cursor, Codex all have solid docs now
+
+Don't trust influencer hype. Test tools on your codebase, with your tasks.
+Discussion Questions
+
+    The perception gap — Have you experienced the "perception-reality gap" where AI felt productive but you're not sure it actually saved time? What happened?
+
+    Experience as a liability — The METR study showed experienced devs were 19% slower with AI. Why do you think experience works against you here, and what would need to change?
+
+    Orchestration vs. model — "Orchestration matters more than which model is under the hood." Do you agree? Have you seen a case where the tool mattered more than the model, or vice versa?
+
+    Your weakest link — Look at the six orchestration questions (context gathering, isolation, planning, parallel execution, self-correction, persistence). Which one does your current setup handle well? Which one is the weakest?
+
+    Observability — How important is it to watch your AI work in real time? Have you ever caught an AI heading down the wrong path early enough to redirect it? What happened when you didn't?
+
+    The "master one tool" debate — The course argues for mastering one tool deeply. What's the counter-argument? When should you switch tools?
+
+Build-Time / Homework
+In-Class: Tool Exploration (20 min)
+
+Pick a tool from the landscape table (or any AI coding tool) that you've been curious about but haven't tried yet. Spend 20 minutes getting your hands dirty with it — install it, give it a small task, poke around.
+
+While you explore, notice:
+
+    How does it gather context about your code?
+    Can you see what it's doing in real-time? Can you interrupt or redirect it?
+    How does it handle planning before diving into code?
+    What surprised you (good or bad)?
+
+Group Share (10-15 min)
+
+A few volunteers share: Which tool did you try? Why that one? What did you discover?
+Homework
+
+    Research which AI-assistant coding tool you'd like to use for this course — If you already have a favorite, great. If not, use what you learned today to narrow it down.
+    Try a test PRD with a few different tools and/or a few different models — Same prompt, different environments. Notice the differences in orchestration, not just output quality.
+

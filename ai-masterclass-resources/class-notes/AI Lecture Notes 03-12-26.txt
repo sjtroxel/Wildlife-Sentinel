@@ -1,0 +1,607 @@
+Class 6: AI-Native Thinking
+AI Masterclass - March 12, 2026 — OPTION B (Built around swarm-v2)
+
+Duration: 2 hours (6:00 PM - 8:00 PM)
+Format: Live virtual session
+Recording: Yes - will be posted to VibeLabs within 24 hours
+Class Overview
+
+Theme: What does it look like when AI agents ARE the product? Not a chatbot bolted on. Not Copilot suggesting lines. A system of agents that observe, reason, score, and improve — autonomously.
+
+Key Message: You've spent five weeks learning to work WITH AI. Tonight you build a system where agents work with EACH OTHER. The same patterns you've been using — context engineering, spec-driven development, feedback loops — they all apply. But instead of you driving one agent, you're designing a team of agents that drive themselves.
+
+The Problem We're Solving: You know that thing where you saw something on your screen — a URL, a Slack message, a code snippet, a product page — and now you can't find it? Clipboard managers help, but they only capture what you explicitly copy, they're text-only, and they use exact-match search. What if you could search your entire screen history by meaning — not just keywords? That's the real-world problem: capture everything on screen, describe it with a vision model, embed it as vectors, and let users search by intent. The swarm's job is to make that model better. Agents capture frames, propose better embedding strategies, test them, score the results, and feed the winners back into the next round. That's reinforced learning on real human work behavior — and that's what we're building tonight.
+Detailed Timeline
+Section 1: The Problem (0:00-0:15)
+
+Why agents? Why a swarm? Why this problem?
+0:00-0:05 — Welcome & Course Callback
+
+    Welcome to the final class
+    Quick pulse: "What's one thing from this course that's already changed how you work?"
+    "For five weeks we've been using AI to help US build software. Tonight we flip it. We're building software where AI agents do the work — and they get better at it without us touching the code." ¹
+
+0:05-0:08 — The Screen Recall Problem
+
+Present the problem through a relatable experience:
+
+"Quick show of hands — who's ever had this happen: you saw something on your screen — a URL, a Slack message, a product page, a code snippet — and now you can't find it? You know it happened. You just can't find it."
+
+"Clipboard managers are incredible tools. But they only capture what you explicitly copy. They're text-only — no screenshots, no context about what app you were in. And they use exact-match search. If you copied a URL two days ago but can't remember the exact domain, you're scrolling through hundreds of entries."
+
+"Now imagine a tool that snaps your screen every 2 seconds, throws away identical frames, and batches 30 seconds of activity — up to 15 unique frames. A vision model looks at the whole batch and describes the activity, not just a single frozen moment. That description becomes a vector embedding, stored in a local database. When you need to find something, you search by meaning — 'that Etsy shop with green tablecloths' or 'the auth bug I was debugging Tuesday' — and it finds it through fuzzy vector search, not keyword matching."
+
+"That's not science fiction. I'm building exactly this — a macOS app called eyestone. ² Fully local, no cloud, Ollama for all inference. The batch approach is key: one frame tells you what's on screen, but a sequence of frames tells you what the user is doing. That's the difference between 'a spreadsheet is open' and 'financial analyst building a quarterly revenue model in Excel, cross-referencing a PDF report.' The embedding quality is the bottleneck — and that's what the swarm optimizes."
+
+The question: "How do you make the embedding descriptions better? You could hand-tune the prompt yourself. Or you could build agents that propose better approaches, test them, score the results, and feed the winners back. That's what we're building tonight."
+0:08-0:10 — Microsoft Tried This (and Got "Recalled")
+
+Share the cautionary tale:
+
+"This isn't a new idea. Microsoft announced Recall in May 2024 — a feature that screenshots your PC every few seconds and lets you search your activity with natural language. ¹⁹ Sound familiar?"
+
+"Here's what happened: security researcher Kevin Beaumont discovered the screenshots were stored in a plaintext SQLite database — completely unencrypted. ²⁰ Another researcher released a tool called TotalRecall that could extract the entire database in seconds. ²¹ Universities warned students not to use it. Signal and Brave built features specifically to block it. ²² Microsoft delayed the launch three separate times."
+
+"The fatal flaw wasn't the idea. The idea was right. The architecture was wrong. Microsoft was processing everything through their cloud infrastructure — encrypted in transit, sure, but still leaving the device. That's what people rejected."
+
+"Now here's the interesting part: local LLMs have gotten good enough that you can do the entire pipeline on-device. Screen capture, OCR, vision model description, embedding, vector search — all running locally through something like Ollama. No data ever leaves your machine. The architecture Microsoft got wrong is now solvable with local models."
+
+Speaking note: "This slide lands well because it's a real story everyone heard about. The key teaching point: the idea of screen recall was valid — the architecture (cloud processing of private data) was the problem. Local models fix the architecture. That's the setup for why we're building a swarm to optimize this pipeline."
+0:10-0:12 — The Six Questions (Product Spec)
+
+"So the architecture is solvable — local models handle the pipeline. But there's a harder problem: what makes a GOOD embedding? Before we write any agent code, we need to define what the product is trying to capture. These six questions are the spec — the dimensions the embedding needs to capture about the user's screen activity."
+What the Embedding Needs to Capture 	Why It Matters
+What is the user doing? 	Surface-level: which app, which screen, what's visible
+What's their goal? 	Intent: not just 'Excel is open' but 'building a revenue model'
+Why are they doing it? 	Context: quarterly reporting, debugging, researching a decision
+How are they approaching it? 	Method: split-screen comparison, tab switching, focused single-app
+What worked / didn't / is missing? 	The reinforcement signal — how the swarm scores and improves
+What would help them recall this later? 	The search query someone would type to find this moment
+
+"A bad embedding answers only the first question: 'Excel is open.' A great embedding answers all six — what they're doing, why, how, and what search query would find this moment later. These become the quality dimensions the swarm's scoring rubric evaluates against."
+
+Speaking note: "Notice the last question: 'What would help them recall this later?' That's the whole product in one sentence. The six questions define the quality bar for the embedding — they're not about the agents, they're about the product. The agents' job is to produce descriptions that answer as many of these as possible. This flows naturally from the Microsoft Recall slide — we established the idea is right, the architecture is solvable with local models, and NOW we're defining what 'good' looks like."
+0:12-0:15 — Why a Swarm?
+
+Why not one agent?
+
+"You could build a single agent that captures frames, describes them, embeds them, scores the results, and adjusts its approach. But remember what we said about monolithic applications — they don't scale. A single agent with too many jobs becomes a jack of all trades." ³
+
+"As instruction complexity increases, rule adherence degrades. ⁴ You're asking one context window to be a screen capturer, an embedding strategist, a quality evaluator, AND a researcher all at once. The context gets polluted. The quality drops."
+
+"The same lesson from microservices: separate concerns, let each process do one thing well, and connect them with a message bus." ⁵
+
+Introduce the swarm architecture (high level):
+
+Frame Capture Agent → screen:frames
+     ↓
+Embedder Agent → screen:approaches
+     ↓
+Approach Tester Agent → screen:results
+     ↓
+Refiner Agent → reads scores, proposes improvements → back to embedder
+
+"Four agents. Each does one job. They don't call each other directly — they publish messages to a Redis stream and consume what they need. Sound familiar? It should — it's a pipeline. Anthropic calls this a workflow pattern. ⁴ The refiner turns it into a feedback loop, which is where it becomes a learning system." ⁶
+
+Speaking note: "Don't rush past the microservices analogy. These are experienced devs — they lived through the monolith-to-microservices transition. That intuition transfers directly. A message bus is just a place where services drop off messages and pick up messages without knowing about each other. The new part is that each 'service' is an LLM, not a function." ⁵
+Section 2: Skill 1 — Agent Definition (0:15-0:35)
+
+We defined WHAT the product needs. Now: HOW to build reliable agents.
+0:15-0:19 — 12-Factor Agent Principles
+
+"We just defined the product spec — the six questions that tell us what 'good' looks like. Now: how do we build agents that actually deliver it? HumanLayer published a set of 12-factor principles for production-grade agents, inspired by the original 12-factor app methodology. ²³ We won't cover all 12, but six directly apply to what we're building tonight:"
+Principle 	In Our Swarm
+Own your prompts 	build_system_prompt() — you control every token, no framework magic
+Own your context window 	Score-injected prompts — curate what the LLM sees each round
+Tools are structured outputs 	The LLM returns JSON intent, deterministic code executes it
+Small, focused agents 	Four agents, each does one job, 3-20 steps max
+Own your control flow 	Explicit agentic loops, not framework black boxes
+Compact errors into context 	Feed failures back so the agent self-corrects on the next attempt
+
+"The key insight from 12-factor: the fastest way to get good AI software to customers is to take small, modular concepts and integrate them incrementally — not to adopt entire frameworks wholesale. That's exactly what swarm-v2 does."
+
+Speaking note: "The 12-factor agents framework comes from observing 100+ SaaS founders trying to build with agents. Most reached 70-80% quality before discovering they needed to 'reverse-engineer the framework' to go further. The principles are about owning the fundamentals: your prompts, your context, your control flow. Experienced devs will recognize this — it's the same lesson they learned with ORMs, web frameworks, and CI/CD pipelines. Abstractions are great until they're not."
+0:19-0:24 — The Agent Contract (Code Walkthrough)
+
+Open skill-1-definition/python/agent.py and walk through the structure:
+
+"Every agent in this swarm implements the same contract — and each method maps to a 12-factor principle:"
+
+    Role + Goal — the agent's identity and what it's optimizing for
+    get_status() — reports current state: task, progress, approach, results
+    add_to_memory() — stores a scored result (task, result, impact_items, top_positive/top_negative)
+    build_system_prompt() — own your prompts + own your context window: memory becomes learning, recent scores injected so the agent adjusts without retraining
+    ask() — calls the local model with the built prompt (owns the context window)
+    act() — returns structured output, deterministic code executes — tools are structured outputs
+
+The key insight: "Look at build_system_prompt(). When an agent has no memory, it gets a basic role/goal prompt. After it's been scored a few times, its system prompt includes the last three results with the top positive and top negative observations. The agent literally learns from evidence — not through fine-tuning, but through context engineering that updates itself." ⁷
+
+# Empty memory → basic prompt:
+"You are embedder, a Screen Embedding Strategist.
+ Goal: Produce embedding descriptions that best capture human work intent..."
+
+# After 3 rounds → prompt includes history:
+"...Your recent performance — use this to improve:
+ Task: Describe Excel + PDF split screen...
+ Score: 0.45 | Worked: Identified tools; concise | Didn't: Too surface-level — missed cognitive state
+ Task: Describe Figma design iteration...
+ Score: 0.68 | Worked: Captured creative context; tool + task | Didn't: Didn't infer person's intent
+ Task: Describe Slack + browser research...
+ Score: 0.82 | Worked: Inferred context switch; cognitive state | Didn't: Could note distraction pattern"
+
+"See the progression? 0.45 → 0.68 → 0.82. The agent is getting better. Not because we changed the code. Because we fed it three things: what worked, what didn't, and what's missing. That's the whole learning signal."
+0:24-0:27 — Same Agent, Three Languages
+
+Briefly show the TypeScript and PHP implementations:
+
+"The contract is identical across languages. getStatus(), addToMemory(), buildSystemPrompt(), act() — same interface, same behavior. If your team is split across stacks, this doesn't matter. The agent pattern is language-agnostic."
+
+    Python: Ollama API (local), dataclasses, straightforward
+    TypeScript: Ollama API (local), typed interfaces, same structure
+    PHP/Laravel: Raw HTTP to Ollama API (local), Guzzle, same contract
+
+"The PHP version uses raw HTTP to Ollama's REST API. But notice: the agent doesn't care. It's the same prompt, the same memory, the same 12-factor principles. The LLM is the brain. The language is just the body."
+
+Speaking note: "Don't spend more than 2-3 minutes on the multi-language piece. The point lands fast: 'the pattern is the pattern, regardless of language.' Move on."
+0:27-0:35 — Run the Demo
+
+Live demo: Run python agent.py
+
+Watch three rounds execute:
+
+    Round 1: Agent describes an Excel spreadsheet → scored 0.45 → "too surface-level"
+    Round 2: Agent describes a Figma design session → scored 0.68 → "captured creative context but missed task goal"
+    Round 3: Agent describes Slack + browser research → scored 0.82 → "inferred context switch and research intent"
+
+"See the system prompt evolving in real time. Each round, the agent gets feedback about its last attempt. By round 3, it's producing richer descriptions because the prompt now includes 'you scored low when you were surface-level, you scored high when you captured cognitive state and work intent.'"
+
+Tie back: "This is context engineering applied to agents. ⁷ Same principle as Week 2 — the context you give the LLM determines the quality of the output. The difference is that the agent's context updates itself based on scored results."
+Section 3: Skill 2 — Orchestration (0:35-0:55)
+
+How do agents coordinate? Message bus, not method calls.
+0:35-0:38 — Pipeline vs. Conversation
+
+"Before we look at the code, there's a design decision you need to make with any multi-agent system: are your agents a pipeline or a conversation?"
+
+Agent Pipeline:
+
+    Each agent does one step, passes the output forward to the next
+    Like a factory assembly line: capture → embed → score → refine
+    Agents don't know who's upstream or downstream — they just read from one stream and write to another
+    Best for: problems with clear stages and predictable throughput
+
+Agent Conversation:
+
+    Agents talk directly to each other by name — "@embedder, can you try a different approach on this frame?"
+    Like a group chat: any agent can message any other agent
+    A central router (or gateway) delivers messages to the right recipient
+    Best for: open-ended collaboration, negotiation, ambiguous tasks where agents need back-and-forth
+
+"swarm-v2 is a pipeline. The work has a clear sequence: capture a frame, propose how to embed it, test that approach, score it, refine. Each step feeds the next. Nobody needs to go back and ask clarifying questions. That's what makes a pipeline the right fit."
+
+Speaking note: "The pipeline vs. conversation distinction is the first question to ask when designing a multi-agent system: does my problem have a clear sequence of steps, or do agents need to negotiate and go back and forth? If it's sequential, use a pipeline. If it's collaborative, use a conversation. Most real systems end up being a pipeline with a conversation layer on top for exception handling — but start with the simpler pattern."
+0:38-0:42 — The Message Bus Pattern
+
+"So we're building a pipeline. The agents communicate through Redis Streams — a built-in feature of Redis that acts as a message bus."
+
+Why a message bus instead of direct function calls?
+
+    Agents can run in different processes, different machines, different languages
+    If one agent is slow or crashes, the others keep working
+    You can scale by adding more consumers to a stream (Redis distributes the work automatically)
+    The message history is persistent — you can replay it, audit it, debug it
+
+The three streams:
+Stream 	Producer 	Consumer 	Message
+screen:frames 	FrameCaptureAgent 	EmbedderAgent 	Batch of screen frames (up to 15 unique per 30s window)
+screen:approaches 	EmbedderAgent 	ApproachTesterAgent 	Proposed embedding strategy
+screen:results 	ApproachTesterAgent 	RefinerAgent + Monitor 	Score + impact_items + top_positive/top_negative
+
+"Plus agent:health — every agent publishes a heartbeat every 20 seconds so the monitor knows who's alive."
+
+Speaking note: "Consumer groups are Redis's way of splitting work across multiple agents. XREADGROUP means if you run three embedder instances, Redis automatically gives each one different messages — no two agents process the same frame. ⁸ Think of it like a restaurant ticket wheel: the kitchen puts tickets up, and whichever cook grabs it first handles that order."
+0:42-0:48 — The Message Schema
+
+"Every message on the bus follows the same shape:"
+
+{
+  "id":        "msg_a3f2c1",
+  "from":      "embedder",
+  "to":        "approach-tester",
+  "type":      "approach_proposal",
+  "payload":   { ... },
+  "context":   { "agent": "embedder", "score": 0.68, "top_positive": "...", "top_negative": "..." },
+  "timestamp": "2026-03-12T18:30:00Z"
+}
+
+"Notice the context field. Every message carries the sender's current status — its current score, top positive observation, and top negative. So when the approach-tester receives a proposal, it doesn't just see the proposal. It sees the embedder's performance evidence. That's how agents share awareness without a central coordinator."
+
+The Agent Help Loop:
+
+1. OBSERVE    — Batch 30s of screen activity (up to 15 unique frames)
+2. PROPOSE    — What approach might improve the embedding?
+3. SCORE      — Two-pass evaluation:
+                 Pass 1: Itemize observations (+/- 1, 2, 3, or 5 impact)
+                 Pass 2: net_impact / √(items) → normalized score
+4. REINFORCE  — Feed winners back. Discard losers. Tune capture params.
+
+"This loop runs continuously. Batch → Propose → Score → Reinforce. Every cycle, the system has more evidence about what works and what doesn't — and the refiner can tune not just the embedding approach, but the capture parameters too."
+0:48-0:55 — Live Demo: Run the Swarm
+
+Run python run_swarm.py --mode demo
+
+Show the terminal output:
+
+    [frame-capture] → screen:frames (frame)
+    [embedder] → screen:approaches (approach_proposal)
+    [approach-tester] → screen:results (score)
+    Scores printed in real time
+
+"Three agents. Three separate async loops. Communicating through Redis. Nobody calls anybody directly. The capture agent doesn't know or care who reads its frames. The embedder doesn't know who scores its proposals. They just publish and consume."
+
+Point out: "Run --agent embedder in one terminal, --agent tester in another, --agent capture in a third. They connect to the same Redis streams. You can scale the embedder to three instances and they'll share the workload via consumer groups. This is how production multi-agent systems actually work."
+
+Speaking note: "If students ask about error handling: the try/except in consume() around xgroup_create is intentional — it just means 'create the group if it doesn't exist, ignore if it does.' The xack after processing ensures messages aren't redelivered. This is real production messaging, not a toy."
+BREAK (0:55-1:05)
+
+"Grab a drink. When we come back: how do you see what the swarm is doing, how do you score it honestly, and how does it get better over time."
+Section 4: Skill 3 — Monitoring (1:05-1:15)
+
+You can't improve what you can't see.
+1:05-1:10 — The Dashboard
+
+Open http://localhost:3000 in the browser
+
+"The monitoring server reads four Redis streams and builds a live picture:"
+
+    Agent liveness — who's alive, who's stale? (heartbeat stream)
+    Queue depths — how backed up is each stream? If screen:frames has 50 messages and screen:approaches has 2, the embedder is the bottleneck.
+    Score trends — are scores going up over time? Flat? Declining?
+    Latest scores — top positive and negative observations from the most recent eval
+
+Show the API endpoints:
+
+    GET /status — full JSON dump
+    GET /scores — score history + trend direction
+    GET /agents — agent liveness
+    GET /streams — queue depths
+
+"This is a TypeScript Express server — 200 lines. It doesn't call the LLM at all. It just reads Redis. Monitoring is separate from reasoning."
+
+Speaking note: "The monitoring pattern here is the same observability pattern they already know from production systems. Prometheus scrapes metrics, Grafana visualizes. This is the agent equivalent. The principle: never trust a system you can't observe." ⁹
+1:10-1:15 — What to Watch For
+
+"When you run a swarm, here's what tells you it's working vs. broken:"
+
+Healthy swarm:
+
+    All agents show "alive" in the health check
+    Queue depths stay low (agents are keeping up)
+    Scores trend upward or stabilize at a high level
+    Top positives are consistent — the system is converging on good approaches
+
+Sick swarm:
+
+    An agent goes stale (no heartbeat for 60+ seconds)
+    Queue depths grow — one agent can't keep up (scale it or simplify its task)
+    Scores are flat or declining — the feedback loop isn't working
+    Top positives contradict each other across rounds — the system is thrashing
+
+"Monitoring is how you tell the difference between a swarm that's learning and a swarm that's burning tokens."
+Section 5: Skill 4 — Evaluation (1:15-1:30)
+
+Honest scoring is the whole game.
+1:15-1:20 — Why Eval Is the Hardest Part
+
+"If monitoring is the eyes, evaluation is the brain. The quality of your scoring determines whether the swarm improves or just spins."
+
+"Here's the trap: if you let an LLM score its own work with a single 'rate this 1-10' prompt, you'll get inflated, inconsistent scores every time. The LLM wants to be helpful. It'll say 7/10 when the real answer is 4." ¹⁰
+
+Callback to Week 5: "Remember what we talked about with the vibeathon judging pipeline? Don't ask for one big holistic score. Break it into smaller, bounded decisions the LLM can make accurately, then aggregate mathematically. Same principle here."
+1:20-1:25 — Three Eval Patterns
+
+Open skill-4-eval/eval.py and walk through:
+
+Pattern 1: Two-Pass Rubric Eval
+Pass 1 (LLM): Itemize observations across four dimensions, each with an impact score (+/- 1, 2, 3, or 5):
+
+    intent_capture — does it capture what the person is trying to accomplish?
+    specificity — specific enough to distinguish similar-looking frames?
+    cognitive_state — does it infer the user's mental state or work stage?
+    noise_resistance — avoids irrelevant visual details?
+
+Pass 2 (math): net_impact / √(total_items) * 8.0, centered on 50, scaled to 0-1. The √ means quality beats quantity — five items averaging +3 beats twenty items averaging +1.
+
+"The rubric is the spec. Same as TDD — you define what 'good' looks like before you evaluate. But the key insight is separating the LLM's job (itemize what you see) from the math (derive a score). The LLM is bad at assigning a single 0-1 number. It's great at listing specific observations." ⁶
+
+Pattern 2: Comparative Eval
+Given two approaches to the same frame, which is better and why?
+
+"This is powerful because relative judgments are easier for LLMs than absolute scores. 'Is A better than B?' is a simpler question than 'How good is A on a scale of 0-1?' Use this when you need to choose between competing approaches."
+
+Pattern 3: Regression Check
+Did the swarm get worse? Compare average scores from the last N rounds to the previous N rounds.
+
+"This catches the case where a refiner proposes a new approach that sounds smart but actually degrades quality. Without regression checks, you can lose ground without knowing it."
+1:25-1:30 — The Scoring Schema
+
+"Every eval in this system produces the same two-pass schema:"
+
+# Pass 1 — LLM itemizes observations
+"items": [
+    {"dimension": "intent_capture",  "observation": "Captured the pivot table workflow", "impact": +3},
+    {"dimension": "noise_resistance", "observation": "Described window chrome instead of task", "impact": -2},
+    {"dimension": "specificity",      "observation": "Distinguished this Excel session from yesterday's", "impact": +2},
+]
+
+# Pass 2 — deterministic math (no LLM)
+"derived": {
+    "overall":            0.607,   # net_impact / √(items) → normalized 0-1
+    "net_impact":         3,
+    "total_items":        5,
+    "normalized_impact":  1.342,
+    "raw_score":          60.7
+}
+
+"Pass 1 is the LLM's job: list what you see, score each observation's impact. Pass 2 is deterministic math — derive_score() is a pure function, no LLM involved. The agent sees the top positive and top negative observations injected into its system prompt. It literally reads 'Best: Captured the pivot table workflow | Worst: Described window chrome instead of task' and adjusts."
+
+"This is reinforced learning without retraining. No fine-tuning, no gradient descent, no GPU cluster. Just itemized evidence fed into the next prompt." ¹ ⁶
+
+Speaking note: "Emphasize: the impact items are doing the job that a loss function does in traditional ML. They're the signal that tells the system which direction to adjust. But it's natural language observations with explicit magnitude, not opaque gradients. And the math is trivially auditable — you can look at the items and verify the score makes sense. That's what makes this accessible to developers who don't have ML backgrounds."
+Section 6: Skill 5 — Refining (1:30-1:45)
+
+Closing the loop: how the swarm gets smarter.
+1:30-1:37 — The Refiner Agent
+
+Open skill-5-refining/refiner.py:
+
+"The refiner is the agent that makes the whole system a learning system instead of just a processing pipeline. Without it, you have agents that capture, embed, and score — but never improve. The refiner closes the loop."
+
+How it works:
+
+    Reads score history from screen:results (every N scores, not every frame — slower cadence)
+    Groups impact items by dimension, sorts by magnitude — high-impact observations (+3/+5 and -3/-5) surface first
+    Proposes a refined approach or reinforces the current one
+    Can also tune capture parameters — batch size, snap frequency, dedup threshold
+    Publishes the new approach back to a Redis key that embedder agents watch
+
+"The refiner plays the role of the human editing program.md — but it does it automatically, based on scored evidence. This is the Karpathy pattern: ¹ you're not retraining the model. You're updating the context that shapes its behavior." ¹¹
+
+Walk through the code:
+
+# The refiner reads impact items across multiple scores:
+"Looking at your last 5 scored results:
+ - Top positives (recurring):
+   +3 intent_capture: 'Captured the pivot table workflow'
+   +3 cognitive_state: 'Inferred user was comparing data sources'
+ - Top negatives (recurring):
+   -2 noise_resistance: 'Described window chrome instead of task'
+   -3 specificity: 'Description could match any spreadsheet session'
+
+ Proposed refinement:
+ ALWAYS include: (1) what tool, (2) what task, (3) what cognitive state,
+ (4) what work stage, (5) what intent. Drop: visual descriptions of UI layout.
+ Also: increase batch window to 45s for spreadsheet tasks — longer context helps."
+
+"See how the refiner synthesizes across multiple rounds? It's not just reading one score — it's finding patterns in the impact items. 'Described window chrome' keeps appearing as a -2? The refinement will push toward task-level descriptions. And notice it can also tune the capture parameters — if longer batch windows produce better scores for certain activities, the refiner adapts how the system observes, not just what it describes."
+1:37-1:42 — The Full Loop in Action
+
+Show the complete cycle:
+
+Batch Capture → 12 frames over 30s: Excel with pivot tables, tab switching, PDF open
+    ↓
+Embedder (with old approach) → "Person is using Excel" [score: 0.32]
+    ↓
+Score items: -3 intent_capture: "Missed pivot table workflow entirely"
+             -2 specificity: "Could match any spreadsheet session"
+             +1 noise_resistance: "Didn't describe window chrome"
+    ↓
+Refiner: "Always include cognitive state and work stage. Increase batch to 45s."
+    ↓
+Embedder (with refined approach) → "Financial analyst building quarterly
+  forecast model, cross-referencing revenue data across tabs, pulling
+  from a PDF report, work stage: active analysis" [score: 0.82]
+    ↓
+Score items: +3 intent_capture: "Captured cross-referencing workflow"
+             +5 cognitive_state: "Inferred analytical deep-focus state"
+
+"The embedder didn't change. The approach changed. The context engineering changed. And the agents figured that out themselves."
+1:42-1:45 — Why This Matters Beyond Screen Embeddings
+
+"This pattern — observe, propose, test, score, refine — isn't specific to screen understanding. It's a general pattern for any problem where:"
+
+    You can evaluate quality (even approximately)
+    The approach to the problem can be described in natural language
+    Iterative improvement is possible
+
+"Customer support? Agents propose better response strategies, score resolution quality, refine. Content generation? Agents propose better outlines, score engagement, refine. Code review? Agents propose better review criteria, score bug-catch rate, refine."
+
+"The domain is the variable. The swarm pattern is the constant."
+Section 7: Connecting It All — The AI-Native Checklist (1:45-1:55)
+
+How to know when something is truly AI-native
+1:45-1:50 — Seven Properties
+
+"We've spent an hour inside a real AI-native system. Now let's step back and name what makes it AI-native — not AI-enhanced, not AI-cosmetic." ¹²
+
+Walk through each property, pointing back to swarm-v2 as the example:
+
+    Natural language is a first-class interface ¹ — Every agent communicates through natural language prompts and responses. The message bus carries descriptions, approaches, and scores — all in English. No rigid API schemas for the reasoning layer.
+
+    Behavior is probabilistic, not deterministic ¹³ — Run the swarm twice, you'll get different scores and different approaches. That's not a bug. The guardrails (the scoring rubric, the product spec, the 12-factor principles) keep it bounded. The variability is where the learning happens.
+
+    Agents replace workflows ⁴ — The embedder doesn't follow a decision tree. It reasons about each frame, consults its memory, and proposes a novel approach. The approach-tester doesn't check boxes — it evaluates quality with judgment.
+
+    Context is the new code ⁷ — The system prompt evolves based on score history. Nobody changed the code between round 1 and round 3. The context changed. That's what changed the output quality.
+
+    Multi-model orchestration is built in ¹⁴ — Ollama does the reasoning; Hindsight handles embedding and similarity search. Three different models, each doing what it's best at.
+
+    The autonomy slider exists — Run in demo mode (synthetic frames) vs. live mode (real screen capture). Run one agent manually vs. the full swarm autonomously. Dial the refiner cadence up or down. The system is designed for variable autonomy.
+
+    It learns and adapts ¹ ⁶ — Scores go from 0.45 to 0.82 across three rounds. The refiner synthesizes patterns and updates the approach. No retraining. No fine-tuning. Just scored feedback fed back into context.
+
+1:50-1:55 — The Litmus Tests
+
+"Two questions to ask about any product someone calls 'AI-native':"
+
+"Could this product exist without AI at its core?" If yes, it's AI-enhanced. If no, it's AI-native. Remove the LLMs from swarm-v2 and what's left? A screenshot tool with a database. The intelligence — the proposing, scoring, refining — IS the product.
+
+"Is the AI doing the work, or helping a human do the work?" In swarm-v2, the agents do the work. They propose approaches, they evaluate quality, they refine strategies. A human sets the goal and reviews the results, but the agents drive.
+Section 8: Course Synthesis + Discussion (1:55-2:15)
+
+Tying all six weeks together
+1:55-2:05 — The Full Picture
+
+"You now have a toolkit and a framework for every project type you'll encounter:"
+Week 	Project Type 	Key Skill 	Tonight's Connection
+1 	The Landscape 	Know what tools exist 	The swarm uses Ollama, Redis, Hindsight — tools from the landscape
+2 	Configure Your Toolkit 	Context engineering 	Agents engineer their own context via score-injected prompts
+3 	Existing Projects 	AI on existing codebases 	The screen pipeline could be added to any existing productivity tool
+4 	Greenfield 	Start from scratch with AI 	swarm-v2 IS a greenfield AI project — built from first principles
+5 	Adding AI Features 	RAG, embeddings, vector DB 	The screen pipeline is a RAG system — embeddings into Hindsight with similarity search
+6 	AI-Native 	Agents, swarms, feedback loops 	The whole system: multi-agent, message bus, self-improving
+
+The build-vs-buy shift:
+
+"If you can build things as easily as buying them — should you just build them?"
+
+"Look at what swarm-v2 is: Docker Compose, three Python files, one TypeScript file, a few hundred lines of code per agent. Redis Streams. Hindsight. Ollama. That's it. No proprietary agent framework. No vendor lock-in. No $50K/year SaaS subscription for 'AI orchestration.'" ¹⁴ ⁴
+
+"McKinsey predicts a 4:1 productivity gap between AI-native companies and non-AI companies by 2027. ¹⁵ The gap isn't about having more developers. It's about building systems where agents do the work and humans set the direction."
+2:05-2:15 — Final Discussion
+
+Discussion prompts:
+
+    "What problem in YOUR domain could a swarm of agents improve? Think about the pattern: observe → propose → test → score → refine. Where does that loop apply?"
+    "Which of the five skills felt most new to you? Definition? Orchestration? Monitoring? Eval? Refining?"
+    "What's the riskiest part of deploying a system like this in production? What guardrails would you add?"
+    "What's the one thing from this entire course you're taking back to work Monday?"
+
+Close:
+
+    swarm-v2.zip will be posted to VibeLabs — take it, run it, modify it, build on it
+    Community continues on Discord — you're grandfathered in
+    Recordings available on VibeLabs for all six classes
+
+"The most important thing I can tell you: AI tools will keep changing. New models every month, new frameworks every week. But the mental models we covered — context engineering, spec-driven development, the composable patterns, the 12-factor principles, the feedback loop — those are durable. Use them as your compass."
+
+"Go build something that couldn't have existed a year ago."
+Supporting Materials
+Slides/Visuals Needed
+
+    The Problem: screen capture → embedding pipeline diagram
+    Swarm architecture: 4 agents + Redis Streams flow
+    The Six Questions (Product) table — embedding quality dimensions
+    12-Factor Agent Principles table — mapped to swarm-v2
+    The Agent Help Loop (observe → question → propose → test → score → reinforce)
+    Message schema (JSON example)
+    System prompt evolution (empty → 3 rounds of history)
+    The Three Eval Patterns (rubric, comparative, regression)
+    The Scoring Schema (5 reinforcement fields)
+    The Full Loop diagram (capture → embed → score → refine → improved embed)
+    The AI-Native Checklist (7 properties)
+    Course Synthesis table (6 weeks → tonight's connection)
+
+Links to Share
+
+    Anthropic — Building Effective Agents: anthropic.com/research/building-effective-agents
+    Claude Agent SDK Docs: platform.claude.com/docs/en/agent-sdk/overview
+    Redis Streams documentation: redis.io/docs/data-types/streams/
+    Hindsight (agentic memory): github.com/vectorize-io/hindsight
+    Karpathy — Software 3.0: ainativefoundation.org (summary)
+    a16z — Notes on AI Apps in 2026: a16z.com/notes-on-ai-apps-in-2026
+    OpenAI Swarm (reference design): github.com/openai/swarm
+    HumanLayer — 12-Factor Agents: github.com/humanlayer/12-factor-agents
+
+Key Stats
+
+    Gartner: 40% of enterprise apps will embed agents by end of 2026 ¹⁶
+    McKinsey: 4:1 productivity gap AI-native vs non-AI by 2027 ¹⁵
+    Microsoft: 81% of leaders expect deep agent integration within 12-18 months ¹⁷
+    Karpathy: "The hottest new programming language is English" ¹
+
+Student Handout: swarm-v2.zip
+
+    5 skills, progressive difficulty
+    Python + TypeScript + PHP implementations
+    Docker Compose for infrastructure
+    Monitoring dashboard
+    Everything runs locally — Ollama for inference, Hindsight for memory, no cloud API keys needed
+
+Instructor Notes
+Pacing Guidelines
+
+    If running behind: Shorten Section 4 (monitoring) to 5 min — just show the dashboard, skip API endpoints. Shorten Section 7 (AI-Native Checklist) to 5 min — the students already lived through the seven properties, don't need to lecture them again.
+    If running ahead: Let the swarm run longer during demos. Deeper discussion at the end. Let students ask questions about the code during each section instead of holding for the end.
+    The break should land around the 55-minute mark. If you're early, extend the orchestration demo. If you're late, shorten the break to 5 minutes.
+
+Demo Risk Mitigation
+
+    Redis/Docker fails: Have a backup plan — python agent.py (Skill 1) doesn't need Redis. You can teach agent definition, the 12-factor principles, and the learning loop with just Skill 1. The orchestration and monitoring become slides-only.
+    API key issues: Test before class. Have a second API key ready. Pre-run the demo and save terminal output as screenshots in case of live failure.
+    Slow inference: Demo mode uses synthetic frames (no real screen capture). If inference is slow, reduce the swarm to 2 agents (capture + embedder) and hand-score the results to show the pattern.
+
+Common Questions to Anticipate
+
+    "Why Redis Streams?" — It's built into Redis, so there's nothing extra to install — one Docker command and you have a message bus. For a single-user system like this, it's more than enough. If you outgrow it, the pattern (publish to a stream, consume from a stream) transfers to any message bus technology.
+    "Why not use a framework like the Claude Agent SDK for this?" ¹⁸ — You absolutely could. swarm-v2 uses raw HTTP calls to Ollama to keep the agent logic transparent. Frameworks add convenience (tool loops, context management) but hide some of what's happening. For teaching, raw is better. For production, pick the framework that fits your stack.
+    "How is this different from fine-tuning?" — Fine-tuning changes the model's weights permanently. This changes the model's context per-call. ¹ Fine-tuning requires training data and compute. This requires scored feedback and good prompts. Both make the system better. This is faster to iterate and cheaper to run.
+    "How would you deploy this in production?" — Each agent becomes a container/process. Redis Streams handles the messaging. ⁸ Add auth, rate limiting, error handling, dead letter queues. The architecture is already production-shaped — it just needs hardening.
+
+Key Themes to Reinforce
+
+    The six product questions define what good looks like — the 12-factor agent principles define how to build reliably
+    Context engineering is the new code — the system prompt is the lever that changes behavior
+    Honest scoring is the whole game — garbage scores in, garbage behavior out
+    The observe → propose → test → score → refine loop applies to any domain
+    AI-native isn't about technology — it's about designing systems where agents drive and humans steer
+
+Cited Sources
+
+¹ Karpathy — Software 3.0 vision. "The hottest new programming language is English." LLMs as operating systems, "thick" AI apps that orchestrate multiple LLM calls into deployed professionals. AI Native Foundation summary · Karpathy 2025 Year in Review · Sequoia analysis
+
+² Screen recall as an active problem domain. eyestone is a fully-local macOS app that captures screen activity, processes it through Ollama (vision model + embeddings), and stores searchable vector embeddings in a local SQLite database with sqlite-vec. Rewind.ai · Google Screen AI
+
+³ Multi-agent swarms as the AI equivalent of microservices architecture. InfoQ — Google's Eight Multi-Agent Design Patterns · Fast.io — AI Agent Swarm Best Practices
+
+⁴ Anthropic — "Building Effective Agents." Composable patterns (prompt chaining, routing, parallelization, orchestrator-workers, evaluator-optimizer, autonomous agents), workflow vs. agent distinction, "start with the simplest solution that works." anthropic.com/research/building-effective-agents · Anthropic Cookbook — Agent Patterns
+
+⁵ Multi-agent orchestration patterns (hub-and-spoke, pipeline, peer-to-peer/swarm). Claude Code Agent Teams docs · OpenAI Swarm reference implementation
+
+⁶ Evaluator-optimizer pattern. One LLM generates, another evaluates; loop continues until quality criteria met. Reinforced learning via prompt engineering — scored feedback fed back into context without fine-tuning. Anthropic — Building Effective Agents
+
+⁷ Anthropic — "Effective Context Engineering for AI Agents." Context as the primary lever for shaping agent behavior. anthropic.com/engineering/effective-context-engineering-for-ai-agents
+
+⁸ Redis Streams — consumer groups for load distribution across agent instances. redis.io/docs/data-types/streams
+
+⁹ Observability pattern for agent systems. Same principle as Prometheus/Grafana for traditional systems — applied to agent health, queue depths, and score trends. General software engineering practice.
+
+¹⁰ LLM self-evaluation bias — models tend to inflate scores when asked to rate their own output. Addressed by structured rubric evaluation with explicit dimensions and bounded scoring. Anthropic — Building Effective Agents
+
+¹¹ Karpathy's "thick" LLM apps concept — apps that organize, fine-tune, and animate teams of LLMs by supplying private data, sensors, actuators, and feedback loops. The refiner agent implements this by updating the approach context rather than retraining. Karpathy 2025 Year in Review
+
+¹² AI-Native vs AI-Enhanced vs AI-Cosmetic spectrum. ThoughtSpot — What Is an AI Native Platform · Next Platform — Building Software in the AI-Native Era · ArXiv — GenAI-Native Design Principles
+
+¹³ Probabilistic vs deterministic paradigm shift in AI-native systems. Acceldata — Balancing Probabilistic and Deterministic Intelligence
+
+¹⁴ a16z — "Notes on AI Apps in 2026." Extraordinary specialization is now possible; cost of building collapsed; build-vs-buy equation has shifted. a16z.com/notes-on-ai-apps-in-2026
+
+¹⁵ McKinsey — 4:1 productivity gap between AI-native companies and non-AI companies expected by 2027. AI Tool Insight — AI Tools Replacing Traditional Software
+
+¹⁶ Gartner — 40% of enterprise apps will embed task-specific AI agents by end of 2026 (up from <5% two years ago). Gartner AI predictions
+
+¹⁷ Microsoft Work Trend Index 2025 — 81% of global leaders expect AI agents deeply integrated in their organizations within 12-18 months. Microsoft Work Trend Index
+
+¹⁸ Claude Agent SDK — gives developers the same tools, agent loop, and context management that power Claude Code. Platform docs · Anthropic Engineering — Building Agents with the Claude Agent SDK
+
+¹⁹ Microsoft Recall — announced May 2024 as part of Copilot+ PCs, designed to screenshot your PC every few seconds and enable natural language search of your activity history. Delayed three times (June 2024, October 2024, December 2024) due to security and privacy backlash. Eventually re-released in limited preview with local encryption. Wikipedia — Windows Recall · Microsoft Recall Support Page
+
+²⁰ Kevin Beaumont (DoublePulsar) discovered that Recall stored screenshots in a plaintext SQLite database, completely unencrypted, accessible to any process on the machine. DoublePulsar — Recall: Stealing everything you've ever typed or viewed on your own Windows PC
+
+²¹ TotalRecall — a security research tool by Alexander Hagenah that demonstrated how trivially the Recall database could be extracted and browsed. GitHub — TotalRecall · TechRepublic — Microsoft Recall Backlash
+
+²² Institutional and application-level response to Recall: University of Pennsylvania ISC warned students about Recall's data exposure risks. Signal added screen security features to prevent Recall from capturing encrypted messages. Brave browser implemented anti-screenshot protections. The Register — Recall Controversy
+
+²³ HumanLayer — 12-Factor Agents. Production principles for building reliable LLM applications, inspired by the original 12-Factor App methodology. Derived from observing 100+ SaaS founders building agents. Key factors: own your prompts, own your context window, tools are structured outputs, small focused agents (3-20 steps), own your control flow, compact errors into context, stateless reducer pattern. GitHub — 12-Factor Agents · HumanLayer — 12-Factor Agents
+
+Last updated: March 12, 2026
