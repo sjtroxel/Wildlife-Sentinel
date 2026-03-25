@@ -2,7 +2,7 @@
 
 **Goal:** A working monorepo skeleton. Discord bot connects and posts a test message. Redis responds to ping. Neon+PostGIS is live and accepts connections. No application logic yet — just infrastructure.
 
-**Status:** Not started
+**Status:** Complete (2026-03-25)
 **Estimated sessions:** 1–2
 
 ---
@@ -10,14 +10,14 @@
 ## Pre-Phase Checklist
 
 Before writing any Phase 0 code, confirm all items in `PHASE_0_HANDOFF.md` are complete:
-- [ ] Neon account created + `DATABASE_URL` connection string obtained
-- [ ] Redis available (Railway Redis service or local Docker for dev)
-- [ ] Discord bot token obtained from Developer Portal
-- [ ] Discord Guild ID obtained (right-click server → Copy Server ID)
-- [ ] Channel IDs for `#wildlife-alerts` and `#sentinel-ops` obtained
-- [ ] Google AI API key obtained
-- [ ] Anthropic API key available
-- [ ] NASA FIRMS API key obtained
+- [x] Neon account created + `DATABASE_URL` connection string obtained
+- [x] Redis available (Railway Redis service or local Docker for dev)
+- [x] Discord bot token obtained from Developer Portal
+- [x] Discord Guild ID obtained (right-click server → Copy Server ID)
+- [x] Channel IDs for `#wildlife-alerts` and `#sentinel-ops` obtained
+- [x] Google AI API key obtained
+- [x] Anthropic API key available
+- [x] NASA FIRMS API key obtained
 
 ---
 

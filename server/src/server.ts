@@ -4,6 +4,9 @@ import { config } from './config.js';
 import { sql } from './db/client.js';
 import { redis } from './redis/client.js';
 import { startBot } from './discord/bot.js';
+import { startScouts } from './scouts/index.js';
+import { startEnrichmentAgent } from './agents/EnrichmentAgent.js';
+import { startDiscordPublisher } from './discord/publisher.js';
 
 async function main(): Promise<void> {
   try {
@@ -23,6 +26,11 @@ async function main(): Promise<void> {
   }
 
   await startBot();
+
+  // Start the pipeline — these run as long-lived async loops
+  startScouts();
+  void startEnrichmentAgent();
+  void startDiscordPublisher();
 
   app.listen(config.port, () => {
     console.log(`[startup] Wildlife Sentinel running on port ${config.port}`);
