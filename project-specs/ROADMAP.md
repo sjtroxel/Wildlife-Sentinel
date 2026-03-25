@@ -8,7 +8,7 @@
 
 | Phase | Name | Status | Notes |
 |---|---|---|---|
-| 0 | Foundation | 🔲 Not started | Monorepo, TypeScript, Redis, Discord skeleton, Neon+PostGIS |
+| 0 | Foundation | ✅ Complete | Monorepo, TypeScript, Redis, Discord skeleton, Neon+PostGIS |
 | 1 | Fire Scout + Basic Pipeline | 🔲 Not started | NASA FIRMS → disaster:raw → Enrichment → Discord |
 | 2 | Full Habitat Coverage + GBIF | 🔲 Not started | Full IUCN polygons, GBIF, Species Context Agent |
 | 3 | TypeScript Model Router | 🔲 Not started | ModelRouter.ts, Gemini 2.5 Flash-Lite/Flash routing, cost tracking |
@@ -23,32 +23,32 @@
 
 ## Pre-Code Checklist (Must Complete Before Phase 0 Implementation)
 
-- [ ] IUCN shapefile download registered (iucnredlist.org)
-- [ ] NASA FIRMS API key obtained (firms.modaps.eosdis.nasa.gov)
-- [ ] Neon account created + new project (neon.tech)
-- [ ] Google AI API key obtained (for Gemini 2.5 Flash/Flash-Lite + text-embedding-004)
-- [ ] Discord bot created in Developer Portal + token obtained
-- [ ] Discord channels created: `#wildlife-alerts` (public) + `#sentinel-ops` (private)
-- [ ] Railway project created (new project, not reusing Asteroid Bonanza)
+- [x] IUCN shapefile download registered (iucnredlist.org) — Terrestrial Mammals 814MB zip, parked outside repo
+- [x] NASA FIRMS API key obtained (firms.modaps.eosdis.nasa.gov)
+- [x] Neon account created + new project (neon.tech) — PostGIS + pgvector enabled
+- [x] Google AI API key obtained (for Gemini 2.5 Flash/Flash-Lite + text-embedding-004)
+- [x] Discord bot created in Developer Portal + token obtained
+- [x] Discord channels created: `#wildlife-alerts` (private for now) + `#sentinel-ops` (private)
+- [ ] Railway project created (new project, not reusing Asteroid Bonanza) — deferred to Phase 9
 
 ---
 
 ## Phase 0 — Foundation
 **Goal:** Working monorepo. Discord bot connects and posts a test message. Redis runs. Neon+PostGIS ready.
 
-- [ ] npm workspaces monorepo: `server/`, `client/`, `shared/`, `scripts/`
-- [ ] TypeScript strict everywhere (`strict: true`, `noUncheckedIndexedAccess: true`)
-- [ ] NodeNext module resolution configured
-- [ ] `shared/types.d.ts` + `shared/models.ts` scaffolded
-- [ ] Express 5 server skeleton (app.ts / server.ts split)
-- [ ] Neon connection via postgres.js — health check endpoint
-- [ ] PostGIS extension enabled on Neon
-- [ ] Redis connection via ioredis — health check
-- [ ] discord.js bot skeleton — connects to server, posts test message to #sentinel-ops
-- [ ] `server/src/config.ts` — env var validation at startup
-- [ ] Husky pre-commit hooks (lint + typecheck)
-- [ ] Vitest configured
-- [ ] GitHub Actions CI (lint + typecheck + test)
+- [x] npm workspaces monorepo: `server/`, `client/`, `shared/`, `scripts/`
+- [x] TypeScript strict everywhere (`strict: true`, `noUncheckedIndexedAccess: true`)
+- [x] NodeNext module resolution configured
+- [x] `shared/types.d.ts` + `shared/models.ts` scaffolded
+- [x] Express 5 server skeleton (app.ts / server.ts split)
+- [x] Neon connection via postgres.js — health check endpoint
+- [x] PostGIS extension enabled on Neon
+- [x] Redis connection via ioredis — health check
+- [x] discord.js bot skeleton — connects to server, posts test message to #sentinel-ops
+- [x] `server/src/config.ts` — env var validation at startup
+- [x] Husky pre-commit hooks (lint + typecheck)
+- [x] Vitest configured
+- [x] GitHub Actions CI (lint + typecheck + test)
 
 → See [PHASE_0_FOUNDATION.md](roadmap/PHASE_0_FOUNDATION.md)
 
