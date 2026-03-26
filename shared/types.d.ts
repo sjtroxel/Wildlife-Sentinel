@@ -62,6 +62,8 @@ export interface SpeciesBrief {
 export interface FullyEnrichedEvent extends EnrichedDisasterEvent {
   gbif_recent_sightings: GBIFSighting[];
   species_briefs: SpeciesBrief[];
+  sighting_confidence: 'confirmed' | 'possible' | 'historical_only';
+  most_recent_sighting: string | null;
 }
 
 export interface AssessedAlert extends FullyEnrichedEvent {

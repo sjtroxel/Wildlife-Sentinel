@@ -6,6 +6,7 @@ import { redis } from './redis/client.js';
 import { startBot } from './discord/bot.js';
 import { startScouts } from './scouts/index.js';
 import { startEnrichmentAgent } from './agents/EnrichmentAgent.js';
+import { startHabitatAgent } from './agents/HabitatAgent.js';
 import { startDiscordPublisher } from './discord/publisher.js';
 
 async function main(): Promise<void> {
@@ -30,6 +31,7 @@ async function main(): Promise<void> {
   // Start the pipeline — these run as long-lived async loops
   startScouts();
   void startEnrichmentAgent();
+  void startHabitatAgent();
   void startDiscordPublisher();
 
   app.listen(config.port, () => {

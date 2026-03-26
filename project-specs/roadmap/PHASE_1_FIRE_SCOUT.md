@@ -2,7 +2,7 @@
 
 **Goal:** Real NASA FIRMS fire data flows end-to-end through the pipeline and produces a real Discord alert when a fire overlaps with a manually-loaded habitat polygon.
 
-**Status:** In progress
+**Status:** Complete (2026-03-25)
 **Depends on:** Phase 0 complete ✓
 **Estimated sessions:** 2–3
 

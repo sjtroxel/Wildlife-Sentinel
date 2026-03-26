@@ -2,7 +2,7 @@
 
 **Goal:** All IUCN Critically Endangered + Endangered species ranges in PostGIS. GBIF occurrence API cross-referencing working. Habitat Agent and Species Context Agent skeleton live.
 
-**Status:** Not started
+**Status:** Complete (2026-03-26)
 **Depends on:** Phase 1 complete, IUCN shapefile download in hand
 **Estimated sessions:** 1–2
 
@@ -291,4 +291,12 @@ In Phase 5, Habitat and Species Context will consume `disaster:enriched` in para
 - Filter to CR + EN only — VU adds ~30% more data with marginal benefit for Phase 1-2 alerting. VU can be enabled later via a config flag.
 - GBIF has no API key requirement — good, one less credential to manage
 - Species Context Agent in Phase 2 has no RAG grounding — this is intentional. Calling it out explicitly in the system prompt ("based on training data only") prevents misleading confidence in output claims. Phase 6 upgrades this properly.
-- The IUCN shapefile load takes 10–30 minutes depending on network speed — run it once and don't repeat unless the dataset needs refreshing.
+- The IUCN shapefile load completed in ~3 minutes (not 10-30) — because only 1,372 of 12,703 records passed the CR/EN filter. Estimate was based on full dataset; filtered set is much smaller.
+
+## Spec Drift / Corrections
+
+- **Field name:** Spec said `binomial` but actual MAMMALS_TERRESTRIAL_ONLY shapefile uses `sci_name`. Loader corrected to `sci_name`.
+- **Geography index:** Spec only defined a geometry GIST index. Queries use `::geography` cast which cannot use a geometry index. Added `idx_species_ranges_geom_geography` on `(geom::geography)` — migration `0003_geography_index.sql`. Must run this migration on any new Neon instance.
+- **Query performance:** Sub-200ms target is not achievable for geography `ST_DWithin` against complex IUCN polygon boundaries (~1.1s consistent). Index scan confirmed working. Acceptable for background pipeline — not a user-facing query.
+- **Publisher stream:** `publisher.ts` was moved from `disaster:enriched` to `discord:queue` before Phase 2 began — corrects premature posting of unenriched events.
+- **FullyEnrichedEvent:** Added `sighting_confidence` and `most_recent_sighting` fields (were missing from Phase 0 stub).

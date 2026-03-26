@@ -9,8 +9,8 @@
 | Phase | Name | Status | Notes |
 |---|---|---|---|
 | 0 | Foundation | ✅ Complete | Monorepo, TypeScript, Redis, Discord skeleton, Neon+PostGIS |
-| 1 | Fire Scout + Basic Pipeline | 🔲 Not started | NASA FIRMS → disaster:raw → Enrichment → Discord |
-| 2 | Full Habitat Coverage + GBIF | 🔲 Not started | Full IUCN polygons, GBIF, Species Context Agent |
+| 1 | Fire Scout + Basic Pipeline | ✅ Complete | NASA FIRMS → PostGIS → Enrichment → Discord live |
+| 2 | Full Habitat Coverage + GBIF | ✅ Complete | 1,372 CR/EN species in PostGIS, GBIF client, Habitat + Species Context agents live |
 | 3 | TypeScript Model Router | 🔲 Not started | ModelRouter.ts, Gemini 2.5 Flash-Lite/Flash routing, cost tracking |
 | 4 | All Five Disaster Sources | 🔲 Not started | NOAA NHC, USGS, Drought Monitor, Coral Reef Watch |
 | 5 | Full Agent Swarm + War Room | 🔲 Not started | Threat Assessment, Synthesis, Discord observability |
@@ -57,16 +57,16 @@
 ## Phase 1 — Fire Scout + Basic Pipeline
 **Goal:** Real NASA FIRMS fire data flows through the pipeline. Discord gets a real alert.
 
-- [ ] `RawDisasterEvent` type defined in shared/types.d.ts
-- [ ] NASA FIRMS Scout Agent (cron, no LLM, publishes to disaster:raw)
-- [ ] Redis consumer group for disaster:raw
-- [ ] Enrichment Agent skeleton (PostGIS lookup only — no LLM yet)
-- [ ] PostGIS habitat polygon loader script (5–10 manual species for testing)
-- [ ] Open-Meteo weather fetch attached to enrichment
-- [ ] `EnrichedDisasterEvent` type
-- [ ] Discord Publisher (posts to #wildlife-alerts and #sentinel-ops)
-- [ ] HITL reaction collector for 'critical' alerts
-- [ ] End-to-end test: real fire event → Discord message
+- [x] `RawDisasterEvent` type defined in shared/types.d.ts
+- [x] NASA FIRMS Scout Agent (cron, no LLM, publishes to disaster:raw)
+- [x] Redis consumer group for disaster:raw
+- [x] Enrichment Agent skeleton (PostGIS lookup only — no LLM yet)
+- [x] PostGIS habitat polygon loader script (10 manual species loaded)
+- [x] Open-Meteo weather fetch attached to enrichment
+- [x] `EnrichedDisasterEvent` type
+- [x] Discord Publisher (posts to #wildlife-alerts and #sentinel-ops)
+- [ ] HITL reaction collector for 'critical' alerts — deferred to Phase 5 (no threat levels yet)
+- [x] End-to-end test: real fire event → Discord message
 
 → See [PHASE_1_FIRE_SCOUT.md](roadmap/PHASE_1_FIRE_SCOUT.md)
 
@@ -75,12 +75,12 @@
 ## Phase 2 — Full Habitat Coverage + GBIF
 **Goal:** All Critically Endangered + Endangered species ranges in PostGIS. GBIF cross-reference working.
 
-- [ ] IUCN bulk shapefile download received + loaded into PostGIS
-- [ ] Shapefile → PostGIS loader script in `scripts/ingest/`
-- [ ] GBIF occurrence API integration
-- [ ] Habitat Agent (Gemini 2.5 Flash-Lite) — GBIF recent sightings
-- [ ] Species Context Agent (Gemini 2.5 Flash) — skeleton without RAG
-- [ ] `EnrichedDisasterEvent` enriched with GBIF + species data
+- [x] IUCN bulk shapefile download received + loaded into PostGIS
+- [x] Shapefile → PostGIS loader script in `scripts/ingest/`
+- [x] GBIF occurrence API integration
+- [x] Habitat Agent (Gemini 2.5 Flash-Lite) — GBIF recent sightings
+- [x] Species Context Agent (Gemini 2.5 Flash) — skeleton without RAG
+- [x] `FullyEnrichedEvent` enriched with GBIF + species data
 
 → See [PHASE_2_FULL_HABITAT.md](roadmap/PHASE_2_FULL_HABITAT.md)
 
