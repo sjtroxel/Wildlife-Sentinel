@@ -1,0 +1,162 @@
+[
+  {
+    "site_code": "02288900",
+    "site_name": "Turner River at Tamiami Trail FL",
+    "lat": 25.9306,
+    "lng": -81.0914,
+    "flood_stage_cfs": 800,
+    "habitat_notes": "Florida panther, wood stork — Big Cypress NP"
+  },
+  {
+    "site_code": "02289000",
+    "site_name": "Tamiami Canal near Ochopee FL",
+    "lat": 25.8567,
+    "lng": -81.3073,
+    "flood_stage_cfs": 1500,
+    "habitat_notes": "Florida panther, American crocodile — Everglades NP"
+  },
+  {
+    "site_code": "02298830",
+    "site_name": "Peace River at Arcadia FL",
+    "lat": 27.2147,
+    "lng": -81.8506,
+    "flood_stage_cfs": 8000,
+    "habitat_notes": "Florida panther, gopher tortoise — Peace River corridor"
+  },
+  {
+    "site_code": "11463980",
+    "site_name": "Russian River near Healdsburg CA",
+    "lat": 38.3468,
+    "lng": -122.7110,
+    "flood_stage_cfs": 11000,
+    "habitat_notes": "Coho salmon, steelhead — NMFS critical habitat"
+  },
+  {
+    "site_code": "11475000",
+    "site_name": "Eel River at Scotia CA",
+    "lat": 40.4885,
+    "lng": -124.0988,
+    "flood_stage_cfs": 50000,
+    "habitat_notes": "Coho salmon, Chinook salmon — Eel River critical habitat"
+  },
+  {
+    "site_code": "11530500",
+    "site_name": "Klamath River near Klamath CA",
+    "lat": 41.5324,
+    "lng": -123.9866,
+    "flood_stage_cfs": 150000,
+    "habitat_notes": "Coho salmon, Chinook salmon, green sturgeon — Klamath Basin"
+  },
+  {
+    "site_code": "14306500",
+    "site_name": "Coquille River near Coquille OR",
+    "lat": 43.1792,
+    "lng": -124.1888,
+    "flood_stage_cfs": 20000,
+    "habitat_notes": "Coho salmon, Oregon Coast coho ESU critical habitat"
+  },
+  {
+    "site_code": "14138800",
+    "site_name": "Sandy River near Marmot OR",
+    "lat": 45.4718,
+    "lng": -122.2304,
+    "flood_stage_cfs": 8000,
+    "habitat_notes": "Bull trout, Chinook salmon — Sandy River critical habitat"
+  },
+  {
+    "site_code": "12025500",
+    "site_name": "Quinault River near Amanda Park WA",
+    "lat": 47.4934,
+    "lng": -123.9023,
+    "flood_stage_cfs": 25000,
+    "habitat_notes": "Bull trout, Chinook salmon — Olympic National Park"
+  },
+  {
+    "site_code": "12041200",
+    "site_name": "Hoh River near Forks WA",
+    "lat": 47.7815,
+    "lng": -124.1543,
+    "flood_stage_cfs": 20000,
+    "habitat_notes": "Bull trout, marbled murrelet — Olympic National Park"
+  },
+  {
+    "site_code": "12115000",
+    "site_name": "Green River near Auburn WA",
+    "lat": 47.3087,
+    "lng": -122.1887,
+    "flood_stage_cfs": 12000,
+    "habitat_notes": "Chinook salmon — critical prey for Southern Resident killer whales"
+  },
+  {
+    "site_code": "13317000",
+    "site_name": "Salmon River at Salmon ID",
+    "lat": 45.1724,
+    "lng": -113.8994,
+    "flood_stage_cfs": 15000,
+    "habitat_notes": "Chinook salmon, bull trout, gray wolf — Frank Church Wilderness"
+  },
+  {
+    "site_code": "12354500",
+    "site_name": "Flathead River near Columbia Falls MT",
+    "lat": 48.3644,
+    "lng": -114.1617,
+    "flood_stage_cfs": 35000,
+    "habitat_notes": "Bull trout, grizzly bear, gray wolf — Glacier NP ecosystem"
+  },
+  {
+    "site_code": "03460000",
+    "site_name": "Pigeon River at Hepco NC",
+    "lat": 35.5887,
+    "lng": -82.9398,
+    "flood_stage_cfs": 5000,
+    "habitat_notes": "Eastern hellbender, brook trout — Southern Appalachian headwaters"
+  },
+  {
+    "site_code": "03504000",
+    "site_name": "Little Tennessee River near Prentiss NC",
+    "lat": 35.1762,
+    "lng": -83.5582,
+    "flood_stage_cfs": 8000,
+    "habitat_notes": "Eastern hellbender, spotfin chub — Little Tennessee drainage"
+  },
+  {
+    "site_code": "08374000",
+    "site_name": "Rio Grande at Johnsons Ranch TX",
+    "lat": 29.3575,
+    "lng": -102.9303,
+    "flood_stage_cfs": 10000,
+    "habitat_notes": "Black bear, mountain lion — Big Bend NP riparian corridor"
+  },
+  {
+    "site_code": "09471000",
+    "site_name": "San Francisco River near Clifton AZ",
+    "lat": 33.0581,
+    "lng": -109.2939,
+    "flood_stage_cfs": 3000,
+    "habitat_notes": "Jaguar, Mexican wolf — Blue Range Wolf Recovery Area"
+  },
+  {
+    "site_code": "09430500",
+    "site_name": "Gila River at Gila NM",
+    "lat": 33.0442,
+    "lng": -108.5661,
+    "flood_stage_cfs": 5000,
+    "habitat_notes": "Loach minnow, spikedace, Mexican wolf — Gila Wilderness"
+  },
+  {
+    "site_code": "07381590",
+    "site_name": "Atchafalaya River at Krotz Springs LA",
+    "lat": 30.5333,
+    "lng": -91.7653,
+    "flood_stage_cfs": 500000,
+    "habitat_notes": "Gulf sturgeon, whooping crane adjacent — Atchafalaya Basin"
+  },
+  {
+    "site_code": "16503000",
+    "site_name": "Wailuku River near Hilo HI",
+    "lat": 19.7106,
+    "lng": -155.1108,
+    "flood_stage_cfs": 10000,
+    "habitat_notes": "Hawaiian petrel, nene — Hawaii Volcanoes NP watershed"
+  }
+]

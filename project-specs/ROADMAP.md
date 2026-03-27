@@ -12,12 +12,13 @@
 | 1 | Fire Scout + Basic Pipeline | ✅ Complete | NASA FIRMS → PostGIS → Enrichment → Discord live |
 | 2 | Full Habitat Coverage + GBIF | ✅ Complete | 1,372 CR/EN species in PostGIS, GBIF client, Habitat + Species Context agents live |
 | 3 | TypeScript Model Router | ✅ Complete | ModelRouter.ts singleton, all SDK imports centralized, cost tracking live |
-| 4 | All Five Disaster Sources | 🔲 Not started | NOAA NHC, USGS, Drought Monitor, Coral Reef Watch |
+| 4 | All Five Disaster Sources | ✅ Complete | NHC, USGS, Drought Monitor, Coral Reef Watch scouts live |
 | 5 | Full Agent Swarm + War Room | 🔲 Not started | Threat Assessment, Synthesis, Discord observability |
 | 6 | RAG Knowledge Base | 🔲 Not started | Google embeddings, species_facts + conservation_context indices |
 | 7 | Refiner / Evaluator Loop | 🔲 Not started | 24h/48h evaluator, system prompt updates, score tracking |
 | 8 | Frontend | 🔲 Not started | Next.js, Leaflet map, alerts feed, agent activity SSE, refiner chart |
 | 9 | Hardening + Deploy | 🔲 Not started | Tests, Playwright E2E, Railway + Vercel deploy, weekly digest |
+| 10 | Expansions & Enhancements | 🔲 Expansion | Global data sources, UI polish, new features — post-launch improvements |
 
 ---
 
@@ -105,13 +106,13 @@
 ## Phase 4 — All Five Disaster Sources
 **Goal:** All five Scout agents polling. All events flow into the same pipeline.
 
-- [ ] NOAA NHC Scout Agent (storm data)
-- [ ] USGS NWIS Scout Agent (flood stage gauges)
-- [ ] US Drought Monitor Scout Agent (weekly severity)
-- [ ] NOAA Coral Reef Watch Scout Agent (bleaching alerts)
-- [ ] Scout agent deduplication working for all five sources
-- [ ] Event normalization to RawDisasterEvent schema for all types
-- [ ] Pipeline handles all five event_types correctly
+- [x] NOAA NHC Scout Agent (storm data)
+- [x] USGS NWIS Scout Agent (flood stage gauges)
+- [x] US Drought Monitor Scout Agent (weekly severity)
+- [x] NOAA Coral Reef Watch Scout Agent (bleaching alerts)
+- [x] Scout agent deduplication working for all five sources
+- [x] Event normalization to RawDisasterEvent schema for all types
+- [x] Pipeline handles all five event_types correctly
 
 → See [PHASE_4_ALL_DISASTERS.md](roadmap/PHASE_4_ALL_DISASTERS.md)
 
@@ -198,3 +199,19 @@
 - [ ] End-to-end smoke test on production
 
 → See [PHASE_9_HARDENING.md](roadmap/PHASE_9_HARDENING.md)
+
+---
+
+## Phase 10 — Expansions & Enhancements
+**Goal:** Post-launch improvements — global data coverage, UI polish, and new features. Items are added here as they're identified. Not all need to ship together.
+
+- [ ] **Global flood monitoring:** Replace USGS NWIS with GloFAS (Copernicus) for Amazon, Congo, Mekong coverage
+- [ ] **Global cyclone coverage:** Replace NOAA NHC with IBTrACS/GDACS for Western Pacific, Indian Ocean basins
+- [ ] **Global drought coverage:** Replace US Drought Monitor with GRACE-FO or CHIRPS for sub-Saharan Africa, Australia, Central Asia
+- [ ] **Dynamic gauge selection:** Replace static `usgs-sites.json` with PostGIS spatial query at startup
+- [ ] **Frontend enhancements:** Additional map layers, filtering by event type or threat level, dark mode
+- [ ] **Alert history:** Searchable archive page on the frontend
+- [ ] **Weekly digest:** Automated Sunday summary post to #wildlife-alerts
+- [ ] *(add more items here as they come up)*
+
+→ See [PHASE_10_EXPANSIONS.md](roadmap/PHASE_10_EXPANSIONS.md)

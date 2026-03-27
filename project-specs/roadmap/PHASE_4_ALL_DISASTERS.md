@@ -362,3 +362,21 @@ if (event.event_type === 'tropical_storm') {
 - Drought events have weekly cadence — they will be rare events in the Discord channel, which is correct. Drought is slow-moving; alerting once per week per county is appropriate.
 - Coral Reef Watch alert areas are polygon-based, not point-based — use polygon centroid as the `coordinates` value for compatibility with the PostGIS point query
 - Marine species ranges are included in the same `species_ranges` table — no separate handling needed for marine events. The 75km radius check works for both terrestrial and marine geographies.
+
+---
+
+## Geographic Scope Limitations (MVP Decision)
+
+Three of the four new scouts in this phase have limited geographic coverage. This is a known, accepted trade-off for MVP. NASA FIRMS (Phase 1) is genuinely global; the others are not:
+
+| Scout | Coverage | What's missing |
+|---|---|---|
+| NASA FIRMS | **Global** | Nothing |
+| NOAA NHC | Atlantic basin + Eastern Pacific only | Western Pacific typhoons (Philippines, Japan, SE Asia), Indian Ocean cyclones |
+| USGS NWIS | **US only** | Amazon, Congo, Mekong, Ganges, Yangtze — all major tropical river systems with critical wildlife habitat |
+| US Drought Monitor | **US only** | Sub-Saharan Africa, Australian outback, Central Asian steppes |
+| NOAA Coral Reef Watch | **Global** | Nothing (satellite-based, covers all coral reef geographies) |
+
+The USGS and Drought Monitor scouts cover important US-based habitats (Florida panther, California salmon, Pacific Northwest species) and use authoritative, high-reliability data sources within their scope. Global reach is deliberately deferred to Phase 10.
+
+**See Phase 10 spec for the plan to replace/augment these with global equivalents.**

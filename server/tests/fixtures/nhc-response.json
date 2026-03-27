@@ -1,0 +1,34 @@
+{
+  "activeStorms": [
+    {
+      "id": "al012025",
+      "name": "ANA",
+      "classification": "HU",
+      "intensity": "75",
+      "pressure": "978",
+      "latitude": "18.2N",
+      "longitude": "74.5W",
+      "movementDir": "310",
+      "movementSpeed": "14",
+      "lastUpdate": "2025-07-10T03:00:00.000Z",
+      "publicAdvisory": {
+        "advNum": "009A"
+      }
+    },
+    {
+      "id": "ep022025",
+      "name": "BLANCA",
+      "classification": "TS",
+      "intensity": "50",
+      "pressure": "994",
+      "latitude": "16.8N",
+      "longitude": "110.3W",
+      "movementDir": "295",
+      "movementSpeed": "8",
+      "lastUpdate": "2025-07-10T09:00:00.000Z",
+      "publicAdvisory": {
+        "advNum": "003"
+      }
+    }
+  ]
+}

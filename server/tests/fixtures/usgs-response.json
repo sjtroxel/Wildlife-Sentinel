@@ -1,0 +1,38 @@
+{
+  "value": {
+    "timeSeries": [
+      {
+        "sourceInfo": {
+          "siteName": "RUSSIAN RIVER NEAR HEALDSBURG CA",
+          "siteCode": [{ "value": "11463980" }]
+        },
+        "values": [
+          {
+            "value": [
+              {
+                "value": "13500.0",
+                "dateTime": "2025-01-15T12:00:00.000-08:00"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "sourceInfo": {
+          "siteName": "TURNER RIVER AT TAMIAMI TRAIL FL",
+          "siteCode": [{ "value": "02288900" }]
+        },
+        "values": [
+          {
+            "value": [
+              {
+                "value": "650.0",
+                "dateTime": "2025-01-15T12:00:00.000-05:00"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

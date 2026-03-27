@@ -98,6 +98,10 @@ export async function processEvent(event: RawDisasterEvent): Promise<void> {
 
   const enriched: EnrichedDisasterEvent = {
     ...event,
+    raw_data: {
+      ...event.raw_data,
+      ...buildStormProjection(event),
+    },
     wind_direction: windDir,
     wind_speed: windSpeed,
     precipitation_probability: precipProb,
@@ -163,6 +167,61 @@ async function fetchWeather(lat: number, lng: number): Promise<OpenMeteoHourly> 
 
   const data = await res.json() as { hourly: OpenMeteoHourly };
   return data.hourly;
+}
+
+// For tropical_storm events: project the storm's position 24h forward based on
+// current track (movement direction + speed from NHC raw_data).
+// Returns extra fields to merge into raw_data, or {} for non-storm events.
+function buildStormProjection(event: RawDisasterEvent): Record<string, unknown> {
+  if (event.event_type !== 'tropical_storm') return {};
+
+  const movementDirDeg = event.raw_data['movement_dir_deg'];
+  const movementSpeedKts = event.raw_data['movement_speed_knots'];
+
+  if (typeof movementDirDeg !== 'number' || typeof movementSpeedKts !== 'number') return {};
+
+  // Distance in 24h: speed (knots) × 1.852 km/knot × 24h
+  const distanceKm = movementSpeedKts * 1.852 * 24;
+
+  const { lat, lng } = event.coordinates;
+  const { lat: projLat, lng: projLng } = projectCoordinate(lat, lng, movementDirDeg, distanceKm);
+
+  return {
+    projected_24h_lat: Math.round(projLat * 1000) / 1000,
+    projected_24h_lng: Math.round(projLng * 1000) / 1000,
+    projected_24h_distance_km: Math.round(distanceKm),
+  };
+}
+
+// Spherical Earth projection: given origin (lat/lng), bearing (degrees clockwise from N),
+// and distance (km), returns the destination lat/lng.
+function projectCoordinate(
+  lat: number,
+  lng: number,
+  bearingDeg: number,
+  distanceKm: number
+): { lat: number; lng: number } {
+  const R = 6_371; // Earth radius km
+  const d = distanceKm / R;
+  const bearing = (bearingDeg * Math.PI) / 180;
+  const lat1 = (lat * Math.PI) / 180;
+  const lng1 = (lng * Math.PI) / 180;
+
+  const lat2 = Math.asin(
+    Math.sin(lat1) * Math.cos(d) +
+    Math.cos(lat1) * Math.sin(d) * Math.cos(bearing)
+  );
+  const lng2 =
+    lng1 +
+    Math.atan2(
+      Math.sin(bearing) * Math.sin(d) * Math.cos(lat1),
+      Math.cos(d) - Math.sin(lat1) * Math.sin(lat2)
+    );
+
+  return {
+    lat: (lat2 * 180) / Math.PI,
+    lng: (lng2 * 180) / Math.PI,
+  };
 }
 
 function bearingToCardinal(degrees: number): string {

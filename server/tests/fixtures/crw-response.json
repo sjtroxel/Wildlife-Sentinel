@@ -1,0 +1,65 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [145.0, -16.0],
+            [146.0, -16.0],
+            [146.0, -17.0],
+            [145.0, -17.0],
+            [145.0, -16.0]
+          ]
+        ]
+      },
+      "properties": {
+        "alert_level": 3,
+        "alert_label": "Bleaching Alert Level 1",
+        "max_dhw": 8.4
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-157.0, 21.0],
+            [-156.0, 21.0],
+            [-156.0, 20.0],
+            [-157.0, 20.0],
+            [-157.0, 21.0]
+          ]
+        ]
+      },
+      "properties": {
+        "alert_level": 1,
+        "alert_label": "Bleaching Watch",
+        "max_dhw": 2.1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [39.0, -10.0],
+            [40.0, -10.0],
+            [40.0, -11.0],
+            [39.0, -11.0],
+            [39.0, -10.0]
+          ]
+        ]
+      },
+      "properties": {
+        "alert_level": 2,
+        "alert_label": "Bleaching Warning",
+        "max_dhw": 4.7
+      }
+    }
+  ]
+}
