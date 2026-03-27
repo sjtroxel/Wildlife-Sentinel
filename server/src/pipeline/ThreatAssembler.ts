@@ -1,0 +1,73 @@
+/**
+ * ThreatAssembler — fan-in coordinator for the Habitat + Species Context agents.
+ *
+ * Both agents consume disaster:enriched in parallel. Each stores its result
+ * in a Redis hash keyed by event ID. When all three parts are present
+ * (event + habitat + species), the assembler publishes the FullyEnrichedEvent
+ * to alerts:assessed and clears the hash.
+ *
+ * TTL of 300s ensures partial hashes are cleaned up even if one agent crashes.
+ */
+import type { EnrichedDisasterEvent, FullyEnrichedEvent, GBIFSighting, SpeciesBrief } from '@wildlife-sentinel/shared/types';
+import { redis } from '../redis/client.js';
+import { STREAMS } from '../pipeline/streams.js';
+
+const ASSEMBLY_TTL_SECONDS = 300;
+
+function assemblyKey(eventId: string): string {
+  return `assembly:${eventId}`;
+}
+
+export interface HabitatAssemblyResult {
+  gbif_recent_sightings: GBIFSighting[];
+  sighting_confidence: 'confirmed' | 'possible' | 'historical_only';
+  most_recent_sighting: string | null;
+}
+
+export interface SpeciesAssemblyResult {
+  species_briefs: SpeciesBrief[];
+}
+
+export async function storeEventForAssembly(eventId: string, event: EnrichedDisasterEvent): Promise<void> {
+  const key = assemblyKey(eventId);
+  await redis.hset(key, 'event', JSON.stringify(event));
+  await redis.expire(key, ASSEMBLY_TTL_SECONDS);
+}
+
+export async function storeHabitatResult(eventId: string, result: HabitatAssemblyResult): Promise<void> {
+  const key = assemblyKey(eventId);
+  await redis.hset(key, 'habitat', JSON.stringify(result));
+  await redis.expire(key, ASSEMBLY_TTL_SECONDS);
+  await tryAssemble(eventId);
+}
+
+export async function storeSpeciesResult(eventId: string, result: SpeciesAssemblyResult): Promise<void> {
+  const key = assemblyKey(eventId);
+  await redis.hset(key, 'species', JSON.stringify(result));
+  await redis.expire(key, ASSEMBLY_TTL_SECONDS);
+  await tryAssemble(eventId);
+}
+
+async function tryAssemble(eventId: string): Promise<void> {
+  const key = assemblyKey(eventId);
+  const stored = await redis.hgetall(key);
+
+  if (!stored['event'] || !stored['habitat'] || !stored['species']) return;
+
+  const event = JSON.parse(stored['event']) as EnrichedDisasterEvent;
+  const habitat = JSON.parse(stored['habitat']) as HabitatAssemblyResult;
+  const species = JSON.parse(stored['species']) as SpeciesAssemblyResult;
+
+  const fullyEnriched: FullyEnrichedEvent = {
+    ...event,
+    gbif_recent_sightings: habitat.gbif_recent_sightings,
+    species_briefs: species.species_briefs,
+    sighting_confidence: habitat.sighting_confidence,
+    most_recent_sighting: habitat.most_recent_sighting,
+  };
+
+  await redis.xadd(STREAMS.ASSESSED, '*', 'data', JSON.stringify(fullyEnriched));
+  await redis.del(key);
+
+  console.log(`[assembler] ${eventId} | assembled + published to alerts:assessed`);
+}

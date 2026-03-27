@@ -7,6 +7,9 @@ import { startBot } from './discord/bot.js';
 import { startScouts } from './scouts/index.js';
 import { startEnrichmentAgent } from './agents/EnrichmentAgent.js';
 import { startHabitatAgent } from './agents/HabitatAgent.js';
+import { startSpeciesContextAgent } from './agents/SpeciesContextAgent.js';
+import { startThreatAssessmentAgent } from './agents/ThreatAssessmentAgent.js';
+import { startSynthesisAgent } from './agents/SynthesisAgent.js';
 import { startDiscordPublisher } from './discord/publisher.js';
 
 async function main(): Promise<void> {
@@ -32,6 +35,9 @@ async function main(): Promise<void> {
   startScouts();
   void startEnrichmentAgent();
   void startHabitatAgent();
+  void startSpeciesContextAgent();
+  void startThreatAssessmentAgent();
+  void startSynthesisAgent();
   void startDiscordPublisher();
 
   app.listen(config.port, () => {

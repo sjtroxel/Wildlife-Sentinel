@@ -1,0 +1,11 @@
+{
+  "threat_level": "high",
+  "predicted_impact": "Fire likely to spread northwest 35-45km over the next 24 hours driven by sustained westerly winds, placing Sumatran Orangutan core nesting habitat at significant risk of direct encroachment.",
+  "compounding_factors": [
+    "Species already at historic population low (~13,600 individuals)",
+    "Dry season conditions reducing moisture-based fire suppression",
+    "Confirmed recent GBIF sightings within 20km of fire perimeter"
+  ],
+  "recommended_action": "Alert conservation teams in North Aceh and West Kalimantan for immediate habitat monitoring and potential wildlife rescue standby.",
+  "reasoning": "Fire severity (87% normalized) combined with westerly winds at 18.5 km/h projects a northeast fire spread toward documented orangutan range polygons. GBIF sighting data 14 days ago confirms active habitat use. Distance of 18.3km is within the 25km high-threat threshold per guidelines."
+}

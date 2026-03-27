@@ -5,6 +5,7 @@ import { redis } from '../redis/client.js';
 import { STREAMS, CONSUMER_GROUPS, ensureConsumerGroup } from '../pipeline/streams.js';
 import { logPipelineEvent } from '../db/pipelineEvents.js';
 import { modelRouter } from '../router/ModelRouter.js';
+import { storeEventForAssembly } from '../pipeline/ThreatAssembler.js';
 
 const HABITAT_RADIUS_METERS = 75_000; // 75 km
 
@@ -112,6 +113,10 @@ export async function processEvent(event: RawDisasterEvent): Promise<void> {
   };
 
   await redis.xadd(STREAMS.ENRICHED, '*', 'data', JSON.stringify(enriched));
+
+  // Store the enriched event in the assembly hash so ThreatAssembler can
+  // fan-in results from HabitatAgent + SpeciesContextAgent.
+  await storeEventForAssembly(event.id, enriched);
 
   await logPipelineEvent({
     event_id: event.id,

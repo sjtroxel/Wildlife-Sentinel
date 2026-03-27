@@ -35,6 +35,10 @@ vi.mock('../../src/db/pipelineEvents.js', () => ({
   logPipelineEvent: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock('../../src/pipeline/ThreatAssembler.js', () => ({
+  storeEventForAssembly: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('../../src/router/ModelRouter.js', () => ({
   modelRouter: {
     complete: vi.fn().mockResolvedValue({

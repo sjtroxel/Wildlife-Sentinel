@@ -2,9 +2,9 @@
 
 **Goal:** All four remaining Scout agents implemented and polling. All five event types flow through the same pipeline without errors.
 
-**Status:** Not started
+**Status:** ✅ Complete (2026-03-27)
 **Depends on:** Phase 3 complete
-**Estimated sessions:** 2
+**Estimated sessions:** 2 (actual: 1)
 
 ---
 

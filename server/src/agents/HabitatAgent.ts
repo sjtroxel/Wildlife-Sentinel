@@ -6,13 +6,14 @@
  *              Phase 5 refactors this into parallel Redis consumers.
  */
 import { MODELS } from '@wildlife-sentinel/shared/models';
-import type { EnrichedDisasterEvent, FullyEnrichedEvent, GBIFSighting } from '@wildlife-sentinel/shared/types';
+import type { EnrichedDisasterEvent, GBIFSighting } from '@wildlife-sentinel/shared/types';
 import { redis } from '../redis/client.js';
 import { STREAMS, CONSUMER_GROUPS, ensureConsumerGroup } from '../pipeline/streams.js';
 import { logPipelineEvent } from '../db/pipelineEvents.js';
 import { fetchRecentSightings } from '../scouts/gbif.js';
 import { modelRouter } from '../router/ModelRouter.js';
-import { runSpeciesContextAgent } from './SpeciesContextAgent.js';
+import { storeHabitatResult } from '../pipeline/ThreatAssembler.js';
+import { logToWarRoom } from '../discord/warRoom.js';
 
 const SLEEP_MS = 100; // polite delay between GBIF calls
 const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
@@ -82,14 +83,6 @@ async function processEvent(event: EnrichedDisasterEvent): Promise<void> {
   // LLM classifies what the sightings mean
   const analysis = await analyzeGBIFSightings(event.species_at_risk, allSightings);
 
-  const fullyEnriched: FullyEnrichedEvent = {
-    ...event,
-    gbif_recent_sightings: allSightings,
-    species_briefs: [],           // SpeciesContextAgent fills this
-    sighting_confidence: analysis.sighting_confidence,
-    most_recent_sighting: analysis.most_recent_sighting,
-  };
-
   await logPipelineEvent({
     event_id: event.id,
     source: event.source,
@@ -103,8 +96,17 @@ async function processEvent(event: EnrichedDisasterEvent): Promise<void> {
     `confidence: ${analysis.sighting_confidence} | most_recent: ${analysis.most_recent_sighting ?? 'none'}`
   );
 
-  // TODO Phase 5: publish to intermediate stream; SpeciesContextAgent becomes an independent consumer
-  await runSpeciesContextAgent(fullyEnriched);
+  await logToWarRoom({
+    agent: 'habitat',
+    action: 'GBIF',
+    detail: `${sightingCount} sightings | confidence: ${analysis.sighting_confidence} | most_recent: ${analysis.most_recent_sighting ?? 'none'}`,
+  });
+
+  await storeHabitatResult(event.id, {
+    gbif_recent_sightings: allSightings,
+    sighting_confidence: analysis.sighting_confidence,
+    most_recent_sighting: analysis.most_recent_sighting,
+  });
 }
 
 async function analyzeGBIFSightings(

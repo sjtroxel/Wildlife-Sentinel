@@ -2,17 +2,19 @@
  * Species Context Agent — generates a SpeciesBrief for each at-risk species.
  *
  * Uses model training data only (no RAG — Phase 6 adds that).
- * Called directly by HabitatAgent (no consumer loop — Phase 5 adds that).
+ * Independent consumer of disaster:enriched (species-group).
+ * Publishes species briefs to ThreatAssembler for fan-in with HabitatAgent results.
  *
  * IUCN status is always sourced from the database, not the LLM.
  */
 import { MODELS } from '@wildlife-sentinel/shared/models';
-import type { FullyEnrichedEvent, SpeciesBrief, IUCNStatus } from '@wildlife-sentinel/shared/types';
+import type { EnrichedDisasterEvent, SpeciesBrief, IUCNStatus } from '@wildlife-sentinel/shared/types';
 import { sql } from '../db/client.js';
 import { redis } from '../redis/client.js';
-import { STREAMS } from '../pipeline/streams.js';
+import { STREAMS, CONSUMER_GROUPS, ensureConsumerGroup } from '../pipeline/streams.js';
 import { logPipelineEvent } from '../db/pipelineEvents.js';
 import { modelRouter } from '../router/ModelRouter.js';
+import { storeSpeciesResult } from '../pipeline/ThreatAssembler.js';
 
 const SYSTEM_PROMPT =
   'You are a wildlife conservation assistant. Provide a brief factual summary for the given species. ' +
@@ -31,8 +33,43 @@ interface GeminiSpeciesResponse {
   confidence_note: string;
 }
 
-// TODO Phase 5: add consumer loop — this becomes an independent Redis consumer of disaster:enriched
-export async function runSpeciesContextAgent(event: FullyEnrichedEvent): Promise<void> {
+export async function startSpeciesContextAgent(): Promise<void> {
+  await ensureConsumerGroup(STREAMS.ENRICHED, CONSUMER_GROUPS.SPECIES);
+  console.log('[species-context] Consumer group ready. Waiting for enriched events...');
+
+  while (true) {
+    const messages = await redis.xreadgroup(
+      'GROUP', CONSUMER_GROUPS.SPECIES, 'species-worker-1',
+      'COUNT', '10', 'BLOCK', '5000',
+      'STREAMS', STREAMS.ENRICHED, '>'
+    ) as [string, [string, string[]][]][] | null;
+
+    if (!messages) continue;
+
+    for (const [, entries] of messages) {
+      for (const [messageId, fields] of entries) {
+        const event = JSON.parse(fields[1] ?? '{}') as EnrichedDisasterEvent;
+
+        try {
+          await processSpeciesEvent(event);
+          await redis.xack(STREAMS.ENRICHED, CONSUMER_GROUPS.SPECIES, messageId);
+        } catch (err) {
+          console.error('[species-context] Error processing event:', err);
+          await redis.xack(STREAMS.ENRICHED, CONSUMER_GROUPS.SPECIES, messageId);
+          await logPipelineEvent({
+            event_id: event.id,
+            source: event.source,
+            stage: 'species',
+            status: 'error',
+            reason: String(err),
+          });
+        }
+      }
+    }
+  }
+}
+
+async function processSpeciesEvent(event: EnrichedDisasterEvent): Promise<void> {
   const briefs: SpeciesBrief[] = [];
 
   for (const speciesName of event.species_at_risk) {
@@ -40,9 +77,7 @@ export async function runSpeciesContextAgent(event: FullyEnrichedEvent): Promise
     briefs.push(brief);
   }
 
-  const assembled: FullyEnrichedEvent = { ...event, species_briefs: briefs };
-
-  await redis.xadd(STREAMS.DISCORD, '*', 'data', JSON.stringify(assembled));
+  await storeSpeciesResult(event.id, { species_briefs: briefs });
 
   await logPipelineEvent({
     event_id: event.id,
@@ -53,7 +88,7 @@ export async function runSpeciesContextAgent(event: FullyEnrichedEvent): Promise
   });
 
   console.log(
-    `[species-context] ${event.id} | briefs: ${briefs.length} | published to discord:queue`
+    `[species-context] ${event.id} | briefs: ${briefs.length} | stored for assembly`
   );
 }
 

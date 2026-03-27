@@ -13,7 +13,7 @@
 | 2 | Full Habitat Coverage + GBIF | ✅ Complete | 1,372 CR/EN species in PostGIS, GBIF client, Habitat + Species Context agents live |
 | 3 | TypeScript Model Router | ✅ Complete | ModelRouter.ts singleton, all SDK imports centralized, cost tracking live |
 | 4 | All Five Disaster Sources | ✅ Complete | NHC, USGS, Drought Monitor, Coral Reef Watch scouts live |
-| 5 | Full Agent Swarm + War Room | 🔲 Not started | Threat Assessment, Synthesis, Discord observability |
+| 5 | Full Agent Swarm + War Room | ✅ Complete | ThreatAssembler fan-in, Threat Assessment + Synthesis (Claude Sonnet), HITL, war room |
 | 6 | RAG Knowledge Base | 🔲 Not started | Google embeddings, species_facts + conservation_context indices |
 | 7 | Refiner / Evaluator Loop | 🔲 Not started | 24h/48h evaluator, system prompt updates, score tracking |
 | 8 | Frontend | 🔲 Not started | Next.js, Leaflet map, alerts feed, agent activity SSE, refiner chart |
@@ -121,13 +121,13 @@
 ## Phase 5 — Full Agent Swarm + Discord War Room
 **Goal:** Complete intelligence pipeline. Quality Discord alerts. Observability in #sentinel-ops.
 
-- [ ] Threat Assessment Agent (Claude Sonnet 4.6)
-- [ ] Confidence scoring from observable fields (not self-reported)
-- [ ] `agent_prompts` table — system prompts stored in DB (updateable by Refiner)
-- [ ] Synthesis Agent (Claude Sonnet 4.6) — rich Discord embeds
-- [ ] Threat level routing (low: drop, medium/high: auto-post, critical: HITL)
-- [ ] #sentinel-ops observability log format (one line per agent action)
-- [ ] End-to-end test: raw event → threat assessment → Discord embed
+- [x] Threat Assessment Agent (Claude Sonnet 4.6)
+- [x] Confidence scoring from observable fields (not self-reported)
+- [x] `agent_prompts` table — system prompts stored in DB (updateable by Refiner)
+- [x] Synthesis Agent (Claude Sonnet 4.6) — rich Discord embeds
+- [x] Threat level routing (low: drop, medium/high: auto-post, critical: HITL)
+- [x] #sentinel-ops observability log format (one line per agent action)
+- [x] End-to-end test: raw event → threat assessment → Discord embed
 
 → See [PHASE_5_FULL_SWARM.md](roadmap/PHASE_5_FULL_SWARM.md)
 
