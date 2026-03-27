@@ -35,6 +35,19 @@ vi.mock('../../src/db/pipelineEvents.js', () => ({
   logPipelineEvent: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock('../../src/router/ModelRouter.js', () => ({
+  modelRouter: {
+    complete: vi.fn().mockResolvedValue({
+      content: 'Wind: 18.5 km/h from W. Precipitation: 5%.',
+      model: 'gemini-2.5-flash-lite',
+      inputTokens: 50,
+      outputTokens: 20,
+      estimatedCostUsd: 0,
+    }),
+    embed: vi.fn(),
+  },
+}));
+
 import { redis } from '../../src/redis/client.js';
 import { logPipelineEvent } from '../../src/db/pipelineEvents.js';
 import { processEvent } from '../../src/agents/EnrichmentAgent.js';

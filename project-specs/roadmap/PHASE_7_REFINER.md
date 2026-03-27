@@ -21,10 +21,10 @@ The Refiner/Evaluator Agent runs twice per fire/storm alert — at 24h and 48h a
 
 ## 1. Database Tables
 
-### `server/src/db/migrations/0005_refiner.sql`
+### `server/src/db/migrations/0006_refiner.sql`
 
 ```sql
--- Migration: 0005_refiner
+-- Migration: 0006_refiner
 
 -- Up
 

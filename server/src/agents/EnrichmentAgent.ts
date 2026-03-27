@@ -1,8 +1,10 @@
 import type { RawDisasterEvent, EnrichedDisasterEvent } from '@wildlife-sentinel/shared/types';
+import { MODELS } from '@wildlife-sentinel/shared/models';
 import { sql } from '../db/client.js';
 import { redis } from '../redis/client.js';
 import { STREAMS, CONSUMER_GROUPS, ensureConsumerGroup } from '../pipeline/streams.js';
 import { logPipelineEvent } from '../db/pipelineEvents.js';
+import { modelRouter } from '../router/ModelRouter.js';
 
 const HABITAT_RADIUS_METERS = 75_000; // 75 km
 
@@ -92,9 +94,7 @@ export async function processEvent(event: RawDisasterEvent): Promise<void> {
   const windSpeed = weather.wind_speed_10m[0] ?? null;
   const precipProb = weather.precipitation_probability[0] ?? null;
 
-  const weather_summary = windSpeed !== null && windDir !== null
-    ? `Wind: ${windSpeed.toFixed(1)} km/h from ${bearingToCardinal(windDir)}. Precipitation: ${precipProb ?? 'unknown'}%.`
-    : 'Weather data unavailable.';
+  const weather_summary = await generateWeatherSummary(windSpeed, windDir, precipProb);
 
   const enriched: EnrichedDisasterEvent = {
     ...event,
@@ -122,6 +122,32 @@ export async function processEvent(event: RawDisasterEvent): Promise<void> {
     `habitats: ${habitats.length} | ` +
     `nearest: ${enriched.species_at_risk[0]} @ ${enriched.habitat_distance_km.toFixed(1)}km`
   );
+}
+
+async function generateWeatherSummary(
+  windSpeed: number | null,
+  windDir: number | null,
+  precipProb: number | null
+): Promise<string> {
+  if (windSpeed === null && windDir === null) return 'Weather data unavailable.';
+
+  const fallback = windSpeed !== null && windDir !== null
+    ? `Wind: ${windSpeed.toFixed(1)} km/h from ${bearingToCardinal(windDir)}. Precipitation: ${precipProb ?? 'unknown'}%.`
+    : 'Weather data unavailable.';
+
+  try {
+    const result = await modelRouter.complete({
+      model: MODELS.GEMINI_FLASH_LITE,
+      systemPrompt: 'Summarize weather conditions for a wildlife disaster assessment in one concise sentence. Focus on fire spread or flood risk implications.',
+      userMessage: `Wind speed: ${windSpeed?.toFixed(1) ?? 'unknown'} km/h from ${windDir !== null ? bearingToCardinal(windDir) : 'unknown'} direction. Precipitation probability: ${precipProb ?? 'unknown'}%.`,
+      maxTokens: 100,
+      temperature: 0.1,
+    });
+    return result.content.trim();
+  } catch (err) {
+    console.warn('[enrichment] Weather summary generation failed, using fallback:', err);
+    return fallback;
+  }
 }
 
 async function fetchWeather(lat: number, lng: number): Promise<OpenMeteoHourly> {

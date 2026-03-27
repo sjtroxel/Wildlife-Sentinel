@@ -21,10 +21,10 @@ Two separate vector indices in Neon (pgvector). Both use Google `text-embedding-
 
 ## 1. Database Tables
 
-### `server/src/db/migrations/0004_rag_tables.sql`
+### `server/src/db/migrations/0005_rag_tables.sql`
 
 ```sql
--- Migration: 0004_rag_tables
+-- Migration: 0005_rag_tables
 
 -- Up
 

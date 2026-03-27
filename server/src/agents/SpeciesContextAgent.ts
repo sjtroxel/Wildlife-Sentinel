@@ -1,28 +1,18 @@
 /**
  * Species Context Agent — generates a SpeciesBrief for each at-risk species.
  *
- * Phase 2: uses Gemini 2.5 Flash directly (no ModelRouter — Phase 3 adds that).
- * Phase 2: uses model training data only (no RAG — Phase 6 adds that).
- * Phase 2: called directly by HabitatAgent (no consumer loop — Phase 5 adds that).
+ * Uses model training data only (no RAG — Phase 6 adds that).
+ * Called directly by HabitatAgent (no consumer loop — Phase 5 adds that).
  *
  * IUCN status is always sourced from the database, not the LLM.
  */
-import { GoogleGenerativeAI } from '@google/generative-ai';
-// TODO Phase 3: import { modelRouter } from '../router/ModelRouter.js' and remove direct SDK use
 import { MODELS } from '@wildlife-sentinel/shared/models';
 import type { FullyEnrichedEvent, SpeciesBrief, IUCNStatus } from '@wildlife-sentinel/shared/types';
-import { config } from '../config.js';
 import { sql } from '../db/client.js';
 import { redis } from '../redis/client.js';
 import { STREAMS } from '../pipeline/streams.js';
 import { logPipelineEvent } from '../db/pipelineEvents.js';
-
-// TODO Phase 3: replace with ModelRouter call
-const genai = new GoogleGenerativeAI(config.googleAiKey);
-const geminiModel = genai.getGenerativeModel({
-  model: MODELS.GEMINI_FLASH,
-  generationConfig: { responseMimeType: 'application/json' },
-});
+import { modelRouter } from '../router/ModelRouter.js';
 
 const SYSTEM_PROMPT =
   'You are a wildlife conservation assistant. Provide a brief factual summary for the given species. ' +
@@ -78,14 +68,15 @@ async function generateSpeciesBrief(speciesName: string): Promise<SpeciesBrief> 
     : 'LC';
 
   try {
-    const result = await geminiModel.generateContent({
-      contents: [{
-        role: 'user',
-        parts: [{ text: `${SYSTEM_PROMPT}\n\nSpecies: ${speciesName} (IUCN status: ${iucnStatus})` }],
-      }],
+    const result = await modelRouter.complete({
+      model: MODELS.GEMINI_FLASH,
+      systemPrompt: SYSTEM_PROMPT,
+      userMessage: `Species: ${speciesName} (IUCN status: ${iucnStatus})`,
+      maxTokens: 512,
+      jsonMode: true,
     });
 
-    const parsed = JSON.parse(result.response.text()) as GeminiSpeciesResponse;
+    const parsed = JSON.parse(result.content) as GeminiSpeciesResponse;
 
     return {
       species_name: speciesName,

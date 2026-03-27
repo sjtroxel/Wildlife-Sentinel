@@ -11,7 +11,7 @@
 | 0 | Foundation | ✅ Complete | Monorepo, TypeScript, Redis, Discord skeleton, Neon+PostGIS |
 | 1 | Fire Scout + Basic Pipeline | ✅ Complete | NASA FIRMS → PostGIS → Enrichment → Discord live |
 | 2 | Full Habitat Coverage + GBIF | ✅ Complete | 1,372 CR/EN species in PostGIS, GBIF client, Habitat + Species Context agents live |
-| 3 | TypeScript Model Router | 🔲 Not started | ModelRouter.ts, Gemini 2.5 Flash-Lite/Flash routing, cost tracking |
+| 3 | TypeScript Model Router | ✅ Complete | ModelRouter.ts singleton, all SDK imports centralized, cost tracking live |
 | 4 | All Five Disaster Sources | 🔲 Not started | NOAA NHC, USGS, Drought Monitor, Coral Reef Watch |
 | 5 | Full Agent Swarm + War Room | 🔲 Not started | Threat Assessment, Synthesis, Discord observability |
 | 6 | RAG Knowledge Base | 🔲 Not started | Google embeddings, species_facts + conservation_context indices |
@@ -89,14 +89,14 @@
 ## Phase 3 — TypeScript Model Router
 **Goal:** ModelRouter.ts routing Anthropic + Google AI. Cost tracking live.
 
-- [ ] `ModelRouter.ts` implemented (Anthropic SDK + Google AI SDK)
-- [ ] `shared/models.ts` with all model constants
-- [ ] Cost tracking per call + running total in `model_usage` table
-- [ ] Enrichment Agent + Habitat Agent switch to ModelRouter
-- [ ] Species Context Agent uses ModelRouter
-- [ ] Cost tracking verified end-to-end
-- [ ] Gemini 2.5 Flash-Lite confirmed working for enrichment agents
-- [ ] Gemini 2.5 Flash confirmed working for Species Context Agent
+- [x] `ModelRouter.ts` implemented (Anthropic SDK + Google AI SDK)
+- [x] `shared/models.ts` with all model constants
+- [x] Cost tracking per call + running total in `model_usage` table
+- [x] Enrichment Agent + Habitat Agent switch to ModelRouter
+- [x] Species Context Agent uses ModelRouter
+- [x] Cost tracking verified end-to-end
+- [x] Gemini 2.5 Flash-Lite confirmed working for enrichment agents
+- [x] Gemini 2.5 Flash confirmed working for Species Context Agent
 
 → See [PHASE_3_MODEL_ROUTER.md](roadmap/PHASE_3_MODEL_ROUTER.md)
 

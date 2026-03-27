@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit';
 import { config } from './config.js';
 import { AppError } from './errors.js';
 import { healthRouter } from './routes/health.js';
+import { adminRouter } from './routes/admin.js';
 
 export const app = express();
 
@@ -18,6 +19,7 @@ app.use(express.json({ limit: '1mb' }));
 app.use(rateLimit({ windowMs: 60_000, max: 100, standardHeaders: true, legacyHeaders: false }));
 
 app.use('/health', healthRouter);
+app.use('/admin', adminRouter);
 
 // Error handler — must have exactly 4 params for Express to recognize it
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {

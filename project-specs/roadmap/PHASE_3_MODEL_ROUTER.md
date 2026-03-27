@@ -2,7 +2,7 @@
 
 **Goal:** `ModelRouter.ts` is the single gateway for all AI calls. Gemini 2.5 Flash-Lite handles enrichment/habitat agents. Gemini 2.5 Flash handles Species Context. Cost tracking is live and queryable.
 
-**Status:** Not started
+**Status:** Complete (2026-03-27)
 **Depends on:** Phase 2 complete
 **Estimated sessions:** 1
 
@@ -144,10 +144,10 @@ export const modelRouter = new ModelRouter();
 
 ## 2. Model Usage Table + Logger
 
-### `server/src/db/migrations/0003_model_usage.sql`
+### `server/src/db/migrations/0004_model_usage.sql`
 
 ```sql
--- Migration: 0003_model_usage + agent_prompts
+-- Migration: 0004_model_usage + agent_prompts
 
 -- Up
 

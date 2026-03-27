@@ -1,29 +1,18 @@
 /**
  * Habitat Agent — cross-references disaster events against GBIF occurrence data.
  *
- * Phase 2: uses Gemini 2.5 Flash-Lite directly (no ModelRouter — Phase 3 adds that).
- * Phase 2: calls SpeciesContextAgent directly after processing (sequential).
- *          Phase 5 refactors this into parallel Redis consumers.
- *
  * Confidence is computed from sighting count — never self-reported by the LLM.
+ * TODO Phase 5: calls SpeciesContextAgent directly (sequential).
+ *              Phase 5 refactors this into parallel Redis consumers.
  */
-import { GoogleGenerativeAI } from '@google/generative-ai';
-// TODO Phase 3: import { modelRouter } from '../router/ModelRouter.js' and remove direct SDK use
 import { MODELS } from '@wildlife-sentinel/shared/models';
 import type { EnrichedDisasterEvent, FullyEnrichedEvent, GBIFSighting } from '@wildlife-sentinel/shared/types';
-import { config } from '../config.js';
 import { redis } from '../redis/client.js';
 import { STREAMS, CONSUMER_GROUPS, ensureConsumerGroup } from '../pipeline/streams.js';
 import { logPipelineEvent } from '../db/pipelineEvents.js';
 import { fetchRecentSightings } from '../scouts/gbif.js';
+import { modelRouter } from '../router/ModelRouter.js';
 import { runSpeciesContextAgent } from './SpeciesContextAgent.js';
-
-// TODO Phase 3: replace with ModelRouter call
-const genai = new GoogleGenerativeAI(config.googleAiKey);
-const geminiModel = genai.getGenerativeModel({
-  model: MODELS.GEMINI_FLASH_LITE,
-  generationConfig: { responseMimeType: 'application/json' },
-});
 
 const SLEEP_MS = 100; // polite delay between GBIF calls
 const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
@@ -130,21 +119,25 @@ async function analyzeGBIFSightings(
         .join('\n')
     : 'No recent GBIF sightings found within 50km of the disaster location.';
 
-  const prompt =
+  const userMessage =
     `Species at risk: ${speciesList}\n\n` +
-    `GBIF sightings (${sightings.length} total within 50km, last 2 years):\n${sightingLines}\n\n` +
-    'Classify the confidence that these species are recently active in this area. ' +
-    'Respond in JSON with exactly these fields: ' +
-    '{ "sighting_confidence": "confirmed" | "possible" | "historical_only", ' +
-    '"most_recent_sighting": "ISO date string or null if none", ' +
-    '"summary": "1-2 sentence summary of sighting data" }';
+    `GBIF sightings (${sightings.length} total within 50km, last 2 years):\n${sightingLines}`;
 
   try {
-    const result = await geminiModel.generateContent({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    const result = await modelRouter.complete({
+      model: MODELS.GEMINI_FLASH_LITE,
+      systemPrompt:
+        'Classify the confidence that the listed species are recently active near the disaster location. ' +
+        'Respond in JSON with exactly these fields: ' +
+        '{ "sighting_confidence": "confirmed" | "possible" | "historical_only", ' +
+        '"most_recent_sighting": "ISO date string or null if none", ' +
+        '"summary": "1-2 sentence summary of sighting data" }',
+      userMessage,
+      maxTokens: 256,
+      jsonMode: true,
     });
 
-    const parsed = JSON.parse(result.response.text()) as GBIFAnalysis;
+    const parsed = JSON.parse(result.content) as GBIFAnalysis;
 
     // Validate the confidence value — don't trust LLM output unconditionally
     if (!VALID_CONFIDENCES.has(parsed.sighting_confidence)) {
@@ -153,7 +146,7 @@ async function analyzeGBIFSightings(
 
     return parsed;
   } catch (err) {
-    console.warn('[habitat] Gemini analysis failed, using fallback classification:', err);
+    console.warn('[habitat] GBIF analysis failed, using fallback classification:', err);
     return {
       sighting_confidence: sightings.length > 0 ? 'possible' : 'historical_only',
       most_recent_sighting: sightings[0]?.eventDate ?? null,
