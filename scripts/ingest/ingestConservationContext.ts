@@ -18,7 +18,7 @@
  * Idempotent: ON CONFLICT DO NOTHING prevents duplicate chunks.
  */
 import { readFileSync, readdirSync, existsSync } from 'fs';
-import { join, basename, dirname } from 'path';
+import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import postgres from 'postgres';
 import { GoogleGenerativeAI } from '@google/generative-ai';
