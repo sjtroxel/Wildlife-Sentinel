@@ -14,7 +14,7 @@
 | 3 | TypeScript Model Router | ✅ Complete | ModelRouter.ts singleton, all SDK imports centralized, cost tracking live |
 | 4 | All Five Disaster Sources | ✅ Complete | NHC, USGS, Drought Monitor, Coral Reef Watch scouts live |
 | 5 | Full Agent Swarm + War Room | ✅ Complete | ThreatAssembler fan-in, Threat Assessment + Synthesis (Claude Sonnet), HITL, war room |
-| 6 | RAG Knowledge Base | 🔶 Blocked | Infrastructure complete, 72 tests pass. Ingest blocked: IUCN API inaccessible (v4=404, v3=Cloudflare). See PHASE_6_HANDOFF.md |
+| 6 | RAG Knowledge Base | 🔶 Ready to ingest | Infrastructure complete, 72 tests pass. Ingest script fixed: IUCN API (Cloudflare-blocked) → GBIF + Wikipedia. Run `npm run ingest:species`. See PHASE_6_HANDOFF.md |
 | 7 | Refiner / Evaluator Loop | 🔲 Not started | 24h/48h evaluator, system prompt updates, score tracking |
 | 8 | Frontend | 🔲 Not started | Next.js, Leaflet map, alerts feed, agent activity SSE, refiner chart |
 | 9 | Hardening + Deploy | 🔲 Not started | Tests, Playwright E2E, Railway + Vercel deploy, weekly digest |
@@ -136,15 +136,16 @@
 ## Phase 6 — RAG Knowledge Base
 **Goal:** Species Context Agent and Synthesis Agent grounded in real data.
 
-- [ ] `species_facts` table (pgvector 768-dim, Neon)
-- [ ] `conservation_context` table (pgvector 768-dim, Neon)
-- [ ] Google text-embedding-004 embedding generation working
-- [ ] `scripts/ingest/ingestSpeciesFacts.ts` — IUCN PDFs + WWF profiles
-- [ ] `scripts/ingest/ingestConservationContext.ts` — WWF Living Planet etc.
-- [ ] RAG retrieval helper with 0.40 similarity threshold
-- [ ] Species Context Agent uses RAG for species briefs
-- [ ] Synthesis Agent uses RAG for "why this matters" framing
-- [ ] Both agents cite `source_id` in output — no uncited claims
+- [x] `species_facts` table (pgvector 768-dim, Neon) — migration 0006 applied
+- [x] `conservation_context` table (pgvector 768-dim, Neon) — migration 0006 applied
+- [x] Google text-embedding-004 embedding generation working
+- [x] `scripts/ingest/ingestSpeciesFacts.ts` — GBIF Species API + Wikipedia fallback (IUCN API was blocked; see PHASE_6_HANDOFF.md for full context)
+- [x] `scripts/ingest/ingestConservationContext.ts` — reads .txt files (user places 3 docs in sources/conservation/)
+- [x] RAG retrieval helper with 0.40 similarity threshold
+- [x] Species Context Agent uses RAG for species briefs
+- [x] Synthesis Agent uses RAG for "why this matters" framing
+- [x] Both agents cite `source_id` in output — no uncited claims
+- [ ] **RUN INGEST:** `npm run ingest:species` then `npm run ingest:conservation` (tables currently empty)
 
 → See [PHASE_6_RAG.md](roadmap/PHASE_6_RAG.md)
 

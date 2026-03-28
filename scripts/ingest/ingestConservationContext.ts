@@ -21,7 +21,6 @@ import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import postgres from 'postgres';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // ── Env validation ──────────────────────────────────────────────────────────
 
@@ -34,13 +33,12 @@ if (!DATABASE_URL || !GOOGLE_AI_API_KEY) {
 }
 
 const sql = postgres(DATABASE_URL, { ssl: 'require', max: 5 });
-const genai = new GoogleGenerativeAI(GOOGLE_AI_API_KEY);
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SOURCES_DIR = join(__dirname, 'sources', 'conservation');
-const EMBEDDING_MODEL = 'text-embedding-004';
+const EMBEDDING_MODEL = 'gemini-embedding-001';
 const MAX_CHUNK_CHARS = 512 * 4;
 const OVERLAP_CHARS = 50 * 4;
 const EMBED_DELAY_MS = 100;
@@ -111,6 +109,7 @@ function chunkDocument(text: string, documentTitle: string): DocumentChunk[] {
       if (content.length > 50) {
         result.push({ content, sectionHeading: section.heading });
       }
+      if (end >= bodyTrimmed.length) break;
       start = end - OVERLAP_CHARS;
     }
   }
@@ -137,10 +136,26 @@ function parseFilename(filename: string): { documentTitle: string; publicationYe
 
 // ── Embedding ─────────────────────────────────────────────────────────────────
 
+interface EmbedResponse {
+  embedding: { values: number[] };
+}
+
 async function embedText(text: string): Promise<number[]> {
-  const model = genai.getGenerativeModel({ model: EMBEDDING_MODEL });
-  const result = await model.embedContent(text);
-  return result.embedding.values;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${EMBEDDING_MODEL}:embedContent?key=${GOOGLE_AI_API_KEY}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: `models/${EMBEDDING_MODEL}`,
+      content: { parts: [{ text }] },
+      outputDimensionality: 1536,
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(`Embedding API ${res.status}: ${await res.text()}`);
+  }
+  const data = await res.json() as EmbedResponse;
+  return data.embedding.values;
 }
 
 // ── Main ingest ───────────────────────────────────────────────────────────────

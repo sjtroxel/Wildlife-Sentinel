@@ -246,27 +246,69 @@ function computeCentroid(coords: number[][]): { lat: number; lng: number } {
 
 ## Species / Habitat APIs
 
-### IUCN Red List API
+### IUCN Red List
 
-- **Base URL:** `https://apiv3.iucnredlist.org/api/v3/`
-- **Auth:** Free token → `IUCN_API_TOKEN` env var
-- **Primary use:** Bulk shapefile download (one-time, loaded into PostGIS)
-- **Live API use:** Fallback for species metadata not in PostGIS (optional)
+- **Auth:** Free token → `IUCN_API_TOKEN` env var (used only for shapefile download portal login)
+- **Primary use:** Bulk shapefile download (one-time setup, loaded into PostGIS via `loadIUCNShapefiles.ts`)
+- **Live API use:** NONE — the v3 and v4 APIs are inaccessible to automated scripts (see below)
 
-**Key endpoints:**
-- `GET /species/category/{CR|EN}` — list all species by threat category
-- `GET /species/{name}` — species metadata by Latin name
+**Downloaded data:**
+- `MAMMALS_TERRESTRIAL_ONLY.shp` — species range polygons for all terrestrial mammals
+- Filtered to CR + EN on load. Stored in PostGIS `species_ranges` table.
+- This is the authoritative source for habitat geometry. It does not contain narrative text.
 
-**Token in requests:** Append `?token={IUCN_API_TOKEN}` to every call.
+**Why the live API is not used:**
+- v3 API (`apiv3.iucnredlist.org`): Blocked by Cloudflare for all automated HTTP clients
+- v4 API (`api.iucnredlist.org`): `/narrative` endpoint returns 404 — does not exist in v4
+- IUCN Data Repository (`iucnredlist.org/resources/data-repository`): Only paper-specific datasets, no general bulk narrative export
+
+**Species narrative text** (habitat descriptions, threats, conservation measures) is sourced from
+GBIF instead — see below.
 
 ---
 
-### GBIF Occurrence API
+### GBIF Species API
 
 - **Base URL:** `https://api.gbif.org/v1/`
-- **Key endpoint:** `/occurrence/search`
-- **Auth:** None required for read access
-- **Rate limit:** Polite use, ~100ms between calls
+- **Auth:** None required
+- **Rate limit:** No hard limit for `/species` single-record lookups (occurrence search is different)
+- **Used by:** `scripts/ingest/ingestSpeciesFacts.ts` (one-time setup) + `HabitatAgent` (live)
+- **User-Agent:** Set to `wildlife-sentinel/1.0 (conservation monitoring)` per GBIF best practices
+
+**Endpoints used for species narrative ingest:**
+```
+GET /v1/species/match?name={scientific_name}
+  → { usageKey, matchType, confidence }
+  → matchType 'NONE' means no match — skip species
+
+GET /v1/species/{usageKey}/descriptions?limit=50
+  → { results: [{ type, language, description, source }] }
+  → type values used: biology_ecology, conservation, distribution, activity, food_feeding, breeding
+  → filter to language='eng' and description length ≥ 50 chars
+```
+
+**Section type mapping (GBIF → DB section_type):**
+| GBIF `type` | DB `section_type` |
+|---|---|
+| `biology_ecology` (first entry) | `habitat` |
+| `biology_ecology` (subsequent) | `ecology` |
+| `conservation` | `conservation_status` |
+| `distribution` | `geographic_range` |
+| `activity` | `ecology` |
+| `food_feeding` | `diet` |
+| `breeding` | `ecology` |
+
+**Why GBIF for narrative text:**
+GBIF aggregates content from peer-reviewed mammal taxonomy monographs (e.g. Wilson & Mittermeier
+*Handbook of the Mammals of the World*). For mammals, coverage and quality is equivalent to IUCN
+narratives. Returns 6–9 sections per species including obscure CR/EN taxa.
+
+**Endpoint used for recent sightings (HabitatAgent):**
+```
+GET /v1/occurrence/search
+  decimalLatitude, decimalLongitude, radius (meters), hasCoordinate=true,
+  hasGeospatialIssue=false, year=last 2 years, limit=10
+```
 
 **Request parameters:**
 ```

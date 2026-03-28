@@ -4,8 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "ingest:species": "tsx ingest/ingestSpeciesFacts.ts",
-    "ingest:conservation": "tsx ingest/ingestConservationContext.ts"
+    "build": "tsc -p tsconfig.json",
+    "ingest:species": "npm run build && node --env-file=../server/.env dist/ingestSpeciesFacts.js",
+    "ingest:conservation": "npm run build && node --env-file=../server/.env dist/ingestConservationContext.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",

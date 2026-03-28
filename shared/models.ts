@@ -14,8 +14,8 @@ export const MODELS = {
   // Enrichment + Habitat agents — free tier: 15 RPM / 1,000 RPD
   GEMINI_FLASH_LITE: 'gemini-2.5-flash-lite',
 
-  // RAG embeddings — 768 dimensions, free tier
-  GOOGLE_EMBEDDINGS: 'text-embedding-004',
+  // RAG embeddings — 3072 dimensions, free tier (v1beta API)
+  GOOGLE_EMBEDDINGS: 'gemini-embedding-001',
 } as const;
 
 export type ModelName = (typeof MODELS)[keyof typeof MODELS];

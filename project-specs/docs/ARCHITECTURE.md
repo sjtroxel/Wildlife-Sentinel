@@ -119,8 +119,9 @@ All running in the same process on Railway. Scaled vertically if needed.
 | USGS NWIS | Flood gauge data | None | Free |
 | US Drought Monitor | Drought severity | None | Free |
 | NOAA Coral Reef Watch | Coral bleaching | None | Free |
-| IUCN Red List | Species range data (pre-loaded) | Free token | Free |
-| GBIF | Recent sightings (live queries) | None | Free |
+| IUCN Red List | Species range polygons (shapefile, pre-loaded into PostGIS) | Free token (portal only) | Free |
+| GBIF | Species narrative text (ingest) + recent sightings (live queries) | None | Free |
+| Wikipedia (MediaWiki) | Species narrative fallback for ingest (when GBIF returns <2 sections) | None | Free |
 | Open-Meteo | Weather enrichment | None | Free |
 | Google AI (Gemini 2.5) | Enrichment + species agents | API key | Free tier |
 | Anthropic (Claude Sonnet 4.6) | Threat + synthesis + refiner | API key | ~$2-8/month |

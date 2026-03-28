@@ -1,158 +1,105 @@
 # Phase 6 — RAG Ingest Handoff
 
+**Last updated:** 2026-03-28
 **Written for:** Fresh Claude session
-**Context:** Phase 6 code is complete and all 72 tests pass. The only blocker is `ingestSpeciesFacts.ts` — the data source for the `species_facts` RAG index is broken. This document explains the problem, what was tried, and what the fresh session needs to solve.
+**Status:** Ingest in progress — run `npm run ingest:species --workspace=scripts` daily until complete.
 
 ---
 
 ## What Phase 6 Built (All Working)
 
 - `server/src/db/migrations/0006_rag_tables.sql` — applied to Neon ✅
+- `server/src/db/migrations/0007_vector_3072.sql` — applied to Neon ✅ (vector(1536), ivfflat index)
 - `server/src/rag/chunker.ts` — text chunking utility ✅
 - `server/src/rag/retrieve.ts` — `retrieveSpeciesFacts()` + `retrieveConservationContext()` ✅
 - `server/src/agents/SpeciesContextAgent.ts` — RAG-grounded with citation enforcement ✅
 - `server/src/agents/SynthesisAgent.ts` — conservation context injection ✅
 - `scripts/ingest/ingestConservationContext.ts` — reads local `.txt` files, works correctly ✅
-- `scripts/ingest/ingestSpeciesFacts.ts` — **BROKEN** (see below) ❌
+- `scripts/ingest/ingestSpeciesFacts.ts` — GBIF + Wikipedia, compiled JS, rate-limit retry ✅
 - 72/72 tests pass, TypeScript strict clean ✅
 
 ---
 
-## The Blocker: `ingestSpeciesFacts.ts`
+## Current Ingest Status (as of 2026-03-28)
 
-### What it's supposed to do
-Populate the `species_facts` pgvector table with IUCN narrative assessments for all **1,372 Critically Endangered and Endangered species** currently loaded in PostGIS `species_ranges`. For each species, it should store chunked text covering: habitat, threats, population, ecology, conservation_measures — each chunk embedded with Google `text-embedding-004` (768 dims).
+- `species_facts`: ~254 species ingested out of 751 total
+- `conservation_context`: not yet run (requires 3 .txt files — see below)
+- Ingest is **resumable** — re-running skips already-ingested species automatically
 
-### Why it must cover all 1,372 species (not just 10)
-The system monitors disasters globally against ALL species in PostGIS. When a wildfire threatens an obscure CR lemur in Madagascar, the SpeciesContextAgent needs grounding facts for that species — not just the 10 most famous ones. Limiting to 10 species defeats the purpose of the entire RAG system.
+### Why it stops mid-run
+Google Gemini embedding free tier limits:
+- **100 requests/minute** — handled: `EMBED_DELAY_MS = 650ms` + 65s retry on 429
+- **~1,500 requests/day** — the daily cap is hit after ~250–300 species per day
 
-### What was tried
-
-**Attempt 1 — IUCN Red List API v4**
-- URL tried: `https://api.iucnredlist.org/api/v4/species/{taxon_id}/narrative`
-- Auth: `Authorization: Token {token}` header
-- Result: HTML 404 page for every single species
-- Conclusion: The `/species/{id}/narrative` endpoint does not exist at this URL in v4
-
-**Attempt 2 — IUCN Red List API v3**
-- URL tried: `https://apiv3.iucnredlist.org/api/v3/species/narrative/id/{id}?token={token}`
-- Result: Cloudflare "Just a moment..." bot protection challenge page
-- Conclusion: v3 is behind Cloudflare and blocks automated requests (curl, Node.js fetch)
-
-**Confirmed via curl from the user's machine.** Both APIs are inaccessible to automated scripts.
-
-The project has a valid `IUCN_API_TOKEN` (env var `IUCN_API_TOKEN` in `server/.env`).
-
-### Current state of the ingest script
-`scripts/ingest/ingestSpeciesFacts.ts` was updated mid-session to try v3 endpoints. It currently has the v3 URL but it will fail the same way. The script architecture (chunking, embedding, upsert) is correct — only the data fetching layer is broken. The key function to fix is `fetchNarrative()`.
+**Action:** Run `npm run ingest:species --workspace=scripts` once per day. It will ingest ~250 new species per run. After 3 days, all 751 species will be done.
 
 ---
 
-## What the Fresh Session Needs to Solve
+## Bugs Fixed This Session (do not reintroduce)
 
-**Goal:** A reliable, automated way to ingest species narrative data for all 1,372 species into `species_facts`. Must be scalable — not manual text files for each species.
+1. **Infinite loop in `chunkText`** — text lengths between MAX_CHUNK_CHARS (2048) and MAX_CHUNK_CHARS + OVERLAP_CHARS (2248) caused infinite loop. Fixed with `if (end >= trimmed.length) break` before advancing start. Same fix applied to `ingestConservationContext.ts`.
 
-### Avenues to investigate (in rough priority order)
+2. **V8 heap OOM from huge GBIF responses** — GBIF can return monograph-sized descriptions. Fixed with `limit=15`, `MAX_DESC_CHARS=4000` cap per description, and 200KB response size check before JSON.parse.
 
-**1. IUCN Full Dataset Download (most promising)**
-IUCN provides bulk dataset downloads for registered users at `iucnredlist.org/resources/grid`. These include narrative assessments in CSV or XML format — the same data the API returns, but as a single downloadable file. The user already has an IUCN account (they have a token). If a bulk download with narratives is available, `ingestSpeciesFacts.ts` could parse that file locally — no API calls needed, no Cloudflare. This would cover all 1,372 species in one operation.
+3. **Wikipedia unbounded extract** — added `exchars=8000` to Wikipedia API URL.
 
-**2. IUCN API v4 — correct endpoint discovery**
-The v4 API exists (`api.iucnredlist.org`) but we never found the correct endpoint. The v4 API is likely assessment-centric rather than species-centric. Possible correct approach:
-- `GET /api/v4/taxa/{sis_id}` → find assessment IDs
-- `GET /api/v4/assessments/{assessment_id}` → get narrative within assessment
-The SIS ID in the database (`iucn_species_id`) should be the same as the v4 taxa ID. Documentation may be at `api.iucnredlist.org` or `developers.iucnredlist.org`. Worth trying with the correct Node.js `fetch()` and headers before assuming it's blocked.
+4. **tsx memory overhead** — scripts now compile to JS first via `tsc`, then run plain JS. See `scripts/tsconfig.json` and `scripts/package.json` build scripts.
 
-**3. IUCN API v3 with browser-like headers**
-Cloudflare bot protection often specifically blocks `curl` User-Agent but allows `node-fetch` or `undici` with a real browser User-Agent. May be worth testing:
-```
-User-Agent: Mozilla/5.0 (compatible; wildlife-sentinel/1.0)
-Accept: application/json
-```
-If this bypasses Cloudflare, v3 is well-understood and works cleanly.
-
-**4. Encyclopedia of Life (EOL) API**
-`eol.org` has species pages with habitat, ecology, threats, conservation info. Free API, no auth required for basic access. Coverage of CR/EN species is good. URL: `https://eol.org/api/`. The tricky part: EOL uses its own IDs, so you'd need to map from IUCN taxon ID → EOL page ID (EOL provides a `provider_ids` lookup endpoint). Less authoritative than IUCN but far more accessible.
-
-**5. Wikipedia API**
-Wikipedia has detailed species articles for most CR/EN species. The MediaWiki API (`en.wikipedia.org/w/api.php`) is completely open, no auth, no rate limits for reasonable use. Quality is good for flagship species (orangutans, tigers, gorillas) but patchy for obscure ones. Could serve as fallback for species with no EOL data. Not peer-reviewed but factually accurate for well-known species.
-
-**6. Hybrid approach**
-IUCN bulk download (if available) for all species that have assessments + Wikipedia/EOL as fallback for any gaps. This mirrors the Poster Pilot pattern (primary source blocked → use alternative database that has the same data).
+5. **Vector dimension mismatch** — `text-embedding-004` (gone) replaced with `gemini-embedding-001` at 1536 dims (full 3072 exceeds ivfflat limit of 2000). All embed calls use `outputDimensionality: 1536`.
 
 ---
 
-## Key Files
+## Run Commands (from repo root)
 
-```
-scripts/ingest/ingestSpeciesFacts.ts   ← needs fixing (fetchNarrative function)
-scripts/ingest/ingestConservationContext.ts  ← works, reads .txt files
-scripts/ingest/sources/conservation/   ← user still needs to place 3 .txt files here:
-                                          ipbes_global_assessment_spm_2019.txt
-                                          wwf_living_planet_report_2024.txt
-                                          cbd_global_biodiversity_outlook_5_2020.txt
-server/src/rag/retrieve.ts             ← works correctly, no changes needed
-server/src/rag/chunker.ts              ← works correctly, no changes needed
-```
-
-## Database
-
-`species_facts` and `conservation_context` tables exist in Neon (migration 0006 applied). Both are empty — ingest has not successfully run yet.
-
-```sql
--- Verify tables exist:
-SELECT COUNT(*) FROM species_facts;        -- should return 0
-SELECT COUNT(*) FROM conservation_context; -- should return 0
-
--- Check species available for ingest:
-SELECT COUNT(DISTINCT iucn_species_id) FROM species_ranges WHERE iucn_species_id IS NOT NULL;
--- returns ~1,372
-```
-
-## Env vars (in server/.env)
-```
-IUCN_API_TOKEN=...
-GOOGLE_AI_API_KEY=...
-DATABASE_URL=...
-```
-
-## How to run ingest once fixed (from repo root)
 ```bash
-npm run ingest:species       # populates species_facts
-npm run ingest:conservation  # populates conservation_context (needs .txt files first)
+# Species facts ingest (run daily until 751/751 complete)
+npm run ingest:species --workspace=scripts
+
+# Check progress
+psql $DATABASE_URL -c "SELECT COUNT(*) FROM species_facts;"
+psql $DATABASE_URL -c "SELECT COUNT(DISTINCT species_name) FROM species_facts;"
+
+# Conservation context ingest (run once, after placing .txt files)
+npm run ingest:conservation --workspace=scripts
 ```
 
 ---
 
-## Ingest Script Architecture (What's Correct, Don't Change)
+## Conservation Context .txt Files Still Needed
 
-The script structure in `ingestSpeciesFacts.ts` is sound — only `fetchNarrative()` needs replacing:
+Place these 3 files in `scripts/ingest/sources/conservation/` before running `ingest:conservation`:
+- `ipbes_global_assessment_spm_2019.txt`
+- `wwf_living_planet_report_2024.txt`
+- `cbd_global_biodiversity_outlook_5_2020.txt`
 
-```typescript
-// This function is what needs fixing — the rest of the script is correct
-async function fetchNarrative(taxonId: string): Promise<{
-  sections: Record<string, string>;  // field_name → narrative text
-  year: number | null;
-}> { ... }
-```
-
-The `SECTION_TYPE_MAP` maps source field names to our DB `section_type` CHECK values:
-```typescript
-// Allowed section_type values in DB:
-'habitat' | 'diet' | 'threats' | 'conservation_status' | 'population' |
-'ecology' | 'behavior' | 'conservation_measures' | 'geographic_range'
-```
-
-Whatever data source is chosen, `fetchNarrative` just needs to return a `sections` object with string values keyed by any name in the SECTION_TYPE_MAP (or any name that maps to one of the allowed section types).
+Download the PDFs from their respective sites, copy the text content into .txt files.
 
 ---
 
 ## Phase 6 Acceptance Criteria (Remaining)
 
-- [ ] `species_facts` populated with ≥50 chunks across species (ideally all 1,372)
-- [ ] `conservation_context` populated with 3 documents (user needs to place .txt files)
-- [ ] `retrieveSpeciesFacts()` returns similarity > 0.40 for test queries
-- [ ] SpeciesContextAgent `source_documents` field populated with real source names
-- [ ] SynthesisAgent Discord embeds include cited conservation framing
+- [x] Migration 0007 applied to Neon (vector(1536))
+- [ ] `ingest:species` runs successfully — `species_facts` populated with ≥50 chunks (in progress, ~254/751 species done)
+- [ ] `ingest:conservation` runs — `conservation_context` populated with 3 documents
+- [ ] `retrieveSpeciesFacts()` returns similarity > 0.40 for a test query
+- [ ] SpeciesContextAgent `source_documents` field populated with real GBIF source names
 
-Everything else in Phase 6 is complete.
+---
+
+## Env vars required (in server/.env)
+
+```
+GOOGLE_AI_API_KEY=...    # for gemini-embedding-001
+DATABASE_URL=...         # Neon connection string
+```
+
+---
+
+## Scripts Architecture Notes
+
+- `scripts/tsconfig.json` — compiles `ingest/**/*.ts` to `scripts/dist/`
+- `scripts/package.json` — `ingest:species` runs `build` then `node dist/ingestSpeciesFacts.js`
+- No tsx at runtime — compiled to plain JS to avoid tsx memory overhead (~2GB for 751 species)
+- `EMBED_DELAY_MS = 650` — stays under 100 RPM free tier limit
+- `embedText()` has 5-retry loop with 65s wait on 429 — handles per-minute bursts
+- Daily limit (~1,500 req/day) is the binding constraint; ~250 species per day

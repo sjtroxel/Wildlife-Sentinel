@@ -14,7 +14,7 @@ const PRICING: Record<string, { input: number; output: number }> = {
   'claude-sonnet-4-6':     { input: 3.00,  output: 15.00 },
   'gemini-2.5-flash':      { input: 0.00,  output: 0.00 },  // free tier
   'gemini-2.5-flash-lite': { input: 0.00,  output: 0.00 },  // free tier
-  'text-embedding-004':    { input: 0.00,  output: 0.00 },
+  'gemini-embedding-001':  { input: 0.00,  output: 0.00 },
 };
 
 class ModelRouter {
@@ -44,12 +44,23 @@ class ModelRouter {
 
   async embed(text: string | string[]): Promise<number[][]> {
     const inputs = Array.isArray(text) ? text : [text];
-    const model = this.google.getGenerativeModel({ model: MODELS.GOOGLE_EMBEDDINGS });
-
     const embeddings: number[][] = [];
     for (const input of inputs) {
-      const result = await model.embedContent(input);
-      embeddings.push(result.embedding.values);
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODELS.GOOGLE_EMBEDDINGS}:embedContent?key=${config.googleAiKey}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: `models/${MODELS.GOOGLE_EMBEDDINGS}`,
+          content: { parts: [{ text: input }] },
+          outputDimensionality: 1536,
+        }),
+      });
+      if (!res.ok) {
+        throw new Error(`ModelRouter embed error ${res.status}: ${await res.text()}`);
+      }
+      const data = await res.json() as { embedding: { values: number[] } };
+      embeddings.push(data.embedding.values);
     }
     return embeddings;
   }
