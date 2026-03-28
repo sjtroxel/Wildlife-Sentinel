@@ -63,9 +63,15 @@ vi.mock('../../src/router/ModelRouter.js', () => ({
   },
 }));
 
+vi.mock('../../src/rag/retrieve.js', () => ({
+  retrieveConservationContext: vi.fn().mockResolvedValue([]),
+  retrieveSpeciesFacts: vi.fn().mockResolvedValue([]),
+}));
+
 import { redis } from '../../src/redis/client.js';
 import { logPipelineEvent } from '../../src/db/pipelineEvents.js';
 import { modelRouter } from '../../src/router/ModelRouter.js';
+import { retrieveConservationContext } from '../../src/rag/retrieve.js';
 import { processAlert } from '../../src/agents/SynthesisAgent.js';
 import type { AssessedAlert } from '@wildlife-sentinel/shared/types';
 
@@ -114,6 +120,7 @@ describe('SynthesisAgent.processAlert', () => {
     vi.mocked(logPipelineEvent).mockResolvedValue(undefined);
     vi.mocked(redis.xadd).mockResolvedValue('1234-0');
     mockSql.mockResolvedValue([]);
+    vi.mocked(retrieveConservationContext).mockResolvedValue([]);
     vi.mocked(modelRouter.complete).mockResolvedValue({
       content: JSON.stringify(synthesisFixture),
       model: 'claude-sonnet-4-6',

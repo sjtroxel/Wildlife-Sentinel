@@ -2,7 +2,7 @@
 
 **Goal:** Species Context Agent and Synthesis Agent grounded in real published data. No agent makes uncited claims about species biology or conservation context.
 
-**Status:** Not started
+**Status:** 🔶 Blocked — infrastructure complete, ingest data source unresolved. See PHASE_6_HANDOFF.md.
 **Depends on:** Phase 5 complete
 **Estimated sessions:** 2
 

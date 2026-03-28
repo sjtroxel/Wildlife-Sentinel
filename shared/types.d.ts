@@ -114,6 +114,24 @@ export interface RefinerScore {
   compositeScore: number;   // 0.6 * direction + 0.4 * magnitude
 }
 
+// Phase 6: RAG retrieval result types
+
+export interface SpeciesFactChunk {
+  id: string;
+  content: string;
+  section_type: string;
+  source_document: string;
+  similarity: number;
+}
+
+export interface ConservationContextChunk {
+  id: string;
+  content: string;
+  document_title: string;
+  source_document: string;
+  similarity: number;
+}
+
 export interface HealthCheckResponse {
   status: 'ok' | 'degraded' | 'error';
   db: 'connected' | 'disconnected';

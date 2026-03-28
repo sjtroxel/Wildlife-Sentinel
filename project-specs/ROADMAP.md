@@ -14,7 +14,7 @@
 | 3 | TypeScript Model Router | ✅ Complete | ModelRouter.ts singleton, all SDK imports centralized, cost tracking live |
 | 4 | All Five Disaster Sources | ✅ Complete | NHC, USGS, Drought Monitor, Coral Reef Watch scouts live |
 | 5 | Full Agent Swarm + War Room | ✅ Complete | ThreatAssembler fan-in, Threat Assessment + Synthesis (Claude Sonnet), HITL, war room |
-| 6 | RAG Knowledge Base | 🔲 Not started | Google embeddings, species_facts + conservation_context indices |
+| 6 | RAG Knowledge Base | 🔶 Blocked | Infrastructure complete, 72 tests pass. Ingest blocked: IUCN API inaccessible (v4=404, v3=Cloudflare). See PHASE_6_HANDOFF.md |
 | 7 | Refiner / Evaluator Loop | 🔲 Not started | 24h/48h evaluator, system prompt updates, score tracking |
 | 8 | Frontend | 🔲 Not started | Next.js, Leaflet map, alerts feed, agent activity SSE, refiner chart |
 | 9 | Hardening + Deploy | 🔲 Not started | Tests, Playwright E2E, Railway + Vercel deploy, weekly digest |

@@ -3,7 +3,12 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
+  "scripts": {
+    "ingest:species": "tsx ingest/ingestSpeciesFacts.ts",
+    "ingest:conservation": "tsx ingest/ingestConservationContext.ts"
+  },
   "dependencies": {
+    "@google/generative-ai": "^0.21.0",
     "postgres": "^3.4.4",
     "shapefile": "^0.6.6"
   },

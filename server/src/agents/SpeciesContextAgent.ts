@@ -1,24 +1,22 @@
 /**
  * Species Context Agent — generates a SpeciesBrief for each at-risk species.
  *
- * Uses model training data only (no RAG — Phase 6 adds that).
- * Independent consumer of disaster:enriched (species-group).
- * Publishes species briefs to ThreatAssembler for fan-in with HabitatAgent results.
- *
+ * Phase 6: RAG-grounded using species_facts pgvector index.
  * IUCN status is always sourced from the database, not the LLM.
+ * Agent may only cite facts from retrieved context — no training data fill-ins.
  */
 import { MODELS } from '@wildlife-sentinel/shared/models';
-import type { EnrichedDisasterEvent, SpeciesBrief, IUCNStatus } from '@wildlife-sentinel/shared/types';
+import type { EnrichedDisasterEvent, SpeciesBrief, IUCNStatus, EventType } from '@wildlife-sentinel/shared/types';
 import { sql } from '../db/client.js';
 import { redis } from '../redis/client.js';
 import { STREAMS, CONSUMER_GROUPS, ensureConsumerGroup } from '../pipeline/streams.js';
 import { logPipelineEvent } from '../db/pipelineEvents.js';
 import { modelRouter } from '../router/ModelRouter.js';
 import { storeSpeciesResult } from '../pipeline/ThreatAssembler.js';
+import { retrieveSpeciesFacts } from '../rag/retrieve.js';
 
-const SYSTEM_PROMPT =
-  'You are a wildlife conservation assistant. Provide a brief factual summary for the given species. ' +
-  'Note: this summary is based on your training data only — no external documents have been retrieved. ' +
+const BASE_SYSTEM_PROMPT =
+  'You are a wildlife conservation assistant. Provide a factual summary for the given species. ' +
   'Respond in JSON with exactly these fields: ' +
   '{ "common_name": string, "population_estimate": string or null, ' +
   '"primary_threats": string[], "habitat_description": string, "confidence_note": string }';
@@ -73,7 +71,7 @@ async function processSpeciesEvent(event: EnrichedDisasterEvent): Promise<void> 
   const briefs: SpeciesBrief[] = [];
 
   for (const speciesName of event.species_at_risk) {
-    const brief = await generateSpeciesBrief(speciesName);
+    const brief = await generateSpeciesBrief(speciesName, event.event_type);
     briefs.push(brief);
   }
 
@@ -92,7 +90,7 @@ async function processSpeciesEvent(event: EnrichedDisasterEvent): Promise<void> 
   );
 }
 
-async function generateSpeciesBrief(speciesName: string): Promise<SpeciesBrief> {
+async function generateSpeciesBrief(speciesName: string, eventType: EventType): Promise<SpeciesBrief> {
   // IUCN status from DB — authoritative source, never from the LLM
   const rows = await sql<{ iucn_status: string }[]>`
     SELECT iucn_status FROM species_ranges WHERE species_name = ${speciesName} LIMIT 1
@@ -102,11 +100,35 @@ async function generateSpeciesBrief(speciesName: string): Promise<SpeciesBrief> 
     ? (rawStatus as IUCNStatus)
     : 'LC';
 
+  // RAG retrieval — ground the agent in real IUCN assessments
+  const ragChunks = await retrieveSpeciesFacts(speciesName, `threatened by ${eventType}`);
+  const sourceDocuments = [...new Set(ragChunks.map(c => c.source_document))];
+
+  let systemPrompt: string;
+  if (ragChunks.length > 0) {
+    const ragContext = ragChunks
+      .map(c => `[${c.source_document} — ${c.section_type}]\n${c.content}`)
+      .join('\n\n');
+    systemPrompt =
+      BASE_SYSTEM_PROMPT +
+      '\n\nRetrieved species context from IUCN Red List (similarity > 0.40):\n\n' +
+      ragContext +
+      '\n\nYou may ONLY state facts that appear in the above retrieved context. ' +
+      'For each factual claim, it must be supported by the retrieved text. ' +
+      'If a retrieved document does not address a field, say "data not available". ' +
+      'Do not use your training data to fill gaps about species biology.';
+  } else {
+    systemPrompt =
+      BASE_SYSTEM_PROMPT +
+      '\n\nNo RAG context was retrieved for this species (index may be empty or below threshold). ' +
+      'Use your training knowledge but set confidence_note to "based on training data only — no IUCN documents retrieved".';
+  }
+
   try {
     const result = await modelRouter.complete({
       model: MODELS.GEMINI_FLASH,
-      systemPrompt: SYSTEM_PROMPT,
-      userMessage: `Species: ${speciesName} (IUCN status: ${iucnStatus})`,
+      systemPrompt,
+      userMessage: `Species: ${speciesName} (IUCN status: ${iucnStatus}, threatened by: ${eventType})`,
       maxTokens: 512,
       jsonMode: true,
     });
@@ -120,7 +142,7 @@ async function generateSpeciesBrief(speciesName: string): Promise<SpeciesBrief> 
       population_estimate: parsed.population_estimate ?? null,
       primary_threats: Array.isArray(parsed.primary_threats) ? parsed.primary_threats : [],
       habitat_description: parsed.habitat_description,
-      source_documents: [], // Phase 6: RAG retrieval populates this
+      source_documents: sourceDocuments,
     };
   } catch (err) {
     console.warn(`[species-context] Failed to generate brief for ${speciesName}:`, err);

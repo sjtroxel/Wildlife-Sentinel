@@ -15,6 +15,7 @@ import { logPipelineEvent } from '../db/pipelineEvents.js';
 import { modelRouter } from '../router/ModelRouter.js';
 import { getAgentPrompt } from '../db/agentPrompts.js';
 import { logToWarRoom } from '../discord/warRoom.js';
+import { retrieveConservationContext } from '../rag/retrieve.js';
 
 const THREAT_COLORS: Record<ThreatLevel, number> = {
   critical: 0xdc2626,  // red
@@ -104,7 +105,18 @@ export async function processAlert(assessed: AssessedAlert): Promise<void> {
     return;
   }
 
-  const systemPrompt = await getAgentPrompt('synthesis');
+  let systemPrompt = await getAgentPrompt('synthesis');
+
+  // RAG retrieval — conservation context for "why this matters" framing
+  const conservationCtx = await retrieveConservationContext(
+    `${assessed.event_type} impact on ${assessed.species_at_risk[0] ?? 'endangered species'} conservation`
+  );
+  if (conservationCtx.length > 0 && conservationCtx[0]) {
+    systemPrompt +=
+      '\n\nConservation context (use for the "why this matters" sentence — cite the source):\n' +
+      conservationCtx[0].content +
+      `\nSource: ${conservationCtx[0].source_document}`;
+  }
 
   const speciesBriefLines = assessed.species_briefs
     .slice(0, 3)
