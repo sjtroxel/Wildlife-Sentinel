@@ -15,6 +15,7 @@ import { logPipelineEvent } from '../db/pipelineEvents.js';
 import { modelRouter } from '../router/ModelRouter.js';
 import { getAgentPrompt } from '../db/agentPrompts.js';
 import { logToWarRoom } from '../discord/warRoom.js';
+import { getNextThursday } from '../refiner/geoUtils.js';
 
 const VALID_THREAT_LEVELS = new Set<string>(['low', 'medium', 'high', 'critical']);
 
@@ -169,9 +170,9 @@ export async function processEvent(event: FullyEnrichedEvent): Promise<void> {
     sources: [event.source, 'open_meteo', 'gbif', 'iucn_postgis'],
   };
 
-  // Upsert alert record — store prediction for Refiner to compare against actuals later
+  // Upsert alert record — store prediction + original raw_data for Refiner to compare against actuals later
   await sql`
-    INSERT INTO alerts (raw_event_id, source, event_type, coordinates, severity, enrichment_data, threat_level, confidence_score, prediction_data)
+    INSERT INTO alerts (raw_event_id, source, event_type, coordinates, severity, enrichment_data, threat_level, confidence_score, prediction_data, raw_data)
     VALUES (
       ${event.id},
       ${event.source},
@@ -181,23 +182,32 @@ export async function processEvent(event: FullyEnrichedEvent): Promise<void> {
       ${JSON.stringify({ weather: event.weather_summary, habitats: event.nearby_habitat_ids })},
       ${threatLevel},
       ${confidence},
-      ${JSON.stringify({ predicted_impact: parsed.predicted_impact, reasoning: parsed.reasoning })}
+      ${JSON.stringify({ predicted_impact: parsed.predicted_impact, reasoning: parsed.reasoning })},
+      ${JSON.stringify(event.raw_data)}
     )
     ON CONFLICT (raw_event_id) DO UPDATE SET
       threat_level     = EXCLUDED.threat_level,
       confidence_score = EXCLUDED.confidence_score,
-      prediction_data  = EXCLUDED.prediction_data
+      prediction_data  = EXCLUDED.prediction_data,
+      raw_data         = EXCLUDED.raw_data
   `;
 
-  // Queue 24h and 48h Refiner evaluations (Phase 7 runs them)
-  await sql`
-    INSERT INTO refiner_queue (alert_id, evaluation_time, run_at)
-    SELECT id, '24h', NOW() + INTERVAL '24 hours' FROM alerts WHERE raw_event_id = ${event.id}
-  `;
-  await sql`
-    INSERT INTO refiner_queue (alert_id, evaluation_time, run_at)
-    SELECT id, '48h', NOW() + INTERVAL '48 hours' FROM alerts WHERE raw_event_id = ${event.id}
-  `;
+  // Queue Refiner evaluations — drought uses weekly cadence (Drought Monitor is Thursday-only)
+  if (event.event_type === 'drought') {
+    await sql`
+      INSERT INTO refiner_queue (alert_id, evaluation_time, run_at)
+      SELECT id, 'weekly', ${getNextThursday()} FROM alerts WHERE raw_event_id = ${event.id}
+    `;
+  } else {
+    await sql`
+      INSERT INTO refiner_queue (alert_id, evaluation_time, run_at)
+      SELECT id, '24h', NOW() + INTERVAL '24 hours' FROM alerts WHERE raw_event_id = ${event.id}
+    `;
+    await sql`
+      INSERT INTO refiner_queue (alert_id, evaluation_time, run_at)
+      SELECT id, '48h', NOW() + INTERVAL '48 hours' FROM alerts WHERE raw_event_id = ${event.id}
+    `;
+  }
 
   // Publish AssessedAlert to alerts:assessed for Synthesis Agent
   await redis.xadd(STREAMS.ASSESSED, '*', 'data', JSON.stringify(assessed));

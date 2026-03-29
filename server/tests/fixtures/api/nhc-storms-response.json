@@ -1,0 +1,17 @@
+{
+  "activeStorms": [
+    {
+      "id": "al052024",
+      "name": "BERYL",
+      "classification": "HU",
+      "intensity": "65",
+      "pressure": "985",
+      "latitude": "18.5N",
+      "longitude": "72.3W",
+      "movementDir": "295",
+      "movementSpeed": "12",
+      "lastUpdate": "2024-07-02T21:00:00Z",
+      "publicAdvisory": { "advNum": "12" }
+    }
+  ]
+}
