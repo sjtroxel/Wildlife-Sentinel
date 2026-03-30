@@ -7,7 +7,7 @@
     "test": "npm run test --workspace=server",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts,.tsx --ignore-path .gitignore",
     "typecheck": "tsc --noEmit --project server/tsconfig.json && tsc --noEmit --project shared/tsconfig.json",
-    "dev": "npm run dev --workspace=server",
+    "dev": "npm run dev --workspace=server & npm run dev --workspace=client",
     "migrate": "node --env-file=server/.env --import tsx/esm scripts/migrate.ts",
     "ingest:species": "node --env-file=server/.env --import tsx/esm scripts/ingest/ingestSpeciesFacts.ts",
     "ingest:conservation": "node --env-file=server/.env --import tsx/esm scripts/ingest/ingestConservationContext.ts",

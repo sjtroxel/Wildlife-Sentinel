@@ -15,6 +15,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Wildlife Sentinel",
   description: "Real-time AI monitoring of global disaster events and their impact on endangered wildlife.",
+  icons: {
+    icon: "/Favicon.ico",
+    apple: "/WildlifeSentinel-Light512x512.png",
+  },
+  openGraph: {
+    title: "Wildlife Sentinel",
+    description: "Real-time AI monitoring of global disaster events and their impact on endangered wildlife.",
+    images: [{ url: "/WildlifeSentinel-Light512x512.png", width: 512, height: 512 }],
+  },
 };
 
 export default function RootLayout({
