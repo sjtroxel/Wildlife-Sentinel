@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@theme {
+  --color-threat-critical: #dc2626;
+  --color-threat-high:     #ea580c;
+  --color-threat-medium:   #d97706;
+  --color-threat-low:      #6b7280;
+
+  --color-event-wildfire:  #ef4444;
+  --color-event-storm:     #3b82f6;
+  --color-event-flood:     #06b6d4;
+  --color-event-drought:   #f59e0b;
+  --color-event-coral:     #14b8a6;
+}

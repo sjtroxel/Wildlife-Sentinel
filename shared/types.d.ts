@@ -140,3 +140,35 @@ export interface HealthCheckResponse {
   uptime_seconds: number;
   timestamp: string;
 }
+
+// DB row types returned by the API (Phase 8)
+
+export interface AlertRow {
+  id: string;
+  source: DisasterSource;
+  event_type: EventType;
+  coordinates: { lat: number; lng: number };
+  severity: number | null;
+  threat_level: ThreatLevel | null;
+  confidence_score: number | null;
+  enrichment_data: Record<string, unknown> | null;
+  created_at: string;
+  discord_message_id: string | null;
+}
+
+export interface RefinerScoreRow {
+  composite_score: number;
+  direction_accuracy: number;
+  magnitude_accuracy: number;
+  evaluation_time: string;
+  evaluated_at: string;
+  event_type: EventType;
+  source: DisasterSource;
+}
+
+export interface BboxQuery {
+  minLng: number;
+  minLat: number;
+  maxLng: number;
+  maxLat: number;
+}

@@ -6,6 +6,10 @@ import { config } from './config.js';
 import { AppError } from './errors.js';
 import { healthRouter } from './routes/health.js';
 import { adminRouter } from './routes/admin.js';
+import { alertsRouter } from './routes/alerts.js';
+import { refinerRouter } from './routes/refiner.js';
+import { habitatsRouter } from './routes/habitats.js';
+import { agentActivityRouter } from './routes/agentActivity.js';
 
 export const app = express();
 
@@ -20,6 +24,10 @@ app.use(rateLimit({ windowMs: 60_000, max: 100, standardHeaders: true, legacyHea
 
 app.use('/health', healthRouter);
 app.use('/admin', adminRouter);
+app.use('/alerts', alertsRouter);
+app.use('/refiner', refinerRouter);
+app.use('/habitats', habitatsRouter);
+app.use('/agent-activity', agentActivityRouter);
 
 // Error handler — must have exactly 4 params for Express to recognize it
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {

@@ -2,9 +2,11 @@
  * War Room — rate-limited observability logger to #sentinel-ops.
  *
  * Posts one-line status entries for every significant pipeline action.
+ * Also publishes to Redis pub/sub channel 'agent:activity' for the SSE stream.
  * Failures here must NEVER crash the pipeline — all errors are swallowed.
  */
 import { getSentinelOpsChannel } from './bot.js';
+import { redis } from '../redis/client.js';
 
 const MIN_POST_INTERVAL_MS = 500; // max 2 war room messages per second
 let lastPostTime = 0;
@@ -29,6 +31,16 @@ export async function logToWarRoom(entry: WarRoomEntry): Promise<void> {
     const msg = `${emoji} \`[${entry.agent}]\` ${entry.action}: ${entry.detail}`;
 
     await getSentinelOpsChannel().send(msg);
+
+    // Also publish to Redis for the SSE agent-activity stream
+    try {
+      await redis.publish('agent:activity', JSON.stringify({
+        agent: entry.agent,
+        action: entry.action,
+        detail: entry.detail,
+        timestamp: new Date().toISOString(),
+      }));
+    } catch { /* swallow — observability must never crash the pipeline */ }
   } catch (err) {
     // War room failures must never crash the pipeline
     console.error('[war-room] Failed to post:', err);
