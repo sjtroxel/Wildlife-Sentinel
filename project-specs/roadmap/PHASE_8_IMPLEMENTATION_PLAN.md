@@ -127,36 +127,23 @@ try {
 
 ## Track 2 — Frontend
 
-### Step 2.1 — Scaffold Next.js
+### Step 2.1 — Scaffold Next.js ✅
 
-Run from `client/`:
-```bash
-npx create-next-app@latest . --typescript --tailwind --app --no-src-dir --import-alias "@/*"
-```
+Next.js 16.2.1 scaffolded (React 19, Tailwind v4, TypeScript strict, App Router).
+No `tailwind.config.js` generated — v4 is already CSS-first.
 
-After scaffolding:
-- Check `client/package.json` for Tailwind version
-- If Tailwind v3: `npm install tailwindcss@latest` to upgrade to v4
-- Delete generated `tailwind.config.js` (v4 is CSS-first — no config file)
-- Add workspace dependency: `"@wildlife-sentinel/shared": "*"` to dependencies
-- Run `npm install` from the monorepo root to link workspace
+### Step 2.2 — Install additional deps ✅
 
-### Step 2.2 — Install additional deps (from `client/`)
+`leaflet@1.9.4`, `recharts@3.8.1`, `@types/leaflet@1.9.21` installed.
+`@wildlife-sentinel/shared` added to dependencies, linked via root `npm install`.
 
-```bash
-npm install leaflet recharts
-npm install -D @types/leaflet
-```
+### Step 2.3 — `client/.env.local` ✅
 
-### Step 2.3 — `client/.env.local`
+`NEXT_PUBLIC_API_URL=http://localhost:3000` written.
 
-```
-NEXT_PUBLIC_API_URL=http://localhost:3000
-```
+### Step 2.4 — `client/app/globals.css` ✅
 
-### Step 2.4 — `client/app/globals.css`
-
-Replace generated content with Tailwind v4 CSS-first setup:
+Replaced with Tailwind v4 CSS-first setup:
 
 ```css
 @import "tailwindcss";
@@ -175,7 +162,7 @@ Replace generated content with Tailwind v4 CSS-first setup:
 }
 ```
 
-### Step 2.5 — `client/lib/api.ts`
+### Step 2.5 — `client/lib/api.ts` ✅
 
 API client. Uses `NEXT_PUBLIC_API_URL`. Types from `@wildlife-sentinel/shared`.
 
@@ -272,28 +259,29 @@ New test files in `server/tests/routes/`. Mock `sql` and `redis`.
 - `server/src/routes/refiner.ts` ✅
 - `server/src/routes/habitats.ts` ✅
 - `server/src/routes/agentActivity.ts` ✅
-- `server/tests/routes/alerts.test.ts`
-- `server/tests/routes/refiner.test.ts`
-- `server/tests/routes/habitats.test.ts`
-- `server/tests/routes/agentActivity.test.ts`
+- `server/tests/routes/alerts.test.ts` ✅
+- `server/tests/routes/refiner.test.ts` ✅
+- `server/tests/routes/habitats.test.ts` ✅
+- `server/tests/routes/agentActivity.test.ts` ✅
 
 **Modify (server):**
 - `server/src/app.ts` — register 4 new routes ✅
 - `server/src/discord/warRoom.ts` — add Redis pub/sub publish ✅
 
-**Create (client — after scaffolding):**
-- `client/lib/api.ts`
-- `client/lib/utils.ts`
-- `client/components/DisasterMap.tsx`
-- `client/components/DisasterMapInner.tsx`
-- `client/components/AlertsFeed.tsx`
-- `client/components/AgentActivity.tsx`
-- `client/components/RefinerChart.tsx`
+**Create (client):**
+- `client/lib/api.ts` ✅
+- `client/lib/utils.ts` ✅
+- `client/components/DisasterMap.tsx` ✅
+- `client/components/DisasterMapInner.tsx` ✅
+- `client/components/AlertsFeed.tsx` ✅
+- `client/components/AgentActivity.tsx` ✅
+- `client/components/RefinerChart.tsx` ✅
 
 **Modify (client):**
-- `client/app/globals.css` — Tailwind v4 CSS-first setup
-- `client/app/page.tsx` — main layout
-- `client/package.json` — add shared workspace dep (post-scaffold)
+- `client/app/globals.css` — Tailwind v4 CSS-first setup ✅
+- `client/app/layout.tsx` — update metadata title/description ✅
+- `client/app/page.tsx` — main layout ✅
+- `client/package.json` — workspace name + deps ✅
 
 ---
 
