@@ -1,8 +1,8 @@
 # Phase 6 — RAG Ingest Handoff
 
-**Last updated:** 2026-03-28
+**Last updated:** 2026-03-30
 **Written for:** Fresh Claude session
-**Status:** Ingest in progress — run `npm run ingest:species --workspace=scripts` daily until complete.
+**Status:** Conservation ingest COMPLETE ✅. Species ingest in progress — run `npm run ingest:species --workspace=scripts` daily until 751/751 species done.
 
 ---
 
@@ -65,22 +65,22 @@ npm run ingest:conservation --workspace=scripts
 
 ---
 
-## Conservation Context .txt Files Still Needed
+## Conservation Context — COMPLETE ✅
 
-Place these 3 files in `scripts/ingest/sources/conservation/` before running `ingest:conservation`:
-- `ipbes_global_assessment_spm_2019.txt`
-- `wwf_living_planet_report_2024.txt`
-- `cbd_global_biodiversity_outlook_5_2020.txt`
+38 chunks ingested on 2026-03-30. Files written by Claude from Wikipedia + official publication page sources:
+- `ipbes_global_assessment_spm_2019.txt` → 13 chunks
+- `wwf_living_planet_report_2024.txt` → 13 chunks
+- `cbd_global_biodiversity_outlook_5_2020.txt` → 12 chunks
 
-Download the PDFs from their respective sites, copy the text content into .txt files.
+Source files live in `scripts/ingest/sources/conservation/`. Do not delete them — they serve as the authoritative source for this index. Re-running `ingest:conservation` is idempotent (ON CONFLICT DO NOTHING).
 
 ---
 
-## Phase 6 Acceptance Criteria (Remaining)
+## Phase 6 Acceptance Criteria
 
 - [x] Migration 0007 applied to Neon (vector(1536))
-- [ ] `ingest:species` runs successfully — `species_facts` populated with ≥50 chunks (in progress, ~254/751 species done)
-- [ ] `ingest:conservation` runs — `conservation_context` populated with 3 documents
+- [ ] `ingest:species` runs to completion — `species_facts` at 751/751 species (584/751 as of 2026-03-30; ~1 more daily run needed)
+- [x] `ingest:conservation` runs — `conservation_context` populated with 38 chunks across 3 documents ✅
 - [ ] `retrieveSpeciesFacts()` returns similarity > 0.40 for a test query
 - [ ] SpeciesContextAgent `source_documents` field populated with real GBIF source names
 

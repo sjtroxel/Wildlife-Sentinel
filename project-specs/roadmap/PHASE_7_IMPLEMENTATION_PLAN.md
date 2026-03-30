@@ -1,6 +1,6 @@
 # Phase 7 — Refiner / Evaluator Loop: Implementation Plan
 
-**Status:** Approved, ready to implement
+**Status:** ✅ Complete (2026-03-29) — all files implemented, 30 refiner tests pass, migration applied
 **Depends on:** Phase 5 complete ✅ (Phase 6 ingest in progress — not a blocker)
 **Session estimate:** 1–2 sessions
 **Spec:** `PHASE_7_REFINER.md`

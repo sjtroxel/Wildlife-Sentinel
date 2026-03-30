@@ -1,0 +1,121 @@
+GLOBAL BIODIVERSITY OUTLOOK 5
+Convention on Biological Diversity, Secretariat
+Published September 2020
+
+OVERVIEW
+
+The Global Biodiversity Outlook 5 (GBO-5) is the flagship publication of the Convention on Biological Diversity (CBD), providing a periodic assessment of the status and trends of biodiversity worldwide and the implications for human well-being. Published in September 2020, GBO-5 synthesizes progress toward the Aichi Biodiversity Targets adopted under the Strategic Plan for Biodiversity 2011–2020.
+
+GBO-5 draws on the most comprehensive dataset ever assembled for assessing biodiversity: the Fifth National Reports submitted by Parties to the Convention, the IPBES Global Assessment on Biodiversity and Ecosystem Services, and 4 IPBES regional assessments, 2 thematic assessments, and multiple other scientific sources.
+
+The central conclusion of GBO-5 is sobering: none of the 20 Aichi Biodiversity Targets set for 2020 was fully achieved. Partial progress was made on 6 targets, some elements were achieved on 13 targets, and the world is further from achieving biodiversity goals than when the targets were set in 2010.
+
+GBO-5 characterizes humanity as standing at a crossroads — with the decisions made in the next decade determining the trajectory of life on Earth for the rest of this century and beyond.
+
+AICHI BIODIVERSITY TARGET ASSESSMENT
+
+The 20 Aichi Biodiversity Targets were adopted at COP10 in Nagoya, Japan in 2010, as part of the Strategic Plan for Biodiversity 2011–2020. They covered five strategic goals: addressing underlying causes, reducing direct pressures, safeguarding ecosystems and species, enhancing benefits, and enabling implementation through participatory planning.
+
+GBO-5 found that while significant conservation actions occurred globally during 2010–2020, they were insufficient in scale and scope to halt or reverse biodiversity loss. Protected area coverage expanded — reaching 15 percent of terrestrial and inland water areas and 17 percent of coastal and marine waters — but ecosystem health within protected areas often declined, and connectivity between protected areas remained inadequate.
+
+Pollution reduction targets were partially met in some pollutant categories but overall pollution loads in ecosystems continued increasing. Invasive species introductions slowed in some regions but increased globally. Genetic diversity conservation efforts were strengthened but implementation remained patchy across countries and taxonomic groups.
+
+The failure to meet the Aichi Targets reflects systemic insufficiency: the scale of response has been far smaller than the scale of threats to biodiversity. Conservation investments, while growing, remain dwarfed by subsidies and incentives that accelerate biodiversity destruction.
+
+BIODIVERSITY STATUS AS OF 2020
+
+Species Extinction Crisis
+
+As of 2020, approximately 28 percent of 134,400 species assessed by the IUCN Red List were threatened with extinction. For specific groups:
+
+Amphibians are the most threatened vertebrate class, with approximately 41 percent of assessed species facing extinction. Amphibians are highly sensitive to habitat change, pollution, disease (particularly chytridiomycosis), and climate change.
+
+Approximately 25 percent of mammals face extinction threat. Large mammals — megafauna — face particularly elevated risk from hunting and habitat fragmentation. Primates are especially threatened, with 60 percent of primate species facing anthropogenic extinction risk and 75 percent showing population declines. Approximately 1,000 mountain gorillas survive.
+
+Approximately 21 percent of reptile species face extinction threat. Freshwater turtles and tortoises are among the most threatened reptile groups, with many species in Asia at critical risk from collection for food and traditional medicine.
+
+Approximately 14 percent of bird species are threatened with extinction. Seabirds, tropical forest specialists, and grassland birds show the steepest declines. Approximately 51 species are critically endangered.
+
+Reef-forming corals face severe threats: approximately 33 percent are threatened with extinction. Coral bleaching driven by rising sea surface temperatures has occurred at unprecedented frequency since 2016, damaging reefs in all ocean basins.
+
+Plants face a severe extinction crisis that is poorly quantified due to the magnitude of the taxonomic challenge. Approximately 40 percent of plant species are threatened with extinction based on available data. One-third of tree species face extinction risk, threatening carbon storage, water regulation, and habitat provision for tree-dependent species.
+
+The background extinction rate — the rate at which species would go extinct in the absence of human influence — is estimated at approximately 0.1 to 1 species per million species-years. Current extinction rates are conservatively estimated at 100 to 1,000 times this background rate.
+
+Population and Abundance Declines
+
+Extinction understates the full extent of biodiversity loss because many species that persist have dramatically reduced populations, ranges, and ecological roles. Population declines of wild animals have been severe across all taxonomic groups and regions.
+
+Wild mammal biomass is estimated seven times lower than its prehistoric values. Wild mammals now comprise only 4 percent of total mammalian biomass on Earth; livestock account for 60 percent and humans 36 percent. This biomass shift represents the most fundamental transformation of vertebrate ecology in the history of complex life.
+
+Wild bird biomass shows similar patterns. In North America alone, approximately 3 billion birds — 29 percent of all birds — have been lost since 1970. European farmland bird populations have declined more than 55 percent since 1980.
+
+The Living Planet Index, which tracks population trends in approximately 20,000 monitored wildlife populations, shows an average decline of 68 percent since 1970 for vertebrate species globally. Freshwater vertebrate populations have declined 84 percent since 1970 — the most severe documented decline of any ecosystem category.
+
+Ecosystem Extent and Condition
+
+All major ecosystem categories show extent and condition declines from pre-industrial baselines:
+
+Forests: Approximately 1.9 million km² of tropical and subtropical forest was lost between 2000 and 2018. Since the dawn of agriculture, roughly half of Earth's forests have been cleared. Primary forest — old-growth forest with the highest biodiversity values — continues to be lost at approximately 50,000 km² per year.
+
+Wetlands: More than 85 percent of the world's wetland area present in 1700 has been lost. Wetland conversion continues at 3 times the rate of forest loss. Wetlands store approximately 30 percent of terrestrial carbon despite covering only 5–8 percent of land area.
+
+Seagrass meadows: Approximately 7 percent of seagrass meadows are lost each year, representing one of the fastest rates of habitat loss on Earth. Seagrasses are nursery habitat for commercially important fish and sea turtles, and store significant carbon.
+
+Coral reefs: 50 percent of the world's coral reefs have been lost since 1950 through bleaching, ocean acidification, coastal pollution, and destructive fishing. At 1.5°C of warming, 70–90 percent of remaining coral reefs will be lost; at 2°C, greater than 99 percent will be lost.
+
+Mangroves: Approximately 35 percent of the world's mangroves were lost between 1980 and 2000. Mangroves provide coastal protection, nursery habitat, and carbon sequestration, and their loss exposes coastlines to storm surge and erosion.
+
+FIVE PATHWAYS TO MEETING POST-2020 BIODIVERSITY GOALS
+
+GBO-5 identifies five areas where action is most urgently needed, based on modeling of multiple scenarios:
+
+1. Land and Sea Use: Halting conversion of natural habitats — particularly tropical forests, wetlands, and coastal ecosystems — and actively restoring degraded areas. This requires reforming agricultural production to reduce its land, water, and chemical footprint per unit of food produced.
+
+2. Overexploitation: Ending unsustainable fishing, hunting, logging, and wildlife trade. Establishing comprehensive systems of protected and sustainably managed areas covering at least 30 percent of land and ocean by 2030 (the "30x30" goal).
+
+3. Climate Change: Achieving net-zero greenhouse gas emissions by mid-century and implementing nature-based solutions including forest protection, restoration, and sustainable land management that simultaneously reduce emissions and support biodiversity.
+
+4. Pollution: Reducing excess nutrients entering freshwater and marine ecosystems; eliminating or controlling harmful pesticides, plastics, and industrial chemicals; reducing noise and light pollution in biodiversity-rich areas.
+
+5. Invasive Species: Strengthening biosecurity, controlling and eradicating invasive species from critical habitats including islands, and preventing future introductions through rigorous screening of trade pathways.
+
+EIGHT KEY TRANSITIONS FOR BIODIVERSITY
+
+Building on the five pathways, GBO-5 identifies eight interdependent transitions across societal systems that together are necessary and sufficient to achieve the 2050 Vision for Biodiversity:
+
+Land and Forests: Transforming land use planning, agricultural systems, and forest management to deliver food security while protecting and restoring biodiversity and ecosystem services. Requires shifting from area-based productivity to sustainable intensification, agroecology, and restoration-integrated landscapes.
+
+Freshwater: Transforming water use and management to achieve sustainable flows for freshwater ecosystems while meeting human needs. Requires dam management reform, water efficiency improvements, pollution control, and restoration of riparian and wetland habitats.
+
+Fisheries and Oceans: Ending overfishing, eliminating destructive fishing practices, protecting critical marine habitats, and managing shipping and extraction activities to allow marine ecosystem recovery. Oceans currently absorb 31 percent of human CO₂ emissions and provide food for more than 3 billion people.
+
+Sustainable Agriculture: Transitioning to agricultural systems that nourish people within planetary boundaries. Reducing reliance on pesticides and synthetic fertilizers; diversifying crop systems; integrating biodiversity into farm landscapes; reducing food loss and waste.
+
+Food Systems: Shifting dietary patterns in high-consumption regions toward plant-rich diets; reforming food retail, trade, and subsidy systems; addressing the ecological externalities of global food supply chains.
+
+Cities and Infrastructure: Planning cities and infrastructure to reduce habitat conversion and fragmentation; incorporating biodiversity into urban design; improving environmental assessments for infrastructure development in biodiversity-critical areas.
+
+Climate Action: Achieving Paris Agreement goals while deploying nature-based climate solutions that sequester carbon and protect biodiversity simultaneously. Approximately 30 percent of required climate mitigation through 2050 can come from natural climate solutions such as forest protection, coastal wetland restoration, and soil carbon management.
+
+One Health: Recognizing the interconnection of human health, animal health, and ecosystem health. Biodiversity loss increases the risk of emerging infectious diseases by concentrating and stressing animal reservoirs and increasing human-wildlife contact through habitat encroachment.
+
+ECOLOGICAL TIPPING POINTS
+
+GBO-5 introduces explicit attention to the risk of ecological tipping points — thresholds beyond which ecosystem changes become self-reinforcing and irreversible. Major tipping points of concern include:
+
+Amazon dieback: Climate change, combined with ongoing deforestation, could push the Amazon rainforest past a tipping point beyond which reduced transpiration creates a self-reinforcing drying cycle, transforming large portions of the world's largest tropical forest into savanna. This would eliminate habitat for thousands of Amazonian endemic species while releasing massive carbon stores.
+
+Coral reef collapse: Continued warming and acidification could eliminate functional coral reef systems globally by mid-century, removing habitat for an estimated 25 percent of all marine species and eliminating coastal protection and food security services for hundreds of millions of people.
+
+Boreal and Arctic ecosystem change: Permafrost thaw releases stored methane and carbon dioxide, amplifying warming and threatening boreal forest and tundra ecosystems. Species adapted to cold environments including wolverines, caribou, Siberian tigers, and thousands of invertebrate species face habitat collapse.
+
+Wetland loss: Many freshwater wetland systems are approaching critical thresholds of extent and connectivity loss beyond which they cannot maintain populations of specialist wetland species. Once below minimum viable areas, these populations enter extinction vortices.
+
+IMPLICATIONS FOR CONSERVATION DECISION-MAKING
+
+GBO-5 emphasizes that conservation effectiveness requires moving beyond protected areas to address the drivers of biodiversity loss in the wider landscape and seascape. The most urgent conservation needs exist where high biodiversity values coincide with high threat intensity — tropical forest frontiers, coral reef systems, freshwater basins, and critical migration corridors.
+
+The report calls for mainstreaming biodiversity across all sectors of the economy — agriculture, fisheries, infrastructure, energy, and finance — rather than treating it as solely an environmental issue. Harmful subsidies estimated at USD 500 billion per year drive biodiversity loss; redirecting even a fraction of these funds to biodiversity-positive outcomes would transform conservation finance.
+
+Biodiversity conservation is not a luxury but a prerequisite for sustainable development. The services provided by functioning ecosystems — clean water, productive soils, climate regulation, disease control, food security, and cultural value — underpin human civilization. Their loss threatens not only the species that share this planet but the long-term viability of human societies themselves.

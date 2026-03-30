@@ -3,9 +3,36 @@
 **Goal:** A portfolio-quality read-only web presence. Looks great on mobile. Shows the system is alive and doing something meaningful to visitors who aren't on Discord.
 
 **Status:** Not started
-**Depends on:** Phase 5 complete (Phase 7 recommended for the refiner chart)
+**Depends on:** Phase 5 complete ✅, Phase 7 complete ✅ (refiner chart needs real score data eventually)
 **Estimated sessions:** 2–3
 **Note:** This is sjtroxel's first Next.js project — keep it clean, demonstrate the patterns well.
+
+---
+
+## Prerequisites (Complete BEFORE Writing Any Frontend Code)
+
+These must be confirmed or completed at the start of the Phase 8 session. Do not skip this list.
+
+### Backend (do first — frontend is blocked on these)
+- [ ] Add Express route: `GET /alerts/recent` — see Section 2 below
+- [ ] Add Express route: `GET /refiner/scores` — see Section 2 below
+- [ ] Add Express route: `GET /habitats` (GeoJSON bbox query) — see Section 2 below
+- [ ] Add Express route: `GET /agent-activity` (SSE) — see Section 2 below
+- [ ] Update `warRoom.ts` to also publish to Redis pub/sub channel `agent:activity` (for SSE)
+- [ ] Register all new routes in `server/src/app.ts`
+
+### Frontend scaffolding
+- [ ] Confirm `client/` contains only a stub `package.json` — Next.js NOT yet initialized
+- [ ] Run `npx create-next-app@latest . --typescript --tailwind --app --no-src-dir --import-alias "@/*"` from `client/`
+- [ ] Delete generated `tailwind.config.js` (Tailwind v4 is CSS-first)
+- [ ] Install `leaflet recharts @types/leaflet` in `client/`
+- [ ] Create `client/.env.local` with `NEXT_PUBLIC_API_URL=http://localhost:3000`
+
+### Verification before frontend build
+- [ ] `npm run dev` on the server starts without errors
+- [ ] `curl http://localhost:3000/alerts/recent` returns JSON (empty array is fine)
+- [ ] `curl http://localhost:3000/refiner/scores` returns JSON
+- [ ] `curl -N http://localhost:3000/agent-activity` stays open (SSE stream)
 
 ---
 

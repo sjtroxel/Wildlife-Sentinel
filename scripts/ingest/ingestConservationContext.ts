@@ -37,7 +37,7 @@ const sql = postgres(DATABASE_URL, { ssl: 'require', max: 5 });
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const SOURCES_DIR = join(__dirname, 'sources', 'conservation');
+const SOURCES_DIR = join(__dirname, '..', 'ingest', 'sources', 'conservation');
 const EMBEDDING_MODEL = 'gemini-embedding-001';
 const MAX_CHUNK_CHARS = 512 * 4;
 const OVERLAP_CHARS = 50 * 4;

@@ -15,7 +15,7 @@
 | 4 | All Five Disaster Sources | ✅ Complete | NHC, USGS, Drought Monitor, Coral Reef Watch scouts live |
 | 5 | Full Agent Swarm + War Room | ✅ Complete | ThreatAssembler fan-in, Threat Assessment + Synthesis (Claude Sonnet), HITL, war room |
 | 6 | RAG Knowledge Base | 🔶 Ready to ingest | Infrastructure complete, 72 tests pass. Ingest script fixed: IUCN API (Cloudflare-blocked) → GBIF + Wikipedia. Run `npm run ingest:species`. See PHASE_6_HANDOFF.md |
-| 7 | Refiner / Evaluator Loop | 🔲 Not started | 24h/48h evaluator, system prompt updates, score tracking |
+| 7 | Refiner / Evaluator Loop | ✅ Complete | 5 event-type scorers, hourly scheduler, correction notes, 121 tests pass |
 | 8 | Frontend | 🔲 Not started | Next.js, Leaflet map, alerts feed, agent activity SSE, refiner chart |
 | 9 | Hardening + Deploy | 🔲 Not started | Tests, Playwright E2E, Railway + Vercel deploy, weekly digest |
 | 10 | Expansions & Enhancements | 🔲 Expansion | Global data sources, UI polish, new features — post-launch improvements |
@@ -145,7 +145,8 @@
 - [x] Species Context Agent uses RAG for species briefs
 - [x] Synthesis Agent uses RAG for "why this matters" framing
 - [x] Both agents cite `source_id` in output — no uncited claims
-- [ ] **RUN INGEST:** `npm run ingest:species` then `npm run ingest:conservation` (tables currently empty)
+- [x] `npm run ingest:conservation` complete — 38 chunks, 3 documents in `conservation_context` ✅
+- [ ] `npm run ingest:species` — ~254/751 species done as of 2026-03-29; run daily until 751/751
 
 → See [PHASE_6_RAG.md](roadmap/PHASE_6_RAG.md)
 
@@ -154,14 +155,17 @@
 ## Phase 7 — Refiner / Evaluator Loop
 **Goal:** System improves its own predictions over time.
 
-- [ ] Refiner Agent runs 24h after each fire/storm alert
-- [ ] Refiner Agent runs 48h after each fire/storm alert
-- [ ] Prediction vs actual comparison logic (NASA FIRMS / NOAA lookback)
-- [ ] Deterministic scoring: `0.6 * directionAccuracy + 0.4 * magnitudeAccuracy`
-- [ ] Correction Note generation (Claude Sonnet 4.6)
-- [ ] `agent_prompts` table update mechanism
-- [ ] `refiner_scores` table — score history per alert
-- [ ] Score trend verified: does the system improve after corrections?
+- [x] Refiner Agent runs 24h after each fire/storm/flood/coral alert
+- [x] Refiner Agent runs 48h after each fire/storm/flood/coral alert
+- [x] Drought evaluation runs weekly (next Thursday at 18:00 UTC — Drought Monitor publication)
+- [x] Prediction vs actual comparison logic (NASA FIRMS / NOAA / USGS / Drought Monitor / CRW)
+- [x] Deterministic scoring: `0.6 * directionAccuracy + 0.4 * magnitudeAccuracy`
+- [x] Correction Note generation (Claude Sonnet 4.6) when score < 0.60
+- [x] `agent_prompts` table update mechanism (correction prepended to system prompt)
+- [x] `refiner_scores` table — score history per alert (migration 0008, applied)
+- [x] Hourly scheduler (`RefinerScheduler.ts`) started in `server.ts`
+- [x] geoUtils.ts — haversine, bearing, centroid, CSV/NHC parsers, prediction extractors
+- [x] 30 refiner tests pass (17 unit + 13 integration)
 
 → See [PHASE_7_REFINER.md](roadmap/PHASE_7_REFINER.md)
 
