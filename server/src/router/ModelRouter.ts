@@ -17,6 +17,48 @@ const PRICING: Record<string, { input: number; output: number }> = {
   'gemini-embedding-001':  { input: 0.00,  output: 0.00 },
 };
 
+const MAX_RETRY_ATTEMPTS = 3;
+const DEFAULT_RETRY_DELAY_MS = 15_000;
+
+const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Parse the retryDelay field from a Google 429/503 error response body.
+ * Returns milliseconds, or null if the body cannot be parsed.
+ */
+function parseRetryDelayMs(errorBody: string): number | null {
+  try {
+    const parsed = JSON.parse(errorBody) as {
+      error?: { details?: Array<{ '@type': string; retryDelay?: string }> }
+    };
+    const retryInfo = parsed.error?.details?.find(
+      d => d['@type'] === 'type.googleapis.com/google.rpc.RetryInfo'
+    );
+    if (retryInfo?.retryDelay) {
+      // retryDelay is e.g. "12s" or "12.882280697s"
+      return Math.ceil(parseFloat(retryInfo.retryDelay) * 1000);
+    }
+  } catch { /* ignore malformed body */ }
+  return null;
+}
+
+/**
+ * Returns true if the error from the Google AI SDK is a retryable 429 or 503.
+ * The SDK exposes `status` on its error objects.
+ */
+function isRetryableGoogleError(err: unknown): boolean {
+  if (typeof err !== 'object' || err === null) return false;
+  const status = (err as Record<string, unknown>)['status'];
+  return status === 429 || status === 503;
+}
+
+function getErrorMessage(err: unknown): string {
+  if (typeof err === 'object' && err !== null && 'message' in err) {
+    return String((err as { message: unknown }).message);
+  }
+  return '';
+}
+
 class ModelRouter {
   private anthropic: Anthropic;
   private google: GoogleGenerativeAI;
@@ -45,23 +87,41 @@ class ModelRouter {
   async embed(text: string | string[]): Promise<number[][]> {
     const inputs = Array.isArray(text) ? text : [text];
     const embeddings: number[][] = [];
+
     for (const input of inputs) {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODELS.GOOGLE_EMBEDDINGS}:embedContent?key=${config.googleAiKey}`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: `models/${MODELS.GOOGLE_EMBEDDINGS}`,
-          content: { parts: [{ text: input }] },
-          outputDimensionality: 1536,
-        }),
-      });
-      if (!res.ok) {
-        throw new Error(`ModelRouter embed error ${res.status}: ${await res.text()}`);
+
+      for (let attempt = 1; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: `models/${MODELS.GOOGLE_EMBEDDINGS}`,
+            content: { parts: [{ text: input }] },
+            outputDimensionality: 1536,
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json() as { embedding: { values: number[] } };
+          embeddings.push(data.embedding.values);
+          break;
+        }
+
+        const body = await res.text();
+        if ((res.status === 429 || res.status === 503) && attempt < MAX_RETRY_ATTEMPTS) {
+          const delayMs = parseRetryDelayMs(body) ?? DEFAULT_RETRY_DELAY_MS;
+          console.warn(
+            `[model-router] Rate limited (${MODELS.GOOGLE_EMBEDDINGS}) — retrying in ${Math.round(delayMs / 1000)}s (attempt ${attempt}/${MAX_RETRY_ATTEMPTS})`
+          );
+          await sleep(delayMs);
+          continue;
+        }
+
+        throw new Error(`ModelRouter embed error ${res.status}: ${body}`);
       }
-      const data = await res.json() as { embedding: { values: number[] } };
-      embeddings.push(data.embedding.values);
     }
+
     return embeddings;
   }
 
@@ -70,6 +130,7 @@ class ModelRouter {
   }
 
   private async completeAnthropic(request: RouterRequest): Promise<RouterResponse> {
+    // Do NOT retry Anthropic — 429s are billing/capacity issues, not transient
     const response = await this.anthropic.messages.create({
       model: request.model,
       max_tokens: request.maxTokens ?? 1024,
@@ -92,27 +153,44 @@ class ModelRouter {
   }
 
   private async completeGoogle(request: RouterRequest): Promise<RouterResponse> {
-    this.checkGoogleRateLimit(request.model);
+    for (let attempt = 1; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
+      try {
+        this.checkGoogleRateLimit(request.model);
 
-    const model = this.google.getGenerativeModel({
-      model: request.model,
-      systemInstruction: request.systemPrompt,
-      generationConfig: {
-        maxOutputTokens: request.maxTokens ?? 1024,
-        temperature: request.temperature ?? 0.3,
-        responseMimeType: request.jsonMode === true ? 'application/json' : 'text/plain',
-      },
-    });
+        const model = this.google.getGenerativeModel({
+          model: request.model,
+          systemInstruction: request.systemPrompt,
+          generationConfig: {
+            maxOutputTokens: request.maxTokens ?? 1024,
+            temperature: request.temperature ?? 0.3,
+            responseMimeType: request.jsonMode === true ? 'application/json' : 'text/plain',
+          },
+        });
 
-    const result = await model.generateContent(request.userMessage);
-    const text = result.response.text();
-    const usage = result.response.usageMetadata;
-    const inputTokens = usage?.promptTokenCount ?? 0;
-    const outputTokens = usage?.candidatesTokenCount ?? 0;
-    const cost = this.calculateCost(request.model, inputTokens, outputTokens);
+        const result = await model.generateContent(request.userMessage);
+        const text = result.response.text();
+        const usage = result.response.usageMetadata;
+        const inputTokens = usage?.promptTokenCount ?? 0;
+        const outputTokens = usage?.candidatesTokenCount ?? 0;
+        const cost = this.calculateCost(request.model, inputTokens, outputTokens);
 
-    await this.trackUsage(request.model, inputTokens, outputTokens, cost);
-    return { content: text, model: request.model, inputTokens, outputTokens, estimatedCostUsd: cost };
+        await this.trackUsage(request.model, inputTokens, outputTokens, cost);
+        return { content: text, model: request.model, inputTokens, outputTokens, estimatedCostUsd: cost };
+      } catch (err) {
+        if (isRetryableGoogleError(err) && attempt < MAX_RETRY_ATTEMPTS) {
+          const delayMs = parseRetryDelayMs(getErrorMessage(err)) ?? DEFAULT_RETRY_DELAY_MS;
+          console.warn(
+            `[model-router] Rate limited (${request.model}) — retrying in ${Math.round(delayMs / 1000)}s (attempt ${attempt}/${MAX_RETRY_ATTEMPTS})`
+          );
+          await sleep(delayMs);
+          continue;
+        }
+        throw err;
+      }
+    }
+
+    // Unreachable — loop always returns or throws — but TypeScript needs this
+    throw new Error(`ModelRouter: ${request.model} failed after ${MAX_RETRY_ATTEMPTS} attempts`);
   }
 
   private calculateCost(model: string, inputTokens: number, outputTokens: number): number {

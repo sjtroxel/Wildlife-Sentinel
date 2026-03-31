@@ -23,6 +23,90 @@ Before writing any new code, confirm:
 
 ---
 
+## Track 0 — Rate Limit Resilience (do before deployment, before coverage)
+
+Observed in dev: the pipeline hits Google free-tier limits within minutes of a real fire event cluster. These two fixes are **pre-deployment blockers** — deploying without them means the production system silently drops events under load.
+
+### Step 0.1 — Retry-with-delay in `ModelRouter.ts`
+
+Both 429 (rate limit) and 503 (transient overload) responses from Google include a `retryDelay` field in the error body. Currently `ModelRouter` throws immediately. It should parse that delay and wait before retrying.
+
+**Implementation in `completeGoogle()` and `embed()`:**
+
+```typescript
+// Parse retryDelay from Google 429/503 error body
+function parseRetryDelayMs(errorBody: string): number | null {
+  try {
+    const parsed = JSON.parse(errorBody) as {
+      error?: { details?: Array<{ '@type': string; retryDelay?: string }> }
+    };
+    const retryInfo = parsed.error?.details?.find(
+      d => d['@type'] === 'type.googleapis.com/google.rpc.RetryInfo'
+    );
+    if (retryInfo?.retryDelay) {
+      // retryDelay is e.g. "12s" or "12.882280697s"
+      return Math.ceil(parseFloat(retryInfo.retryDelay) * 1000);
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+```
+
+**Retry logic:** up to 3 attempts. On 429/503, wait the `retryDelay` returned by the API (or a default of 15s if not parseable), then retry. On 4th failure, throw.
+
+**Applies to:**
+- `completeGoogle()` — Flash + Flash-Lite generation calls
+- `embed()` — the raw `fetch()` call to the embedding endpoint
+
+**Do NOT retry Anthropic calls** — Claude 429s are billing/capacity issues, not transient. Log and throw immediately.
+
+### Step 0.2 — Embedding cache in Redis
+
+The Species Context Agent embeds the same query strings repeatedly (e.g. "Panthera tigris threats habitat" appears for every Borneo fire event). This burns the 1,000/day embedding quota fast.
+
+**Implementation in `server/src/rag/retrieve.ts`:**
+
+```typescript
+import { redis } from '../redis/client.js';
+
+async function getCachedEmbedding(query: string): Promise<number[] | null> {
+  const key = `embed:${Buffer.from(query).toString('base64').slice(0, 64)}`;
+  const cached = await redis.get(key);
+  return cached ? (JSON.parse(cached) as number[]) : null;
+}
+
+async function setCachedEmbedding(query: string, vector: number[]): Promise<void> {
+  const key = `embed:${Buffer.from(query).toString('base64').slice(0, 64)}`;
+  await redis.setex(key, 86_400, JSON.stringify(vector)); // 24h TTL
+}
+```
+
+In `retrieveSpeciesFacts()` and `retrieveConservationContext()`: check cache before calling `modelRouter.embed()`. Store result after a live call.
+
+**Expected impact:** 80%+ reduction in embedding calls during a fire cluster, since the same species appear across many nearby events.
+
+**Key constraint:** TTL is 24h — embeddings don't change, so this is safe to cache aggressively.
+
+### Step 0.3 — Verify/update model limits in `shared/models.ts` comments
+
+The dev logs revealed that `gemini-2.5-flash-lite` is hitting a **20 RPD** limit, not the 1,000 RPD documented in `model-router.md`. Check the actual quota at `ai.dev/rate-limit` before deploying — if 20 RPD is the real limit, either:
+- Upgrade to paid Google tier (recommended — cost is negligible at this volume)
+- Or switch the EnrichmentAgent weather summary to a simpler non-LLM approach (Open-Meteo returns structured data; the LLM summary step could be skipped)
+
+Update `model-router.md` and `shared/models.ts` comments to reflect confirmed real limits.
+
+### Step 0.4 — Suppress full stack traces on known transient errors
+
+Currently a 429 or 503 prints a wall of JSON to the console. Noisy and obscures real errors. In ModelRouter, catch 429/503 specifically and log a one-liner:
+
+```
+[model-router] Rate limited (gemini-2.5-flash-lite) — retrying in 8s (attempt 1/3)
+```
+
+Full error JSON only logged if all retries are exhausted.
+
+---
+
 ## Track 1 — Coverage (60% → as high as meaningful)
 
 The 80% Vitest threshold is the minimum gate, not the goal. The agents (`src/agents`) and the ModelRouter (`src/router`) are the **system's core intelligence** — they contain all the consequential logic. 46% agent coverage and 23% router coverage means the most important code in this system has the weakest tests. Fix that first. The arbitrary percentage follows naturally.
@@ -482,13 +566,15 @@ Phase 9 is parallelizable. Each track is independent. Suggested session order:
 
 | Session | Work | Token Cost |
 |---|---|---|
-| A | Track 1, Steps 1.1–1.3 (db + ThreatAssembler + warRoom) | Low — small files, simple mocks |
-| B | Track 1, Step 1.4 (ModelRouter) — read source thoroughly first | Medium — complex mock setup |
-| C | Track 1, Step 1.5 agents 1–2 (EnrichmentAgent + ThreatAssessmentAgent) | High — largest + most critical |
-| D | Track 1, Step 1.5 agents 3–5 (Synthesis + Habitat + Species) | High |
-| E | Track 2 (weekly digest) + Track 3 (Playwright) | Low–Medium |
-| F | Tracks 4–6 (Railway + Vercel + CORS) | Low — mostly config |
-| G | Track 7 (smoke test) | Minimal |
+| A | **Track 0** — retry-with-delay (ModelRouter) + embedding cache (retrieve.ts) + log cleanup | High — read both source files fully first |
+| B | Track 0 Step 0.3 — verify real quota limits at ai.dev/rate-limit, update docs | Low |
+| C | Track 1, Steps 1.1–1.3 (db + ThreatAssembler + warRoom) | Low — small files, simple mocks |
+| D | Track 1, Step 1.4 (ModelRouter tests — now covers retry logic too) | Medium |
+| E | Track 1, Step 1.5 agents 1–2 (EnrichmentAgent + ThreatAssessmentAgent) | High — largest + most critical |
+| F | Track 1, Step 1.5 agents 3–5 (Synthesis + Habitat + Species) | High |
+| G | Track 2 (weekly digest) + Track 3 (Playwright) | Low–Medium |
+| H | Tracks 4–6 (Railway + Vercel + CORS) | Low — mostly config |
+| I | Track 7 (smoke test) | Minimal |
 
 Rules:
 - Always read the agent source file completely before writing its tests. The drop/routing logic is in the details.

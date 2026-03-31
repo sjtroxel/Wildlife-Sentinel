@@ -14,10 +14,10 @@
 | 3 | TypeScript Model Router | ✅ Complete | ModelRouter.ts singleton, all SDK imports centralized, cost tracking live |
 | 4 | All Five Disaster Sources | ✅ Complete | NHC, USGS, Drought Monitor, Coral Reef Watch scouts live |
 | 5 | Full Agent Swarm + War Room | ✅ Complete | ThreatAssembler fan-in, Threat Assessment + Synthesis (Claude Sonnet), HITL, war room |
-| 6 | RAG Knowledge Base | 🔶 Ready to ingest | Infrastructure complete, 72 tests pass. Ingest script fixed: IUCN API (Cloudflare-blocked) → GBIF + Wikipedia. Run `npm run ingest:species`. See PHASE_6_HANDOFF.md |
+| 6 | RAG Knowledge Base | ✅ Complete | 750 species in species_facts + 38 conservation_context chunks. Ingest complete 2026-03-31. |
 | 7 | Refiner / Evaluator Loop | ✅ Complete | 5 event-type scorers, hourly scheduler, correction notes, 121 tests pass |
-| 8 | Frontend | 🔲 Not started | Next.js, Leaflet map, alerts feed, agent activity SSE, refiner chart |
-| 9 | Hardening + Deploy | 🔲 Not started | Tests, Playwright E2E, Railway + Vercel deploy, weekly digest |
+| 8 | Frontend | ✅ Complete | Next.js 16.2.1, Leaflet map, alerts feed, SSE, refiner chart, logos/favicon. 139 tests pass. |
+| 9 | Hardening + Deploy | 🔲 Not started | Tests, Playwright E2E, Railway + Vercel deploy, weekly digest. See PHASE_9_IMPLEMENTATION_PLAN.md |
 | 10 | Expansions & Enhancements | 🔲 Expansion | Global data sources, UI polish, new features — post-launch improvements |
 
 ---
@@ -146,7 +146,7 @@
 - [x] Synthesis Agent uses RAG for "why this matters" framing
 - [x] Both agents cite `source_id` in output — no uncited claims
 - [x] `npm run ingest:conservation` complete — 38 chunks, 3 documents in `conservation_context` ✅
-- [ ] `npm run ingest:species` — ~254/751 species done as of 2026-03-29; run daily until 751/751
+- [x] `npm run ingest:species` — 750/750 species complete as of 2026-03-31 ✅
 
 → See [PHASE_6_RAG.md](roadmap/PHASE_6_RAG.md)
 
@@ -174,15 +174,16 @@
 ## Phase 8 — Frontend
 **Goal:** Portfolio-quality read-only web presence for non-Discord visitors.
 
-- [ ] Next.js 15 App Router project scaffolded in `client/`
-- [ ] Tailwind CSS v4 configured
-- [ ] Mobile-first responsive layout (375px base)
-- [ ] Leaflet map: disaster events (color-coded) + habitat polygons
-- [ ] `dynamic` import for Leaflet (ssr: false)
-- [ ] Recent Alerts feed (last 15 from DB)
-- [ ] Agent Activity SSE panel (live stream from server)
-- [ ] Refiner score trend chart
-- [ ] Mobile review passes (375px, 768px, 1280px viewports)
+- [x] Next.js 16.2.1 App Router project scaffolded in `client/`
+- [x] Tailwind CSS v4 configured (CSS-first, no tailwind.config.js)
+- [x] Mobile-first responsive layout (375px base, lg:grid-cols-[1fr_380px])
+- [x] Leaflet map: disaster events color-coded by type, sized by severity
+- [x] `dynamic` import for Leaflet (ssr: false) — page.tsx must be 'use client'
+- [x] Recent Alerts feed (last 20, polling 60s, expand-on-click)
+- [x] Agent Activity SSE panel (last 50 entries, EventSource)
+- [x] Refiner score trend chart (recharts, reference lines at 0.60 + 0.85)
+- [x] Logo images (light/dark wide + 512x512) + Favicon.ico integrated
+- [ ] Leaflet map tile/marker polish (known issues — tackle in Phase 9 or 10)
 
 → See [PHASE_8_FRONTEND.md](roadmap/PHASE_8_FRONTEND.md)
 

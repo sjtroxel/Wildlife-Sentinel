@@ -72,12 +72,12 @@ This is a **push-model, event-driven system**. No user triggers it. The world tr
 | Redis | ioredis | Better TypeScript support |
 | Database | Neon (PostgreSQL) | pgvector + PostGIS. Use `postgres.js` directly. |
 | Spatial queries | PostGIS | `ST_DWithin`, `ST_Intersects`, `ST_Point::geography` |
-| Vector embeddings | Voyage AI `voyage-large-2-instruct` | 1024 dims, raw `fetch()` — no npm SDK |
+| Vector embeddings | Google `gemini-embedding-001` | 3072 dims, raw `fetch()` v1beta API |
 | AI routing | TypeScript `ModelRouter` | See `docs/MODEL_ROUTER.md` and `.claude/rules/model-router.md` |
 | AI: synthesis/threat/refiner | Claude Sonnet 4.6 | Anthropic SDK direct — quality-critical only |
-| AI: moderate tasks (Species Context) | Gemini 2.5 Flash | Free tier: 10 RPM / 250 RPD |
-| AI: high-volume simple tasks (Enrichment, Habitat) | Gemini 2.5 Flash-Lite | Free tier: 15 RPM / 1,000 RPD. $0.10/1M input if over limit |
-| AI: embeddings | Google text-embedding-004 | Free tier via `@google/generative-ai` SDK |
+| AI: moderate tasks (Species Context) | Gemini 2.5 Flash | Tier 1 paid (upgraded 2026-03-31): ~1,500 RPD / 30 RPM |
+| AI: high-volume simple tasks (Enrichment, Habitat) | Gemini 2.5 Flash-Lite | Tier 1 paid: ~1,500 RPD / 30 RPM. $0.10/1M input |
+| AI: embeddings | Google `gemini-embedding-001` | Tier 1 paid via `@google/generative-ai` SDK |
 | Frontend | Next.js 15 (App Router) | Read-only. Mobile-first. |
 | Maps | Leaflet.js | 2D geospatial. Not Three.js. |
 | Hosting (backend) | Railway | Redis + Node.js + bot process |

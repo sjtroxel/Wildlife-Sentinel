@@ -11,6 +11,14 @@ vi.mock('../../src/router/ModelRouter.js', () => ({
 const mockSql = vi.hoisted(() => vi.fn());
 vi.mock('../../src/db/client.js', () => ({ sql: mockSql }));
 
+// Mock redis so cache always misses — tests verify live-embed behaviour
+vi.mock('../../src/redis/client.js', () => ({
+  redis: {
+    get: vi.fn().mockResolvedValue(null),
+    setex: vi.fn().mockResolvedValue('OK'),
+  },
+}));
+
 import { modelRouter } from '../../src/router/ModelRouter.js';
 import { retrieveSpeciesFacts, retrieveConservationContext } from '../../src/rag/retrieve.js';
 import type { SpeciesFactChunk, ConservationContextChunk } from '@wildlife-sentinel/shared/types';
