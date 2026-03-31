@@ -22,7 +22,17 @@ export default defineConfig({
       provider: 'v8',
       thresholds: { statements: 80, branches: 70, functions: 80, lines: 80 },
       include: ['src/**/*.ts'],
-      exclude: ['src/server.ts', 'src/**/*.d.ts', 'src/db/migrations/**'],
+      exclude: [
+        'src/server.ts',
+        'src/**/*.d.ts',
+        'src/db/migrations/**',
+        'src/db/client.ts',         // connection singleton — no testable logic
+        'src/redis/client.ts',      // connection singleton — no testable logic
+        'src/discord/bot.ts',       // discord.js lifecycle — integration only
+        'src/discord/hitl.ts',      // reaction collector — integration only
+        'src/scouts/index.ts',      // cron startup wrapper — integration only
+        'src/refiner/RefinerScheduler.ts', // node-cron lifecycle — integration only
+      ],
       reporter: ['text', 'html'],
     },
   },

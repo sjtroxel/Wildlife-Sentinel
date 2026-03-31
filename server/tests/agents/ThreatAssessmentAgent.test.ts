@@ -17,6 +17,7 @@ vi.mock('../../src/db/client.js', () => ({ sql: mockSql }));
 vi.mock('../../src/redis/client.js', () => ({
   redis: {
     xadd: vi.fn().mockResolvedValue('1234-0'),
+    xreadgroup: vi.fn(),
     xack: vi.fn().mockResolvedValue(1),
     on: vi.fn(),
     quit: vi.fn(),
@@ -54,7 +55,9 @@ vi.mock('../../src/router/ModelRouter.js', () => ({
 import { redis } from '../../src/redis/client.js';
 import { logPipelineEvent } from '../../src/db/pipelineEvents.js';
 import { modelRouter } from '../../src/router/ModelRouter.js';
-import { processEvent } from '../../src/agents/ThreatAssessmentAgent.js';
+import { getAgentPrompt } from '../../src/db/agentPrompts.js';
+import { logToWarRoom } from '../../src/discord/warRoom.js';
+import { processEvent, startThreatAssessmentAgent } from '../../src/agents/ThreatAssessmentAgent.js';
 import type { FullyEnrichedEvent } from '@wildlife-sentinel/shared/types';
 
 const baseEvent: FullyEnrichedEvent = {
@@ -166,5 +169,173 @@ describe('ThreatAssessmentAgent.processEvent', () => {
     ) as { sources: string[] };
     expect(payload.sources).toContain('nasa_firms');
     expect(payload.sources).toContain('gbif');
+  });
+
+  it('calls getAgentPrompt with "threat_assessment"', async () => {
+    await processEvent(baseEvent);
+    expect(getAgentPrompt).toHaveBeenCalledWith('threat_assessment');
+  });
+
+  it('calls logToWarRoom with threat level and confidence info', async () => {
+    await processEvent(baseEvent);
+    expect(logToWarRoom).toHaveBeenCalledWith(
+      expect.objectContaining({
+        agent: 'threat_assess',
+        action: expect.stringContaining('HIGH'),
+        detail: expect.stringContaining('confidence='),
+      })
+    );
+  });
+
+  it('publishes alert with warning level logToWarRoom for high threat', async () => {
+    await processEvent(baseEvent);
+    expect(logToWarRoom).toHaveBeenCalledWith(
+      expect.objectContaining({ level: 'warning' })
+    );
+  });
+
+  it('publishes alert with alert level logToWarRoom for critical threat', async () => {
+    vi.mocked(modelRouter.complete).mockResolvedValueOnce({
+      content: JSON.stringify({ ...threatFixture as object, threat_level: 'critical' }),
+      model: 'claude-sonnet-4-6',
+      inputTokens: 500,
+      outputTokens: 200,
+      estimatedCostUsd: 0.004,
+    });
+    await processEvent(baseEvent);
+    expect(logToWarRoom).toHaveBeenCalledWith(
+      expect.objectContaining({ level: 'alert' })
+    );
+  });
+
+  it('includes prediction_timestamp in published AssessedAlert', async () => {
+    await processEvent(baseEvent);
+    const payload = JSON.parse(
+      vi.mocked(redis.xadd).mock.calls[0]?.[3] as string
+    ) as { prediction_timestamp: string };
+    expect(payload.prediction_timestamp).toBeTruthy();
+    expect(new Date(payload.prediction_timestamp).toString()).not.toBe('Invalid Date');
+  });
+
+  it('executes SQL to upsert the alert record', async () => {
+    await processEvent(baseEvent);
+    // sql is called at least 3 times: alert upsert + two refiner_queue inserts
+    expect(mockSql).toHaveBeenCalled();
+  });
+
+  it('inserts two refiner_queue entries for non-drought events (24h and 48h)', async () => {
+    await processEvent(baseEvent); // wildfire
+    // 3 sql calls: INSERT alerts + INSERT refiner_queue 24h + INSERT refiner_queue 48h
+    expect(mockSql.mock.calls.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('inserts one refiner_queue entry for drought events (weekly)', async () => {
+    const droughtEvent: FullyEnrichedEvent = { ...baseEvent, event_type: 'drought', source: 'drought_monitor' };
+    await processEvent(droughtEvent);
+    // 2 sql calls: INSERT alerts + INSERT refiner_queue weekly
+    expect(mockSql.mock.calls.length).toBeGreaterThanOrEqual(2);
+    const calls = mockSql.mock.calls.map((c: unknown[]) => JSON.stringify(c));
+    const weeklyCall = calls.find((c: string) => c.includes('weekly'));
+    expect(weeklyCall).toBeDefined();
+  });
+
+  it('malformed LLM JSON → processEvent throws (caught by outer loop)', async () => {
+    vi.mocked(modelRouter.complete).mockResolvedValueOnce({
+      content: '{ not valid json',
+      model: 'claude-sonnet-4-6',
+      inputTokens: 100,
+      outputTokens: 50,
+      estimatedCostUsd: 0,
+    });
+    await expect(processEvent(baseEvent)).rejects.toThrow();
+  });
+
+  it('getAgentPrompt failure → processEvent throws', async () => {
+    vi.mocked(getAgentPrompt).mockRejectedValueOnce(new Error('No prompt found'));
+    await expect(processEvent(baseEvent)).rejects.toThrow('No prompt found');
+  });
+});
+
+// ── startThreatAssessmentAgent loop tests ─────────────────────────────────────
+
+function makeThreatXreadgroupPayload(data: Record<string, unknown>, msgId = 'threat-msg-001') {
+  return [['alerts:assessed', [[msgId, ['data', JSON.stringify(data)]]]]];
+}
+
+async function runThreatIteration(data: Record<string, unknown>, msgId = 'threat-msg-001') {
+  vi.mocked(redis.xreadgroup)
+    .mockResolvedValueOnce(makeThreatXreadgroupPayload(data, msgId))
+    .mockRejectedValueOnce(new Error('stop'));
+  await expect(startThreatAssessmentAgent()).rejects.toThrow('stop');
+}
+
+describe('startThreatAssessmentAgent loop', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    vi.mocked(logPipelineEvent).mockResolvedValue(undefined);
+    vi.mocked(logToWarRoom).mockResolvedValue(undefined);
+    vi.mocked(redis.xadd).mockResolvedValue('1234-0');
+    vi.mocked(redis.xack).mockResolvedValue(1);
+    vi.mocked(getAgentPrompt).mockResolvedValue('You are a wildlife threat assessment specialist.');
+    mockSql.mockResolvedValue([]);
+    vi.mocked(modelRouter.complete).mockResolvedValue({
+      content: JSON.stringify(threatFixture),
+      model: 'claude-sonnet-4-6',
+      inputTokens: 500,
+      outputTokens: 200,
+      estimatedCostUsd: 0.004,
+    });
+  });
+
+  it('skips messages that already have threat_level (AssessedAlerts) — ACKs without processing', async () => {
+    const alreadyAssessed = { ...baseEvent, threat_level: 'high', predicted_impact: '...' };
+    await runThreatIteration(alreadyAssessed as unknown as Record<string, unknown>, 'skip-msg-001');
+    expect(redis.xack).toHaveBeenCalledWith('alerts:assessed', 'threat-group', 'skip-msg-001');
+    expect(modelRouter.complete).not.toHaveBeenCalled();
+  });
+
+  it('processes messages without threat_level (FullyEnrichedEvents)', async () => {
+    await runThreatIteration(baseEvent as unknown as Record<string, unknown>);
+    expect(modelRouter.complete).toHaveBeenCalled();
+  });
+
+  it('ACKs message after successful processEvent', async () => {
+    await runThreatIteration(baseEvent as unknown as Record<string, unknown>, 'threat-success-001');
+    expect(redis.xack).toHaveBeenCalledWith('alerts:assessed', 'threat-group', 'threat-success-001');
+  });
+
+  it('ACKs message even when processEvent throws — no message loss', async () => {
+    vi.mocked(modelRouter.complete).mockRejectedValueOnce(new Error('Claude API error'));
+    await runThreatIteration(baseEvent as unknown as Record<string, unknown>, 'threat-err-001');
+    expect(redis.xack).toHaveBeenCalledWith('alerts:assessed', 'threat-group', 'threat-err-001');
+  });
+
+  it('logs error status to pipeline_events when processEvent throws', async () => {
+    vi.mocked(modelRouter.complete).mockRejectedValueOnce(new Error('Claude API error'));
+    await runThreatIteration(baseEvent as unknown as Record<string, unknown>);
+    expect(logPipelineEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        stage: 'threat',
+        status: 'error',
+        reason: expect.stringContaining('Claude API error'),
+      })
+    );
+  });
+
+  it('getAgentPrompt failure → error caught by outer loop → XACK + error log', async () => {
+    vi.mocked(getAgentPrompt).mockRejectedValueOnce(new Error('No prompt found'));
+    await runThreatIteration(baseEvent as unknown as Record<string, unknown>, 'prompt-err-001');
+    expect(redis.xack).toHaveBeenCalledWith('alerts:assessed', 'threat-group', 'prompt-err-001');
+    expect(logPipelineEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'error', reason: expect.stringContaining('No prompt found') })
+    );
+  });
+
+  it('skips null poll without ACKing', async () => {
+    vi.mocked(redis.xreadgroup)
+      .mockImplementationOnce(() => Promise.resolve(null))
+      .mockRejectedValueOnce(new Error('stop'));
+    await expect(startThreatAssessmentAgent()).rejects.toThrow('stop');
+    expect(redis.xack).not.toHaveBeenCalled();
   });
 });
