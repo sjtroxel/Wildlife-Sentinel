@@ -1,5 +1,7 @@
 node_modules/
 dist/
+shared/models.js
+shared/models.d.ts
 .next/
 out/
 .env
