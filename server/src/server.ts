@@ -12,6 +12,7 @@ import { startThreatAssessmentAgent } from './agents/ThreatAssessmentAgent.js';
 import { startSynthesisAgent } from './agents/SynthesisAgent.js';
 import { startDiscordPublisher } from './discord/publisher.js';
 import { startRefinerScheduler } from './refiner/RefinerScheduler.js';
+import { startWeeklyDigestScheduler } from './discord/weeklyDigest.js';
 
 async function main(): Promise<void> {
   try {
@@ -41,6 +42,7 @@ async function main(): Promise<void> {
   void startSynthesisAgent();
   void startDiscordPublisher();
   startRefinerScheduler();
+  startWeeklyDigestScheduler();
 
   app.listen(config.port, () => {
     console.log(`[startup] Wildlife Sentinel running on port ${config.port}`);
