@@ -53,3 +53,8 @@ main().catch((err) => {
   console.error('[startup] Fatal error:', err);
   process.exit(1);
 });
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[process] Unhandled rejection (agent loop crash):', reason);
+  // Do NOT exit — keep the server alive so /health and the other agents continue
+});

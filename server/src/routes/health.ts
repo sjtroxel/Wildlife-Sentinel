@@ -19,8 +19,7 @@ healthRouter.get('/', async (_req, res) => {
   const discordStatus = getBotStatus();
   const allOk = dbStatus === 'connected' && redisStatus === 'connected' && discordStatus === 'connected';
 
-  // Always return 200 so Railway healthcheck passes — diagnostic mode
-  res.status(200).json({
+  res.status(allOk ? 200 : 503).json({
     status: allOk ? 'ok' : 'degraded',
     db: dbStatus,
     redis: redisStatus,
