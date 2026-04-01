@@ -11,6 +11,7 @@ let redisConnected = false;
 
 export function setDbConnected(): void { dbConnected = true; }
 export function setRedisConnected(): void { redisConnected = true; }
+export function resetHealthState(): void { dbConnected = false; redisConnected = false; }
 
 healthRouter.get('/', (_req, res) => {
   const discordStatus = getBotStatus();
