@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { app } from './app.js';
+import { setDbConnected, setRedisConnected } from './routes/health.js';
 import { config } from './config.js';
 import { sql } from './db/client.js';
 import { redis } from './redis/client.js';
@@ -17,6 +18,7 @@ import { startWeeklyDigestScheduler } from './discord/weeklyDigest.js';
 async function main(): Promise<void> {
   try {
     await sql`SELECT 1`;
+    setDbConnected();
     console.log('[startup] Database connected');
   } catch (err) {
     console.error('[startup] Database connection failed:', err);
@@ -25,6 +27,7 @@ async function main(): Promise<void> {
 
   try {
     await redis.ping();
+    setRedisConnected();
     console.log('[startup] Redis connected');
   } catch (err) {
     console.error('[startup] Redis connection failed:', err);

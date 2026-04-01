@@ -1,28 +1,25 @@
 import { Router } from 'express';
-import { sql } from '../db/client.js';
-import { redis } from '../redis/client.js';
 import { getBotStatus } from '../discord/bot.js';
 
 export const healthRouter = Router();
 const startTime = Date.now();
 
-healthRouter.get('/', async (_req, res) => {
-  let dbStatus: 'connected' | 'disconnected' = 'disconnected';
-  try { await sql`SELECT 1`; dbStatus = 'connected'; } catch { /* leave disconnected */ }
+// Connection state set at startup by server.ts — avoids live async pings
+// that can timeout under Railway's healthcheck window.
+let dbConnected = false;
+let redisConnected = false;
 
-  let redisStatus: 'connected' | 'disconnected' = 'disconnected';
-  try {
-    const pong = await redis.ping();
-    if (pong === 'PONG') redisStatus = 'connected';
-  } catch { /* leave disconnected */ }
+export function setDbConnected(): void { dbConnected = true; }
+export function setRedisConnected(): void { redisConnected = true; }
 
+healthRouter.get('/', (_req, res) => {
   const discordStatus = getBotStatus();
-  const allOk = dbStatus === 'connected' && redisStatus === 'connected' && discordStatus === 'connected';
+  const allOk = dbConnected && redisConnected && discordStatus === 'connected';
 
   res.status(allOk ? 200 : 503).json({
     status: allOk ? 'ok' : 'degraded',
-    db: dbStatus,
-    redis: redisStatus,
+    db: dbConnected ? 'connected' : 'disconnected',
+    redis: redisConnected ? 'connected' : 'disconnected',
     discord: discordStatus,
     uptime_seconds: Math.floor((Date.now() - startTime) / 1000),
     timestamp: new Date().toISOString(),
