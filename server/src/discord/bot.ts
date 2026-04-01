@@ -10,10 +10,8 @@ const client = new Client({
   ],
 });
 
-let botStatus: 'connected' | 'disconnected' = 'disconnected';
-
 export function getBotStatus(): 'connected' | 'disconnected' {
-  return botStatus;
+  return client.isReady() ? 'connected' : 'disconnected';
 }
 
 export function getSentinelOpsChannel(): TextChannel {
@@ -31,7 +29,6 @@ export function getWildlifeAlertsChannel(): TextChannel {
 export async function startBot(): Promise<void> {
   await new Promise<void>((resolve, reject) => {
     client.once('ready', async () => {
-      botStatus = 'connected';
       console.log(`[discord] Online as ${client.user?.tag}`);
       try {
         const ops = getSentinelOpsChannel();
@@ -42,7 +39,6 @@ export async function startBot(): Promise<void> {
       resolve();
     });
     client.on('error', (err) => {
-      botStatus = 'disconnected';
       console.error('[discord] Client error:', err);
       reject(err);
     });
