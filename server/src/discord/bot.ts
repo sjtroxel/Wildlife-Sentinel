@@ -28,7 +28,7 @@ export function getWildlifeAlertsChannel(): TextChannel {
 
 export async function startBot(): Promise<void> {
   await new Promise<void>((resolve, reject) => {
-    client.once('ready', async () => {
+    client.once('clientReady', async () => {
       console.log(`[discord] Online as ${client.user?.tag}`);
       try {
         const ops = getSentinelOpsChannel();

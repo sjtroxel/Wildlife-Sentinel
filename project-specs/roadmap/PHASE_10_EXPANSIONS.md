@@ -14,6 +14,52 @@ Unlike Phases 0–9 (which have defined scopes), Phase 10 is a **rolling backlog
 
 ---
 
+## Expansion Area 0 — Data Source Hardening (HIGH PRIORITY)
+
+### Lesson Learned in Phase 9
+Data source endpoint failures were discovered post-deploy rather than pre-build. NOAA CRW's VS polygon
+endpoint moved (`/vs/gauges/crw_vs_alert_areas.json` → `/product/vs/vs_polygons.json`) with a schema
+change (Polygon → Point, `alert_level: number` → `alert: string`). Only caught because it was logging
+404 noise in #sentinel-ops after launch.
+
+**Root cause:** The Phase 0 checklist verified API *keys* but not endpoint *health*. Add to Phase 0
+spec as a manual verification step before any Phase 1+ implementation.
+
+### A — Endpoint canary check (add to Phase 0 spec)
+
+Manual verification before any Phase 1 work:
+```bash
+curl -s "https://firms.modaps.eosdis.nasa.gov/api/country/csv/<KEY>/VIIRS_SNPP_NRT/World/1/$(date +%Y-%m-%d)" | head -3
+curl -s "https://nhc.noaa.gov/CurrentStorms.json" | python3 -c "import sys,json; d=json.load(sys.stdin); print('NHC OK')"
+curl -s "https://waterservices.usgs.gov/nwis/iv/?format=json&parameterCd=00060&sites=01646500" | python3 -c "import sys,json; print('USGS OK')"
+curl -s "https://coralreefwatch.noaa.gov/product/vs/vs_polygons.json" | python3 -c "import sys,json; d=json.load(sys.stdin); print(f'CRW: {len(d[\"features\"])} stations')"
+```
+
+Also add a `server/tests/integration/scoutEndpoints.test.ts` with `describe.skip` — run manually
+pre-deploy to verify all sources are live. See phase-0-foundation.md for the updated checklist item.
+
+### B — Persist circuit breaker state in Redis
+
+`BaseScout.consecutiveFailures` is in-memory and resets to 0 on process restart. Every Railway redeploy
+re-triggers the error log for any broken endpoint.
+
+**Fix:** Store circuit open/failures keys in Redis with TTL (see BaseScout.ts). This keeps the circuit
+open across restarts — broken endpoint silences itself without per-deployment noise.
+
+### C — `/health/scouts` endpoint
+
+Expose per-scout circuit state so ops can see which scouts are healthy without reading logs:
+```json
+GET /health/scouts
+{
+  "nasa_firms":       { "status": "healthy", "consecutiveFailures": 0 },
+  "coral_reef_watch": { "status": "circuit_open", "openUntil": "2026-04-02T18:30:00Z" }
+}
+```
+Also surface in the frontend's Agent Activity panel.
+
+---
+
 ## Expansion Area 1 — Global Data Sources
 
 Phase 4 shipped three scouts with limited geographic coverage as a deliberate MVP trade-off. This area replaces them with global equivalents.

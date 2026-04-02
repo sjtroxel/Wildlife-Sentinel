@@ -1,42 +1,41 @@
 import type { RawDisasterEvent } from '@wildlife-sentinel/shared/types';
 import { BaseScout, fetchWithRetry } from './BaseScout.js';
 
-const CRW_ALERT_AREAS_URL =
-  'https://coralreefwatch.noaa.gov/vs/gauges/crw_vs_alert_areas.json';
+const CRW_VS_POLYGONS_URL =
+  'https://coralreefwatch.noaa.gov/product/vs/vs_polygons.json';
 
 // 0=no stress, 1=watch, 2=warning, 3=alert1, 4=alert2
 // Only publish warning and above
 const MIN_ALERT_LEVEL = 2;
 
+const ALERT_LABELS: Record<number, string> = {
+  0: 'No Stress',
+  1: 'Bleaching Watch',
+  2: 'Bleaching Warning',
+  3: 'Bleaching Alert Level 1',
+  4: 'Bleaching Alert Level 2',
+};
+
 interface CRWProperties {
-  alert_level: number;
-  alert_label: string;
-  max_dhw: number;   // degree heating weeks
+  name: string;
+  date: string;
+  sst: string;
+  ssta: string;
+  hs: string;
+  dhw: string;      // degree heating weeks as string
+  alert: string;    // alert level "0"–"4" as string
+  gauge_page: string;
 }
 
 interface CRWFeature {
   type: 'Feature';
-  geometry: { type: 'Polygon'; coordinates: number[][][] };
+  geometry: { type: 'Point'; coordinates: [number, number] };  // [lng, lat]
   properties: CRWProperties;
 }
 
 interface CRWGeoJSON {
   type: 'FeatureCollection';
   features: CRWFeature[];
-}
-
-// Simple centroid: average of all polygon ring vertices [lng, lat]
-function computeCentroid(ring: number[][]): { lat: number; lng: number } {
-  let sumLng = 0;
-  let sumLat = 0;
-  for (const point of ring) {
-    sumLng += point[0] ?? 0;
-    sumLat += point[1] ?? 0;
-  }
-  return {
-    lng: sumLng / ring.length,
-    lat: sumLat / ring.length,
-  };
 }
 
 export class CoralScout extends BaseScout {
@@ -50,7 +49,7 @@ export class CoralScout extends BaseScout {
   }
 
   protected async fetchEvents(): Promise<RawDisasterEvent[]> {
-    const res = await fetchWithRetry(CRW_ALERT_AREAS_URL);
+    const res = await fetchWithRetry(CRW_VS_POLYGONS_URL);
     const data = await res.json() as CRWGeoJSON;
 
     const features: CRWFeature[] = data.features ?? [];
@@ -58,34 +57,35 @@ export class CoralScout extends BaseScout {
     const today = new Date().toISOString().slice(0, 10);
 
     for (const feature of features) {
-      const { alert_level, alert_label, max_dhw } = feature.properties;
+      const alertLevel = parseInt(feature.properties.alert, 10);
 
-      if (alert_level < MIN_ALERT_LEVEL) continue;
+      if (isNaN(alertLevel) || alertLevel < MIN_ALERT_LEVEL) continue;
 
-      const ring = feature.geometry.coordinates[0];
-      if (!ring || ring.length === 0) continue;
+      const [lng, lat] = feature.geometry.coordinates;
+      if (lng === undefined || lat === undefined || isNaN(lat) || isNaN(lng)) continue;
 
-      const { lat, lng } = computeCentroid(ring);
-      if (isNaN(lat) || isNaN(lng)) continue;
+      const maxDhw = parseFloat(feature.properties.dhw);
 
-      // ID is stable for the day — changes if alert level changes or moves
-      const eventId = `coral_${lat.toFixed(2)}_${lng.toFixed(2)}_al${alert_level}_${today}`;
+      // ID is stable for the day — changes if alert level changes
+      const eventId = `coral_${lat.toFixed(2)}_${lng.toFixed(2)}_al${alertLevel}_${today}`;
 
       events.push({
         id: eventId,
         source: 'coral_reef_watch',
         event_type: 'coral_bleaching',
         coordinates: { lat, lng },
-        severity: alert_level / 4,
+        severity: alertLevel / 4,
         timestamp: new Date().toISOString(),
         raw_data: {
-          alert_level,
-          alert_label,
-          max_dhw,
-          bleaching_watch: alert_level === 1,
-          bleaching_warning: alert_level === 2,
-          bleaching_alert_1: alert_level === 3,
-          bleaching_alert_2: alert_level === 4,
+          alert_level: alertLevel,
+          alert_label: ALERT_LABELS[alertLevel] ?? `Alert Level ${alertLevel}`,
+          max_dhw: isNaN(maxDhw) ? null : maxDhw,
+          station_name: feature.properties.name,
+          date: feature.properties.date,
+          bleaching_watch: alertLevel === 1,
+          bleaching_warning: alertLevel === 2,
+          bleaching_alert_1: alertLevel === 3,
+          bleaching_alert_2: alertLevel === 4,
         },
       });
     }

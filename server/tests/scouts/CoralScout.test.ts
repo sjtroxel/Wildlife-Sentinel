@@ -86,19 +86,18 @@ describe('CoralScout', () => {
     expect(alertLevel2!.severity).toBeCloseTo(0.5, 3);
   });
 
-  it('computes centroid as average of polygon vertices', async () => {
+  it('uses Point geometry coordinates directly', async () => {
     await scout.run();
 
     const published = vi.mocked(redis.xadd).mock.calls.map(call =>
       JSON.parse(call[3] as string) as { coordinates: { lat: number; lng: number }; raw_data: { alert_level: number } }
     );
 
-    // First feature ring: lngs [145,146,146,145,145], lats [-16,-16,-17,-17,-16]
-    // centroid lng = (145+146+146+145+145)/5 = 145.4, lat = (-16-16-17-17-16)/5 = -16.4
+    // First feature: Point at [145.5, -16.5] (lng, lat)
     const alertLevel3 = published.find(e => e.raw_data.alert_level === 3);
     expect(alertLevel3).toBeDefined();
-    expect(alertLevel3!.coordinates.lng).toBeCloseTo(145.4, 1);
-    expect(alertLevel3!.coordinates.lat).toBeCloseTo(-16.4, 1);
+    expect(alertLevel3!.coordinates.lng).toBeCloseTo(145.5, 1);
+    expect(alertLevel3!.coordinates.lat).toBeCloseTo(-16.5, 1);
   });
 
   it('deduplicates events already seen in Redis', async () => {

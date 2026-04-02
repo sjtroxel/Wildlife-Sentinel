@@ -17,7 +17,7 @@
 | 6 | RAG Knowledge Base | ✅ Complete | 750 species in species_facts + 38 conservation_context chunks. Ingest complete 2026-03-31. |
 | 7 | Refiner / Evaluator Loop | ✅ Complete | 5 event-type scorers, hourly scheduler, correction notes, 121 tests pass |
 | 8 | Frontend | ✅ Complete | Next.js 16.2.1, Leaflet map, alerts feed, SSE, refiner chart, logos/favicon. 139 tests pass. |
-| 9 | Hardening + Deploy | 🔲 Not started | Tests, Playwright E2E, Railway + Vercel deploy, weekly digest. See PHASE_9_IMPLEMENTATION_PLAN.md |
+| 9 | Hardening + Deploy | 🔄 In Progress | Railway live ✅. Vercel in progress. Tracks 5–7 remaining. See PHASE_9_IMPLEMENTATION_PLAN.md |
 | 10 | Expansions & Enhancements | 🔲 Expansion | Global data sources, UI polish, new features — post-launch improvements |
 
 ---

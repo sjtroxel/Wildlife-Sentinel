@@ -129,7 +129,7 @@ async function generateSpeciesBrief(speciesName: string, eventType: EventType): 
       model: MODELS.GEMINI_FLASH,
       systemPrompt,
       userMessage: `Species: ${speciesName} (IUCN status: ${iucnStatus}, threatened by: ${eventType})`,
-      maxTokens: 512,
+      maxTokens: 1024,
       jsonMode: true,
     });
 
