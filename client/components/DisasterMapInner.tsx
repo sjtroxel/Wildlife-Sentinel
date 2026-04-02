@@ -23,17 +23,38 @@ const EVENT_COLORS: Record<EventType, string> = {
   coral_bleaching: '#14b8a6',
 };
 
+const TILE_LAYERS = {
+  light: {
+    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  },
+  dark: {
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  },
+};
+
 export default function DisasterMapInner() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<L.Map | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const [isDark, setIsDark] = useState(false);
 
   // Effect 1: initialize map
   useEffect(() => {
     if (!containerRef.current) return;
-    const m = L.map(containerRef.current, { zoomControl: true });
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    const worldBounds = L.latLngBounds(L.latLng(-90, -180), L.latLng(90, 180));
+    const m = L.map(containerRef.current, {
+      zoomControl: true,
+      maxBounds: worldBounds,
+      maxBoundsViscosity: 1.0,
+      minZoom: 2,
+    });
+    const { url, attribution } = TILE_LAYERS.light;
+    tileLayerRef.current = L.tileLayer(url, {
+      attribution,
       maxZoom: 18,
+      minZoom: 2,
     }).addTo(m);
     m.setView([20, 0], 2);
     setMap(m);
@@ -42,7 +63,19 @@ export default function DisasterMapInner() {
     };
   }, []);
 
-  // Effect 2: load alert markers
+  // Effect 2: swap tile layer when dark mode toggles
+  useEffect(() => {
+    if (!map || !tileLayerRef.current) return;
+    const { url, attribution } = isDark ? TILE_LAYERS.dark : TILE_LAYERS.light;
+    map.removeLayer(tileLayerRef.current);
+    tileLayerRef.current = L.tileLayer(url, {
+      attribution,
+      maxZoom: 18,
+      minZoom: 2,
+    }).addTo(map);
+  }, [isDark, map]);
+
+  // Effect 3: load alert markers
   useEffect(() => {
     if (!map) return;
     api.getRecentAlerts(50).then((alerts) => {
@@ -69,5 +102,17 @@ export default function DisasterMapInner() {
     });
   }, [map]);
 
-  return <div ref={containerRef} className="w-full h-full" />;
+  return (
+    <div className="relative w-full h-full">
+      <div ref={containerRef} className="w-full h-full" />
+      <button
+        onClick={() => setIsDark(d => !d)}
+        className="absolute bottom-8 right-2 z-1000 flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium shadow-md transition-colors bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+        aria-label="Toggle map theme"
+        title="Toggle map theme"
+      >
+        {isDark ? '☀ Light' : '🌙 Dark'}
+      </button>
+    </div>
+  );
 }
