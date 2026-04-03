@@ -43,10 +43,13 @@ export default function DisasterMapInner() {
   // Effect 1: initialize map
   useEffect(() => {
     if (!containerRef.current) return;
-    const worldBounds = L.latLngBounds(L.latLng(-90, -180), L.latLng(90, 180));
+    // Allow infinite horizontal scrolling (worldCopyJump handles seamless wrapping),
+    // but clamp latitude to the Mercator projection limits (±85°).
+    // The large longitude range (±100000°) is effectively infinite for any user interaction.
     const m = L.map(containerRef.current, {
       zoomControl: true,
-      maxBounds: worldBounds,
+      worldCopyJump: true,
+      maxBounds: L.latLngBounds(L.latLng(-85, -100000), L.latLng(85, 100000)),
       maxBoundsViscosity: 1.0,
       minZoom: 2,
     });

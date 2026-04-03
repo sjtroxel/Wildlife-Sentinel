@@ -14,6 +14,7 @@ import { logPipelineEvent } from '../db/pipelineEvents.js';
 import { modelRouter } from '../router/ModelRouter.js';
 import { storeSpeciesResult } from '../pipeline/ThreatAssembler.js';
 import { retrieveSpeciesFacts } from '../rag/retrieve.js';
+import { logToWarRoom } from '../discord/warRoom.js';
 
 const BASE_SYSTEM_PROMPT =
   'You are a wildlife conservation assistant. Provide a factual summary for the given species. ' +
@@ -77,6 +78,12 @@ async function processSpeciesEvent(event: EnrichedDisasterEvent): Promise<void> 
 
   await storeSpeciesResult(event.id, { species_briefs: briefs });
 
+  await logToWarRoom({
+    agent: 'species-context',
+    action: 'briefs',
+    detail: `${briefs.length} species briefed | ${event.species_at_risk.slice(0, 2).join(', ')}${event.species_at_risk.length > 2 ? ` +${event.species_at_risk.length - 2} more` : ''}`,
+  });
+
   await logPipelineEvent({
     event_id: event.id,
     source: event.source,
@@ -129,7 +136,7 @@ async function generateSpeciesBrief(speciesName: string, eventType: EventType): 
       model: MODELS.GEMINI_FLASH,
       systemPrompt,
       userMessage: `Species: ${speciesName} (IUCN status: ${iucnStatus}, threatened by: ${eventType})`,
-      maxTokens: 1024,
+      maxTokens: 2048,
       jsonMode: true,
     });
 
