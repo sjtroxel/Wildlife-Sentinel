@@ -17,9 +17,10 @@ const speciesFixture = JSON.parse(
 };
 
 // vi.hoisted: these mock fns are referenced inside vi.mock factories, so must be hoisted
-const { mockXreadgroup, mockXack, mockSql } = vi.hoisted(() => ({
+const { mockXreadgroup, mockXack, mockRedisExists, mockSql } = vi.hoisted(() => ({
   mockXreadgroup: vi.fn(),
   mockXack: vi.fn(),
+  mockRedisExists: vi.fn().mockResolvedValue(1), // default: assembly hash exists → process event
   mockSql: vi.fn(),
 }));
 
@@ -27,6 +28,8 @@ vi.mock('../../src/redis/client.js', () => ({
   redis: {
     xreadgroup: mockXreadgroup,
     xack: mockXack,
+    exists: mockRedisExists,
+    publish: vi.fn().mockResolvedValue(0),
     on: vi.fn(),
     quit: vi.fn(),
   },
@@ -133,6 +136,7 @@ describe('SpeciesContextAgent', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mockXack.mockResolvedValue(1);
+    mockRedisExists.mockResolvedValue(1); // assembly hash exists by default
     vi.mocked(logPipelineEvent).mockResolvedValue(undefined);
     vi.mocked(storeSpeciesResult).mockResolvedValue(undefined);
     vi.mocked(retrieveSpeciesFacts).mockResolvedValue([]);
