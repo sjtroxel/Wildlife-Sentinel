@@ -6,13 +6,14 @@
  * (event + habitat + species), the assembler publishes the FullyEnrichedEvent
  * to alerts:assessed and clears the hash.
  *
- * TTL of 300s ensures partial hashes are cleaned up even if one agent crashes.
+ * TTL of 600s ensures partial hashes are cleaned up even if one agent crashes.
+ * 600s gives species-context enough time to brief large species lists (19+ species).
  */
 import type { EnrichedDisasterEvent, FullyEnrichedEvent, GBIFSighting, SpeciesBrief } from '@wildlife-sentinel/shared/types';
 import { redis } from '../redis/client.js';
 import { STREAMS } from '../pipeline/streams.js';
 
-const ASSEMBLY_TTL_SECONDS = 300;
+const ASSEMBLY_TTL_SECONDS = 600;
 
 function assemblyKey(eventId: string): string {
   return `assembly:${eventId}`;

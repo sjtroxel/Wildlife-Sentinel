@@ -69,6 +69,15 @@ export async function startSpeciesContextAgent(): Promise<void> {
 }
 
 async function processSpeciesEvent(event: EnrichedDisasterEvent): Promise<void> {
+  // Skip backlog events whose assembly hash has already expired.
+  // The EnrichmentAgent sets a 300s TTL on assembly:{id}. If it's gone, the
+  // event can't be assembled regardless — skip rather than waste LLM calls.
+  const assemblyExists = await redis.exists(`assembly:${event.id}`);
+  if (!assemblyExists) {
+    console.log(`[species-context] Skipping ${event.id} — assembly hash expired (backlog)`);
+    return;
+  }
+
   const briefs: SpeciesBrief[] = [];
 
   for (const speciesName of event.species_at_risk) {
