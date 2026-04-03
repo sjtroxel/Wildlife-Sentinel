@@ -215,6 +215,7 @@ describe('SpeciesContextAgent', () => {
       for (const status of validStatuses) {
         vi.resetAllMocks();
         mockXack.mockResolvedValue(1);
+        mockRedisExists.mockResolvedValue(1);
         vi.mocked(logPipelineEvent).mockResolvedValue(undefined);
         vi.mocked(storeSpeciesResult).mockResolvedValue(undefined);
         vi.mocked(retrieveSpeciesFacts).mockResolvedValue([]);
