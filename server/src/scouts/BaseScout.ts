@@ -72,10 +72,30 @@ export abstract class BaseScout {
 export async function fetchWithRetry(
   url: string,
   options?: RequestInit,
-  maxAttempts = 3
+  maxAttempts = 3,
+  timeoutMs = 10_000
 ): Promise<Response> {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    const res = await fetch(url, options);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    let res: Response;
+    try {
+      res = await fetch(url, { ...options, signal: controller.signal });
+    } catch (err) {
+      clearTimeout(timeoutId);
+      if (err instanceof Error && err.name === 'AbortError') {
+        if (attempt < maxAttempts) {
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10_000);
+          console.warn(`[fetchWithRetry] Timeout after ${timeoutMs}ms, retrying in ${delay}ms (attempt ${attempt}/${maxAttempts})`);
+          await new Promise(r => setTimeout(r, delay));
+          continue;
+        }
+        throw new Error(`Timeout after ${timeoutMs}ms from ${url} after ${maxAttempts} attempts`);
+      }
+      throw err;
+    }
+    clearTimeout(timeoutId);
 
     if (res.ok) return res;
 
