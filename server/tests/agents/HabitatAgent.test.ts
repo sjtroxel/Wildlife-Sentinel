@@ -11,15 +11,17 @@ const habitatFixture = JSON.parse(
 ) as { sighting_confidence: string; most_recent_sighting: string | null; summary: string };
 
 // vi.hoisted: these mock fns are referenced inside vi.mock factories, so must be hoisted
-const { mockXreadgroup, mockXack } = vi.hoisted(() => ({
+const { mockXreadgroup, mockXack, mockExists } = vi.hoisted(() => ({
   mockXreadgroup: vi.fn(),
   mockXack: vi.fn(),
+  mockExists: vi.fn(),
 }));
 
 vi.mock('../../src/redis/client.js', () => ({
   redis: {
     xreadgroup: mockXreadgroup,
     xack: mockXack,
+    exists: mockExists,
     on: vi.fn(),
     quit: vi.fn(),
   },
@@ -129,6 +131,7 @@ describe('HabitatAgent', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mockXack.mockResolvedValue(1);
+    mockExists.mockResolvedValue(1); // assembly hash exists by default
     vi.mocked(logPipelineEvent).mockResolvedValue(undefined);
     vi.mocked(logToWarRoom).mockResolvedValue(undefined);
     vi.mocked(storeHabitatResult).mockResolvedValue(undefined);
@@ -155,6 +158,13 @@ describe('HabitatAgent', () => {
       expect(mockXack).not.toHaveBeenCalled();
     });
 
+    it('skips event and does not call storeHabitatResult when assembly hash is absent', async () => {
+      mockExists.mockResolvedValueOnce(0); // no assembly hash — old backlog event
+      await runOneIteration();
+      expect(storeHabitatResult).not.toHaveBeenCalled();
+      expect(fetchRecentSightings).not.toHaveBeenCalled();
+    });
+
     it('ACKs the message with correct stream/group/id after successful processing', async () => {
       vi.mocked(fetchRecentSightings).mockResolvedValue([gbifSighting]);
       await runOneIteration(baseEnrichedEvent, 'msg-ack-test');
@@ -165,6 +175,19 @@ describe('HabitatAgent', () => {
       vi.mocked(fetchRecentSightings).mockRejectedValueOnce(new Error('GBIF network failure'));
       await runOneIteration(baseEnrichedEvent, 'msg-err-001');
       expect(mockXack).toHaveBeenCalledWith('disaster:enriched', 'habitat-group', 'msg-err-001');
+    });
+
+    it('posts error to war room when processEvent throws', async () => {
+      vi.mocked(fetchRecentSightings).mockRejectedValueOnce(new Error('GBIF network failure'));
+      await runOneIteration();
+      expect(logToWarRoom).toHaveBeenCalledWith(
+        expect.objectContaining({
+          agent: 'habitat',
+          action: 'ERROR',
+          level: 'warning',
+          detail: expect.stringContaining('GBIF network failure'),
+        })
+      );
     });
 
     it('logs error status to pipeline_events when processEvent throws', async () => {

@@ -57,6 +57,12 @@ export async function startHabitatAgent(): Promise<void> {
             status: 'error',
             reason: String(err),
           });
+          await logToWarRoom({
+            agent: 'habitat',
+            action: 'ERROR',
+            detail: `${event.id} — ${String(err).slice(0, 120)}`,
+            level: 'warning',
+          });
         }
       }
     }
@@ -64,6 +70,17 @@ export async function startHabitatAgent(): Promise<void> {
 }
 
 async function processEvent(event: EnrichedDisasterEvent): Promise<void> {
+  // Skip backlog events whose assembly hash doesn't exist.
+  // The EnrichmentAgent stores assembly:{id} BEFORE publishing to disaster:enriched.
+  // If the hash is absent, this is an old message published before that logic was added —
+  // processing it would create a partial hash (habitat-only) that tricks species-context
+  // into processing the same stale event, leaving the assembly permanently without 'event'.
+  const assemblyExists = await redis.exists(`assembly:${event.id}`);
+  if (!assemblyExists) {
+    console.log(`[habitat] Skipping ${event.id} — no assembly hash (backlog event)`);
+    return;
+  }
+
   const { lat, lng } = event.coordinates;
 
   // Collect GBIF sightings for all at-risk species

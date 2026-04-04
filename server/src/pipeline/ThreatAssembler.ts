@@ -56,7 +56,29 @@ async function tryAssemble(eventId: string): Promise<void> {
   const key = assemblyKey(eventId);
   const stored = await redis.hgetall(key);
 
-  if (!stored['event'] || !stored['habitat'] || !stored['species']) return;
+  if (!stored['event'] || !stored['habitat'] || !stored['species']) {
+    const hasEvent   = Boolean(stored['event']);
+    const hasHabitat = Boolean(stored['habitat']);
+    const hasSpecies = Boolean(stored['species']);
+
+    // If both downstream agents finished but the event was never stored, the
+    // assembly will never complete. This is the specific failure mode where an
+    // old backlog event was processed without a call to storeEventForAssembly.
+    if (hasHabitat && hasSpecies && !hasEvent) {
+      console.warn(`[assembler] WARN ${eventId}: habitat+species present but NO event field — backlog event processed without assembly hash`);
+      await logToWarRoom({
+        agent: 'assembler',
+        action: 'WARN: orphaned hash',
+        detail: `${eventId} — habitat ✅ species ✅ event ❌. Old backlog message processed without storeEventForAssembly.`,
+        level: 'warning',
+      });
+    } else {
+      // Normal partial state: one agent finished, waiting on the other.
+      const present = [hasEvent && 'event', hasHabitat && 'habitat', hasSpecies && 'species'].filter(Boolean).join('+');
+      console.log(`[assembler] ${eventId}: partial (${present || 'none'}) — waiting`);
+    }
+    return;
+  }
 
   const event = JSON.parse(stored['event']) as EnrichedDisasterEvent;
   const habitat = JSON.parse(stored['habitat']) as HabitatAssemblyResult;

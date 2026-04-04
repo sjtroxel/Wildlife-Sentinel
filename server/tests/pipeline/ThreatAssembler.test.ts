@@ -23,6 +23,7 @@ import {
   type HabitatAssemblyResult,
   type SpeciesAssemblyResult,
 } from '../../src/pipeline/ThreatAssembler.js';
+import { logToWarRoom } from '../../src/discord/warRoom.js';
 import type { EnrichedDisasterEvent } from '@wildlife-sentinel/shared/types';
 
 const BASE_EVENT: EnrichedDisasterEvent = {
@@ -100,6 +101,39 @@ describe('partial assembly', () => {
     expect(mockRedis.xadd).not.toHaveBeenCalled();
     expect(mockRedis.del).not.toHaveBeenCalled();
   });
+
+  it('does not publish and emits a warning when habitat+species present but event missing', async () => {
+    // This is the specific failure mode: old backlog event processed without
+    // storeEventForAssembly being called. Both downstream agents stored their
+    // results, but the event field was never written.
+    mockRedis.hgetall.mockResolvedValueOnce({
+      habitat: JSON.stringify(HABITAT_RESULT),
+      species: JSON.stringify(SPECIES_RESULT),
+    });
+
+    await storeSpeciesResult('event-orphan', SPECIES_RESULT);
+
+    expect(mockRedis.xadd).not.toHaveBeenCalled();
+    expect(mockRedis.del).not.toHaveBeenCalled();
+    expect(vi.mocked(logToWarRoom)).toHaveBeenCalledWith(
+      expect.objectContaining({
+        agent: 'assembler',
+        level: 'warning',
+        detail: expect.stringContaining('event-orphan'),
+      })
+    );
+  });
+
+  it('does NOT warn for normal partial state — event+habitat present, species pending', async () => {
+    mockRedis.hgetall.mockResolvedValueOnce({
+      event: JSON.stringify(BASE_EVENT),
+      habitat: JSON.stringify(HABITAT_RESULT),
+    });
+
+    await storeHabitatResult('event-1', HABITAT_RESULT);
+
+    expect(vi.mocked(logToWarRoom)).not.toHaveBeenCalled();
+  });
 });
 
 describe('full assembly — species arrives last', () => {
@@ -147,7 +181,7 @@ describe('full assembly — species arrives last', () => {
 
   it('merges habitat and species fields into the published event', async () => {
     const habitatWithSighting: HabitatAssemblyResult = {
-      gbif_recent_sightings: [{ species: 'Pongo abelii', lat: -3.0, lng: 104.0, date: '2026-01-15', count: 2 }],
+      gbif_recent_sightings: [{ speciesName: 'Pongo abelii', decimalLatitude: -3.0, decimalLongitude: 104.0, eventDate: '2026-01-15', datasetName: 'GBIF Backbone Taxonomy', occurrenceID: 'occ-001' }],
       sighting_confidence: 'confirmed',
       most_recent_sighting: '2026-01-15',
     };
