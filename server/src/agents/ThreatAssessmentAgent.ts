@@ -131,6 +131,14 @@ export async function startThreatAssessmentAgent(): Promise<void> {
             status: 'error',
             reason: String(err),
           });
+          // Surface failures to #sentinel-ops so they are visible — previously
+          // errors were only written to pipeline_events DB, making them invisible.
+          await logToWarRoom({
+            agent: 'threat_assess',
+            action: 'ERROR',
+            detail: `${event.event_type} ${event.id} — ${String(err).slice(0, 120)}`,
+            level: 'warning',
+          });
         }
       }
     }

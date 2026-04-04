@@ -6,14 +6,17 @@
  * (event + habitat + species), the assembler publishes the FullyEnrichedEvent
  * to alerts:assessed and clears the hash.
  *
- * TTL of 600s ensures partial hashes are cleaned up even if one agent crashes.
- * 600s gives species-context enough time to brief large species lists (19+ species).
+ * TTL of 3600s (1 hour) ensures partial hashes survive species-context backlogs.
+ * Species-context processes 17-20 species sequentially (~90s per event × up to 6
+ * events per batch = up to 9 min per batch). A 1-hour TTL prevents the death
+ * spiral where species-context falls behind and all hashes expire.
  */
 import type { EnrichedDisasterEvent, FullyEnrichedEvent, GBIFSighting, SpeciesBrief } from '@wildlife-sentinel/shared/types';
 import { redis } from '../redis/client.js';
 import { STREAMS } from '../pipeline/streams.js';
+import { logToWarRoom } from '../discord/warRoom.js';
 
-const ASSEMBLY_TTL_SECONDS = 600;
+const ASSEMBLY_TTL_SECONDS = 3600;
 
 function assemblyKey(eventId: string): string {
   return `assembly:${eventId}`;
@@ -71,4 +74,10 @@ async function tryAssemble(eventId: string): Promise<void> {
   await redis.del(key);
 
   console.log(`[assembler] ${eventId} | assembled + published to alerts:assessed`);
+
+  await logToWarRoom({
+    agent: 'assembler',
+    action: 'assembled',
+    detail: `${fullyEnriched.species_at_risk.length} species | ${fullyEnriched.event_type} | ${fullyEnriched.source} → alerts:assessed`,
+  });
 }

@@ -12,6 +12,9 @@ vi.mock('../../src/redis/client.js', () => ({ redis: mockRedis }));
 vi.mock('../../src/pipeline/streams.js', () => ({
   STREAMS: { ASSESSED: 'alerts:assessed' },
 }));
+vi.mock('../../src/discord/warRoom.js', () => ({
+  logToWarRoom: vi.fn().mockResolvedValue(undefined),
+}));
 
 import {
   storeEventForAssembly,
@@ -62,10 +65,10 @@ describe('storeEventForAssembly', () => {
     );
   });
 
-  it('sets TTL of 600s on the assembly hash', async () => {
+  it('sets TTL of 3600s on the assembly hash', async () => {
     await storeEventForAssembly('event-1', BASE_EVENT);
 
-    expect(mockRedis.expire).toHaveBeenCalledWith('assembly:event-1', 600);
+    expect(mockRedis.expire).toHaveBeenCalledWith('assembly:event-1', 3600);
   });
 });
 

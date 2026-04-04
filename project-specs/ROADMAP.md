@@ -192,17 +192,20 @@
 ## Phase 9 — Hardening + Deploy
 **Goal:** Production-ready. Deployed to Railway + Vercel.
 
-- [ ] Vitest coverage ≥ 80% on server/src/
-- [ ] All LLM calls mocked with fixtures in tests
-- [ ] Playwright E2E suite (frontend + key bot behaviors)
-- [ ] Rate limiting on all Express endpoints
-- [ ] Error handling: all agent failures log to #sentinel-ops, never crash pipeline
-- [ ] Weekly digest automation (every Sunday)
-- [ ] `npm run migrate:prod` script for Neon
-- [ ] Railway deployment (server + Redis + bot)
-- [ ] Vercel deployment (Next.js frontend)
-- [ ] Environment variables set on Railway + Vercel
-- [ ] End-to-end smoke test on production
+- [x] Vitest coverage ≥ 80% on server/src/ — 91.4% achieved (286 tests)
+- [x] All LLM calls mocked with fixtures in tests
+- [x] Playwright E2E suite (frontend + key bot behaviors)
+- [x] Rate limiting on all Express endpoints
+- [x] Error handling: all agent failures log to #sentinel-ops, never crash pipeline
+  - `startWithRestart()` auto-restarts all agent loops (2026-04-03)
+  - `logToWarRoom` added to ThreatAssessmentAgent catch block (2026-04-04)
+  - `logToWarRoom` added to ThreatAssembler on successful assembly (2026-04-04)
+- [x] Weekly digest automation (every Sunday)
+- [x] `npm run migrate:prod` script for Neon
+- [x] Railway deployment (server + Redis + bot)
+- [x] Vercel deployment (Next.js frontend)
+- [x] Environment variables set on Railway + Vercel
+- [ ] End-to-end smoke test on production — **IN PROGRESS** (watching logs after 2026-04-04 pipeline fixes)
 
 → See [PHASE_9_HARDENING.md](roadmap/PHASE_9_HARDENING.md)
 

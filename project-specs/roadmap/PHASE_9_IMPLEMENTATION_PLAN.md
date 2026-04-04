@@ -593,3 +593,49 @@ Rules:
 6. `https://your-app.vercel.app` loads without errors on mobile and desktop
 7. No CORS errors between frontend and backend
 8. Weekly digest scheduled (verify via `#sentinel-ops` on Sunday or manual trigger)
+
+---
+
+## Post-Deployment Pipeline Debug Log (2026-04-04)
+
+After going live, the production pipeline ran for ~24 hours without producing any threat assessments. The following bugs were diagnosed from #sentinel-ops Discord log export and code analysis.
+
+### Bug 1 — Assembly TTL death spiral (root cause of 18-hour species-context blackout)
+
+**Symptom:** `[species-context]` logs disappeared from #sentinel-ops for ~18 hours. Only `[habitat]` logs continued. Service recovered only after a Railway process restart.
+
+**Root cause:** Species-context processes 17–20 species per event with sequential LLM calls (~90s/event). With 5–6 events per enrichment batch, a full batch takes up to 9 minutes. The assembly hash TTL was 600s (10 min). Once species-context fell more than one batch behind, every assembly hash expired before species-context reached those events. The `redis.exists('assembly:ID')` guard in `processSpeciesEvent` then silently skipped all events — no Discord log, no error, no sign of life. The only recovery was a full process restart that put species-context back at the head of the stream.
+
+**Fix:** `ASSEMBLY_TTL_SECONDS` 600 → **3600** in `ThreatAssembler.ts`. The TTL must accommodate worst-case backlog: 6 events × 90s/event = 9 min per cycle × several cycles of lag. One hour gives ample margin.
+
+**File:** `server/src/pipeline/ThreatAssembler.ts`
+
+### Bug 2 — Race condition in EnrichmentAgent (storeEventForAssembly after XADD)
+
+**Symptom:** Occasional species-context skip at startup even for fresh events.
+
+**Root cause:** In `EnrichmentAgent.processEvent()`, `redis.xadd(STREAMS.ENRICHED, ...)` ran on line 115, but `storeEventForAssembly(event.id, enriched)` ran on line 119. A fast species-context consumer could read the stream message and call `redis.exists('assembly:ID')` in that ~10ms window — before the hash existed — and skip the event.
+
+**Fix:** Swapped the order. `storeEventForAssembly` now runs first, then `redis.xadd`. The assembly hash is always guaranteed to exist before any consumer can read the stream message.
+
+**File:** `server/src/agents/EnrichmentAgent.ts`
+
+### Bug 3 — ThreatAssessmentAgent failures completely invisible in Discord
+
+**Symptom:** Even for the 3 events where assembly DID complete (visible at 10:17, 10:24, 10:32 AM on day 1), no `[threat_assess]` log ever appeared in #sentinel-ops.
+
+**Root cause:** The try/catch in `startThreatAssessmentAgent` called `logPipelineEvent` (writes to the `pipeline_events` DB table) but never called `logToWarRoom`. Any failure — Claude API error, DB constraint violation, rate limit, anything — was silently swallowed from Discord's perspective.
+
+**Fix:** Added `logToWarRoom({ level: 'warning' })` in the catch block. Failed threat assessments now surface to #sentinel-ops with the error message.
+
+**File:** `server/src/agents/ThreatAssessmentAgent.ts`
+
+### Bonus — Assembly completion was also invisible
+
+**Fix:** Added `logToWarRoom` in `ThreatAssembler.tryAssemble` on successful assembly. `[assembler] assembled` messages now appear in #sentinel-ops confirming the fan-in completed and the event is flowing to the threat assessment stage.
+
+**File:** `server/src/pipeline/ThreatAssembler.ts`
+
+### Test update
+
+`ThreatAssembler.test.ts` TTL assertion updated: 600 → 3600. `logToWarRoom` mock added to the ThreatAssembler test file. All 286 tests pass.

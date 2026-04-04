@@ -112,11 +112,13 @@ export async function processEvent(event: RawDisasterEvent): Promise<void> {
     habitat_distance_km: habitats[0]!.distance_km,
   };
 
-  await redis.xadd(STREAMS.ENRICHED, '*', 'data', JSON.stringify(enriched));
-
-  // Store the enriched event in the assembly hash so ThreatAssembler can
-  // fan-in results from HabitatAgent + SpeciesContextAgent.
+  // Store the assembly hash BEFORE publishing to the stream.
+  // SpeciesContextAgent checks redis.exists('assembly:ID') immediately on
+  // reading the message — if we published first, there would be a race window
+  // where the check returns 0 and the event gets silently skipped.
   await storeEventForAssembly(event.id, enriched);
+
+  await redis.xadd(STREAMS.ENRICHED, '*', 'data', JSON.stringify(enriched));
 
   await logPipelineEvent({
     event_id: event.id,
