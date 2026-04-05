@@ -17,10 +17,13 @@ import { retrieveSpeciesFacts } from '../rag/retrieve.js';
 import { logToWarRoom } from '../discord/warRoom.js';
 
 const BASE_SYSTEM_PROMPT =
-  'You are a wildlife conservation assistant. Provide a factual summary for the given species. ' +
+  'You are a wildlife conservation assistant. Provide a concise factual summary for the given species. ' +
   'Respond in JSON with exactly these fields: ' +
-  '{ "common_name": string, "population_estimate": string or null, ' +
-  '"primary_threats": string[], "habitat_description": string, "confidence_note": string }';
+  '{ "common_name": string, "population_estimate": string or null (1 sentence), ' +
+  '"primary_threats": string[] (3-5 short phrases), ' +
+  '"habitat_description": string (1-2 sentences max), ' +
+  '"confidence_note": string (1 sentence) }. ' +
+  'Keep all fields brief — total response under 200 words.';
 
 const VALID_IUCN_STATUSES: ReadonlySet<string> = new Set(['EX', 'EW', 'CR', 'EN', 'VU', 'NT', 'LC']);
 
@@ -145,7 +148,7 @@ async function generateSpeciesBrief(speciesName: string, eventType: EventType): 
       model: MODELS.GEMINI_FLASH_LITE,
       systemPrompt,
       userMessage: `Species: ${speciesName} (IUCN status: ${iucnStatus}, threatened by: ${eventType})`,
-      maxTokens: 400,
+      maxTokens: 800,
       jsonMode: true,
     });
 
