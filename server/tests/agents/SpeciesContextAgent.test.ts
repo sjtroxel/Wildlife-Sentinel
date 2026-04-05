@@ -394,10 +394,10 @@ describe('SpeciesContextAgent', () => {
       expect(stored.species_briefs[0]!.primary_threats).toEqual([]);
     });
 
-    it('uses GEMINI_FLASH (not Flash-Lite) for species brief generation', async () => {
+    it('uses GEMINI_FLASH_LITE for species brief generation', async () => {
       await runOneIteration();
       expect(modelRouter.complete).toHaveBeenCalledWith(
-        expect.objectContaining({ model: 'gemini-2.5-flash' })
+        expect.objectContaining({ model: 'gemini-2.5-flash-lite' })
       );
     });
 

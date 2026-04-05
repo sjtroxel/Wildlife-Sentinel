@@ -142,7 +142,7 @@ async function generateSpeciesBrief(speciesName: string, eventType: EventType): 
 
   try {
     const result = await modelRouter.complete({
-      model: MODELS.GEMINI_FLASH,
+      model: MODELS.GEMINI_FLASH_LITE,
       systemPrompt,
       userMessage: `Species: ${speciesName} (IUCN status: ${iucnStatus}, threatened by: ${eventType})`,
       maxTokens: 400,
