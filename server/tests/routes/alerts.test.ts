@@ -36,29 +36,46 @@ describe('GET /alerts/recent', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('returns 200 with alert rows', async () => {
-    vi.mocked(sql).mockResolvedValueOnce([mockAlert]);
+    vi.mocked(sql).mockResolvedValueOnce([mockAlert] as never);
     const res = await request.get('/alerts/recent');
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
     expect(res.body[0]).toMatchObject({ id: 'uuid-1', threat_level: 'high' });
   });
 
+  it('parses coordinates from JSON string when DB returns text', async () => {
+    const rawRow = {
+      ...mockAlert,
+      coordinates: '{"lat":13.744,"lng":106.688}',
+      severity: '0.0696',
+      confidence_score: '0.74',
+    };
+    vi.mocked(sql).mockResolvedValueOnce([rawRow] as never);
+    const res = await request.get('/alerts/recent');
+    expect(res.status).toBe(200);
+    expect(res.body[0].coordinates).toEqual({ lat: 13.744, lng: 106.688 });
+    expect(typeof res.body[0].severity).toBe('number');
+    expect(typeof res.body[0].confidence_score).toBe('number');
+    expect(res.body[0].severity).toBeCloseTo(0.0696);
+    expect(res.body[0].confidence_score).toBeCloseTo(0.74);
+  });
+
   it('returns empty array when no alerts exist', async () => {
-    vi.mocked(sql).mockResolvedValueOnce([]);
+    vi.mocked(sql).mockResolvedValueOnce([] as never);
     const res = await request.get('/alerts/recent');
     expect(res.status).toBe(200);
     expect(res.body).toEqual([]);
   });
 
   it('defaults to limit 20', async () => {
-    vi.mocked(sql).mockResolvedValueOnce([]);
+    vi.mocked(sql).mockResolvedValueOnce([] as never);
     await request.get('/alerts/recent');
     // sql tagged template was called
     expect(vi.mocked(sql)).toHaveBeenCalledOnce();
   });
 
   it('caps limit at 50 regardless of query param', async () => {
-    vi.mocked(sql).mockResolvedValueOnce([]);
+    vi.mocked(sql).mockResolvedValueOnce([] as never);
     // Send limit=999 — the route caps it at 50 before passing to sql
     const res = await request.get('/alerts/recent?limit=999');
     expect(res.status).toBe(200);
@@ -67,7 +84,7 @@ describe('GET /alerts/recent', () => {
   });
 
   it('uses custom limit within bounds', async () => {
-    vi.mocked(sql).mockResolvedValueOnce([]);
+    vi.mocked(sql).mockResolvedValueOnce([] as never);
     const res = await request.get('/alerts/recent?limit=10');
     expect(res.status).toBe(200);
     expect(vi.mocked(sql)).toHaveBeenCalledOnce();

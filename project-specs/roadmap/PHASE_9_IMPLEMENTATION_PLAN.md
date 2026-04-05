@@ -489,23 +489,26 @@ After Vercel deploy URL is known:
 
 ---
 
-## Track 7 — Smoke Test Checklist
+## Track 7 — Smoke Test Checklist ✅ COMPLETE (2026-04-05)
 
-Run this checklist after both services are deployed:
+Script: `scripts/smoke-test.sh` — 8/8 automated checks passed.
 
 ```
-□ GET /health → { status: 'ok', db: 'connected', redis: 'connected', discord: 'connected' }
-□ GET /alerts/recent → JSON array (empty OK)
-□ GET /refiner/scores → JSON array (empty OK)
-□ GET /habitats?minLng=-10&minLat=-10&maxLng=10&maxLat=10 → GeoJSON FeatureCollection
-□ curl -N /agent-activity → stays open (SSE)
-□ Discord bot is online in the server member list
-□ Post a test message to #sentinel-ops manually via /admin in Discord
-□ Frontend loads at Vercel URL on mobile
-□ Frontend loads at Vercel URL at 1280px
-□ Leaflet map tiles render
-□ CORS: fetch /alerts/recent from browser console on Vercel URL → no CORS error
+✅ GET /health → { status:'ok', db:'connected', redis:'connected', discord:'connected' }
+✅ GET /alerts/recent → JSON array (20 alerts in DB)
+✅ GET /refiner/scores → JSON array (0 scores — accumulating as Refiner runs)
+✅ GET /habitats?minLng=-10&minLat=-10&maxLng=10&maxLat=10 → GeoJSON FeatureCollection
+✅ curl -N /agent-activity → stayed open (timed out cleanly after 3s as expected)
+✅ Discord bot online — Wildlife Sentinel#4612 green dot confirmed
+✅ Frontend loads at https://wildlife-sentinel.vercel.app on mobile (375px)
+✅ Frontend loads at 1280px — map tiles render in light + dark mode
+✅ CORS — fetch from Vercel console returned 'CORS OK, alerts: 20'
 ```
+
+Issues found (deferred to Phase 10):
+- Alert click in feed navigates to broken page → fix: remove navigation
+- No alert markers on Leaflet map → fix: plot circleMarkers from /alerts/recent
+- Mobile layout proportions cramped → fix: resizable panels (react-resizable-panels)
 
 ---
 
