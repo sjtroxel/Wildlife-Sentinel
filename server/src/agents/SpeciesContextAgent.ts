@@ -117,7 +117,7 @@ async function generateSpeciesBrief(speciesName: string, eventType: EventType): 
     : 'LC';
 
   // RAG retrieval — ground the agent in real IUCN assessments
-  const ragChunks = await retrieveSpeciesFacts(speciesName, `threatened by ${eventType}`);
+  const ragChunks = await retrieveSpeciesFacts(speciesName, `threatened by ${eventType}`, 2);
   const sourceDocuments = [...new Set(ragChunks.map(c => c.source_document))];
 
   let systemPrompt: string;
@@ -145,7 +145,7 @@ async function generateSpeciesBrief(speciesName: string, eventType: EventType): 
       model: MODELS.GEMINI_FLASH,
       systemPrompt,
       userMessage: `Species: ${speciesName} (IUCN status: ${iucnStatus}, threatened by: ${eventType})`,
-      maxTokens: 2048,
+      maxTokens: 400,
       jsonMode: true,
     });
 

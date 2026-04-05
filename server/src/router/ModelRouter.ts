@@ -9,12 +9,12 @@ import { MODELS } from '@wildlife-sentinel/shared/models';
 import { config } from '../config.js';
 import { logModelUsage } from '../db/modelUsage.js';
 
-// Pricing per million tokens (March 2026)
+// Pricing per million tokens — Tier 1 paid (upgraded 2026-03-31)
 const PRICING: Record<string, { input: number; output: number }> = {
   'claude-sonnet-4-6':     { input: 3.00,  output: 15.00 },
-  'gemini-2.5-flash':      { input: 0.00,  output: 0.00 },  // free tier
-  'gemini-2.5-flash-lite': { input: 0.00,  output: 0.00 },  // free tier
-  'gemini-embedding-001':  { input: 0.00,  output: 0.00 },
+  'gemini-2.5-flash':      { input: 0.30,  output: 2.50  },
+  'gemini-2.5-flash-lite': { input: 0.10,  output: 0.40  },
+  'gemini-embedding-001':  { input: 0.00,  output: 0.00  },  // verify in AI Studio
 };
 
 const MAX_RETRY_ATTEMPTS = 3;
@@ -148,8 +148,14 @@ class ModelRouter {
     const outputTokens = response.usage.output_tokens;
     const cost = this.calculateCost(request.model, inputTokens, outputTokens);
 
+    // Claude sometimes wraps JSON responses in ```json ... ``` code fences even when
+    // asked for raw JSON. Strip them so callers can JSON.parse() reliably.
+    const text = request.jsonMode === true
+      ? content.text.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '').trim()
+      : content.text;
+
     await this.trackUsage(request.model, inputTokens, outputTokens, cost);
-    return { content: content.text, model: request.model, inputTokens, outputTokens, estimatedCostUsd: cost };
+    return { content: text, model: request.model, inputTokens, outputTokens, estimatedCostUsd: cost };
   }
 
   private async completeGoogle(request: RouterRequest): Promise<RouterResponse> {

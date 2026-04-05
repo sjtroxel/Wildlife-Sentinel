@@ -241,7 +241,7 @@ describe('SpeciesContextAgent', () => {
   describe('RAG grounding', () => {
     it('calls retrieveSpeciesFacts with species name and threatened-by context', async () => {
       await runOneIteration();
-      expect(retrieveSpeciesFacts).toHaveBeenCalledWith('Pongo abelii', 'threatened by wildfire');
+      expect(retrieveSpeciesFacts).toHaveBeenCalledWith('Pongo abelii', 'threatened by wildfire', 2);
     });
 
     it('calls retrieveSpeciesFacts once per species in species_at_risk', async () => {

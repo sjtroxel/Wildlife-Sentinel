@@ -148,6 +148,34 @@ describe('RouterResponse shape', () => {
     };
     expect(callArg?.generationConfig?.responseMimeType).toBe('text/plain');
   });
+
+  it('strips ```json code fences from Claude response when jsonMode=true', async () => {
+    const rawWithFence = '```json\n{"threat_level":"high"}\n```';
+    mockAnthropicCreate.mockResolvedValueOnce(makeAnthropicResponse(rawWithFence));
+
+    const result = await modelRouter.complete({
+      model: MODELS.CLAUDE_SONNET,
+      systemPrompt: 's',
+      userMessage: 'u',
+      jsonMode: true,
+    });
+
+    expect(result.content).toBe('{"threat_level":"high"}');
+    expect(() => JSON.parse(result.content)).not.toThrow();
+  });
+
+  it('does not strip content from Claude response when jsonMode is not set', async () => {
+    const rawWithFence = '```json\n{"key":"val"}\n```';
+    mockAnthropicCreate.mockResolvedValueOnce(makeAnthropicResponse(rawWithFence));
+
+    const result = await modelRouter.complete({
+      model: MODELS.CLAUDE_SONNET,
+      systemPrompt: 's',
+      userMessage: 'u',
+    });
+
+    expect(result.content).toBe(rawWithFence);
+  });
 });
 
 // ── cost tracking ──────────────────────────────────────────────────────────
@@ -165,13 +193,14 @@ describe('cost tracking', () => {
     expect(modelRouter.getRunningCostUsd() - before).toBeCloseTo(3.0, 1);
   });
 
-  it('Gemini call adds $0 (free-tier pricing)', async () => {
+  it('Gemini Flash Lite call reflects Tier 1 paid pricing', async () => {
+    // 500k input × $0.10/1M = $0.05 | 500k output × $0.40/1M = $0.20 → $0.25 total
     mockGoogleGenerateContent.mockResolvedValueOnce(makeGoogleResponse('x', 500_000, 500_000));
 
     const before = modelRouter.getRunningCostUsd();
     await modelRouter.complete({ model: MODELS.GEMINI_FLASH_LITE, systemPrompt: 's', userMessage: 'u' });
 
-    expect(modelRouter.getRunningCostUsd() - before).toBe(0);
+    expect(modelRouter.getRunningCostUsd() - before).toBeCloseTo(0.25, 5);
   });
 
   it('calls logModelUsage for every Claude call', async () => {
