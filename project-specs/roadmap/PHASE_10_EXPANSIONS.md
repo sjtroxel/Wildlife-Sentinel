@@ -2,7 +2,7 @@
 
 **Goal:** Post-launch improvements. This phase is a living backlog — items are added as they're identified after Phase 9 ships. Not all items need to ship together; they can be batched into sub-releases.
 
-**Status:** Not started
+**Status:** In progress — Tracks 1 (bug fixes) and 2 (resizable panels) complete as of 2026-04-06. See PHASE_10_IMPLEMENTATION_PLAN.md for full status.
 **Depends on:** Phase 9 complete (system deployed and stable)
 **Priority:** Bonus / expansion — system is fully functional at Phase 9 without any of this
 

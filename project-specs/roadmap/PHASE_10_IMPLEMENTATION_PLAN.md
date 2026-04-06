@@ -2,233 +2,224 @@
 
 ## Context
 
-Phase 9 is complete as of 2026-04-05. The system is live end-to-end:
+Phase 9 complete as of 2026-04-05. System is live end-to-end:
 - Backend: `https://wildlife-sentinel.up.railway.app`
 - Frontend: `https://wildlife-sentinel.vercel.app`
-- Pipeline firing real alerts. First end-to-end alert posted 2026-04-04.
+- Pipeline firing real alerts. 20 alerts in DB as of 2026-04-05.
 
-Phase 10 addresses confirmed bugs found during the Phase 9 smoke test, plus known backlog items deferred from earlier phases. No new major architecture is introduced — this phase is polish, fixes, and targeted enhancements.
+Phase 10 is a **rolling backlog** — not a fixed scope. Items are grouped into tracks and expansion areas. Near-term tracks address confirmed bugs and polish from the Phase 9 smoke test. Expansion areas are larger improvements added as the system matures post-launch.
 
----
-
-## Issues Confirmed During Phase 9 Smoke Test (2026-04-05)
-
-| # | Issue | Type |
-|---|---|---|
-| 1 | Alert click in feed navigates to a broken page | Bug |
-| 2 | Alerts not plotted as markers on the Leaflet map | Bug |
-| 3 | Mobile layout proportions feel cramped; user wants resizable panels | Enhancement |
-| 4 | Leaflet map tile/marker rough edges (known since Phase 8) | Polish |
-
-## Backlog Items Carried From Earlier Phases
-
-| # | Item | Source |
-|---|---|---|
-| 5 | #sentinel-ops logs every habitat event even with 0 GBIF sightings — noisy | Phase 9 notes |
-| 6 | Cost trend visibility — model_usage table populated; surface it somewhere | Phase 9 notes |
+See also `PHASE_10_EXPANSIONS.md` for the living backlog document.
 
 ---
 
-## Track 1 — Bug Fixes (do first)
+## Completed ✅
 
-### Step 1.1 — Fix broken alert click navigation
+### Track 1 — Bug Fixes (2026-04-05/06)
 
-**Symptom:** Clicking a recent alert in the alerts feed navigates to "This page couldn't load."
+**Root cause:** `coordinates`, `severity`, and `confidence_score` come back from postgres as strings (postgres.js only auto-parses JSONB columns, not JSON). The `AlertRow` type declared the right types but the raw DB response didn't match.
 
-**Investigation needed:** Read `client/src/components/RecentAlerts.tsx` (or equivalent). Find what `href` or `onClick` is being set. The frontend is read-only — there is no alert detail page. The link should either:
-- (a) Do nothing (remove the link entirely if no detail page exists), or
-- (b) Open a detail panel/modal inline without navigating away.
+**Fix location:** `server/src/routes/alerts.ts` — normalizes the three fields before `res.json()`.
 
-**Decision:** Remove navigation entirely for now. If we want an alert detail view, that's a separate tracked feature. A broken link is worse than no link.
+- ✅ **Alert click → broken page** — Was a runtime crash: expanding an alert tried `string.lat.toFixed()` → `undefined.toFixed` → TypeError → Next.js error page. Fixed by parsing coordinates correctly.
+- ✅ **Alert markers missing from map** — `circleMarker([undefined, undefined])` silently failed. Map marker code in `DisasterMapInner.tsx` Effect 3 was already complete — it just needed valid coordinates. Fixed by same route change.
+- ✅ **TypeScript errors in alerts.test.ts** — Pre-existing `as never` cast missing on all `mockResolvedValueOnce` calls. Fixed. New test added for string→object coordinates parsing.
 
-**File to fix:** Identify by reading `client/src/` — likely `RecentAlerts.tsx` or `AlertCard.tsx`.
+**296 tests passing.**
 
-### Step 1.2 — Plot alerts as markers on the Leaflet map
+### Track 2 — Resizable Panels (2026-04-06)
 
-**Symptom:** The map renders correctly (tiles load, habitat polygons show) but recent alerts are not plotted as markers.
+- ✅ Installed `react-resizable-panels@4.9.0` (v4 API: `Group`, `Panel`, `Separator`)
+- ✅ `client/app/page.tsx` rewritten with drag-to-resize panel dividers
+- ✅ Mobile (< 1024px): vertical `Group` — map (40% default) / alerts (35%) / agent activity (15%) / refiner chart (10%). All draggable.
+- ✅ Desktop (≥ 1024px): horizontal `Group` (map 65% | right column 35%) with nested vertical `Group` inside the right column.
+- ✅ Layout auto-switches on `window.matchMedia('(min-width: 1024px)')` resize.
+- ✅ Build passes.
 
-**Expected behavior:** Each alert in `/alerts/recent` should appear as a colored marker on the map at its `coordinates`. Color matches the event type (use `EVENT_COLORS` from `frontend.md`):
+---
+
+## Near-Term Tracks (Next Sessions)
+
+### Track 3 — Sentinel-Ops Noise Reduction
+
+**File:** `server/src/agents/HabitatAgent.ts`
+
+**Problem:** Every GBIF lookup posts to #sentinel-ops even when 0 sightings found. Generates significant noise that buries meaningful signals.
+
+**Fix:** Only call `logToWarRoom` when `sightings.length > 0`. Log 0-sighting results to `console.log` only.
 
 ```typescript
-export const EVENT_COLORS = {
-  wildfire: '#ef4444',
-  tropical_storm: '#3b82f6',
-  flood: '#06b6d4',
-  drought: '#f59e0b',
-  coral_bleaching: '#14b8a6',
-} as const;
-```
-
-**Marker behavior:**
-- Click a marker → show a Leaflet popup with: event type, threat level, species at risk (top 3), confidence score, timestamp.
-- Marker size: uniform. Do NOT scale by severity — clutters the map.
-- Use `L.circleMarker` for clean rendering (no custom icon image dependencies).
-
-**Implementation location:** `client/src/components/DisasterMap.tsx` (or `DisasterMapInner.tsx`). The component already fetches habitat polygons — add a second fetch for `/alerts/recent` and layer markers on top.
-
-**Data shape to expect from `/alerts/recent`:**
-
-```typescript
-interface AlertMarker {
-  id: string;
-  event_type: string;
-  coordinates: string;     // JSON string: '{"lat": 13.7, "lng": 106.7}'
-  threat_level: string;
-  confidence: string;      // decimal string from DB e.g. "0.74"
-  species_at_risk: string; // JSON string: '["Panthera tigris", ...]'
-  created_at: string;
-}
-```
-
-Note: `coordinates` and `species_at_risk` come back as JSON strings from the DB — parse them before use.
-
-**Two-effect pattern (already established in the map component):**
-1. Effect 1: initialize Leaflet map on mount
-2. Effect 2: fetch habitats + alerts once `map` state is set, add layers
-
-Keep this pattern. Add alerts to Effect 2.
-
----
-
-## Track 2 — Mobile Layout & Resizable Panels
-
-### Step 2.1 — Audit current mobile layout
-
-Read the current layout component (`client/src/app/page.tsx` or equivalent layout file). Document the current flex/grid structure before changing anything.
-
-### Step 2.2 — Improve default mobile proportions
-
-At 375px (mobile base), the current split is roughly map 25% / alerts 60% / agent-activity 15%. This feels cramped.
-
-**New default proportions (mobile):**
-- Map: 40% of viewport height (`h-[40vh]`)
-- Alerts feed: scrollable, no fixed height — natural content flow
-- Agent activity: scrollable, no fixed height — natural content flow
-
-Alerts and agent activity should scroll independently within their panels, not push each other around.
-
-### Step 2.3 — Resizable panel dividers
-
-Allow the user to drag the border between panels to resize them. This is a significant UX improvement and feasible with CSS + a small amount of JavaScript.
-
-**Approach:** Use the browser-native `resize` CSS property where applicable, or implement a drag-handle divider.
-
-Recommended: a thin drag handle `<div>` between each panel pair. On `mousedown`/`touchstart`, track pointer movement and update panel heights via inline style or a React state variable.
-
-**Libraries to consider:**
-- `react-resizable-panels` — purpose-built, well-maintained, small. Install as a client dependency in `client/`.
-- Manual implementation — ~50 lines, no dep, but fiddlier on touch.
-
-**Decision:** Use `react-resizable-panels`. It handles touch, keyboard, and accessibility correctly out of the box.
-
-```bash
-npm install react-resizable-panels --workspace=client
-```
-
-**Layout structure with resizable panels:**
-
-```tsx
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-
-<PanelGroup direction="vertical">
-  <Panel defaultSize={40} minSize={20}>
-    <DisasterMap />
-  </Panel>
-  <PanelResizeHandle className="h-1 bg-border cursor-row-resize" />
-  <Panel defaultSize={35} minSize={15}>
-    <RecentAlerts />
-  </Panel>
-  <PanelResizeHandle className="h-1 bg-border cursor-row-resize" />
-  <Panel defaultSize={25} minSize={10}>
-    <AgentActivity />
-  </Panel>
-</PanelGroup>
-```
-
-On desktop (`md:` breakpoint), use `direction="horizontal"` for the map vs. right-panel split, then a nested vertical group for alerts + agent activity.
-
----
-
-## Track 3 — Sentinel-Ops Noise Reduction
-
-### Step 3.1 — Suppress 0-sighting habitat logs
-
-**Location:** `server/src/agents/HabitatAgent.ts`
-
-**Current behavior:** `logToWarRoom` is called for every event processed, including those where GBIF returned 0 sightings. This generates significant noise in #sentinel-ops.
-
-**Fix:** Only log to warRoom when `gbif_recent_sightings.length > 0`. Log 0-sighting results to console only (not Discord).
-
-```typescript
-// Before (logs everything to warRoom)
-await logToWarRoom({ agent: 'habitat', action: 'gbif_result', detail: `0 sightings for ${species}` });
-
-// After (0 sightings → console only)
 if (sightings.length > 0) {
-  await logToWarRoom({ agent: 'habitat', action: 'gbif_sightings', detail: `${sightings.length} sightings for ${species}` });
+  await logToWarRoom({ agent: 'habitat', action: 'gbif_sightings',
+    detail: `${sightings.length} sightings for ${species}` });
 } else {
   console.log(`[habitat] 0 GBIF sightings for ${species} — skipping warRoom log`);
 }
 ```
 
-Apply the same principle: only post to #sentinel-ops when there's something meaningful to report.
+Small change, high signal-to-noise impact on #sentinel-ops.
+
+### Track 4 — Cost Visibility
+
+**File:** `server/src/discord/weeklyDigest.ts`
+
+Add a cost line to the weekly digest embed querying `model_usage`:
+
+```sql
+SELECT COALESCE(SUM(estimated_cost_usd), 0)::numeric(6,4) AS total
+FROM model_usage
+WHERE created_at > NOW() - INTERVAL '7 days';
+```
+
+Embed line: `• AI cost this week: $X.XX`
+
+This surfaces the cost trend without requiring a separate dashboard visit.
 
 ---
 
-## Track 4 — Cost Visibility
+## Expansion Area 0 — Data Source Hardening (HIGH PRIORITY)
 
-### Step 4.1 — Add cost summary to weekly digest
+### Lesson Learned in Phase 9
 
-The `weeklyDigest.ts` already queries for alert counts and refiner scores. Add a cost line:
+NOAA CRW's VS polygon endpoint moved after Phase 4 shipped, only caught from 404 noise in #sentinel-ops post-launch. The Phase 0 checklist verified API *keys* but not endpoint *health*.
 
-```typescript
-const costResult = await sql`
-  SELECT COALESCE(SUM(estimated_cost_usd), 0)::numeric(6,4) AS total
-  FROM model_usage
-  WHERE created_at > NOW() - INTERVAL '7 days'
-`;
+### 0A — Endpoint canary checks (add to Phase 0 spec)
+
+Add manual verification before any Phase 1+ work (update `phase-0-foundation.md`):
+
+```bash
+curl -s "https://firms.modaps.eosdis.nasa.gov/api/country/csv/<KEY>/VIIRS_SNPP_NRT/World/1/$(date +%Y-%m-%d)" | head -3
+curl -s "https://nhc.noaa.gov/CurrentStorms.json" | python3 -c "import sys,json; d=json.load(sys.stdin); print('NHC OK')"
+curl -s "https://waterservices.usgs.gov/nwis/iv/?format=json&parameterCd=00060&sites=01646500" | python3 -c "import sys,json; print('USGS OK')"
+curl -s "https://coralreefwatch.noaa.gov/product/vs/vs_polygons.json" | python3 -c "import sys,json; d=json.load(sys.stdin); print(f'CRW: {len(d[\"features\"])} stations')"
 ```
 
-Add to the digest embed: `• AI cost this week: $X.XX`
+Add `server/tests/integration/scoutEndpoints.test.ts` with `describe.skip` — run manually pre-deploy to verify all sources are live.
 
-This surfaces the cost trend to you without requiring a separate dashboard visit.
+### 0B — Persist circuit breaker state in Redis
 
-### Step 4.2 — Add `/admin/costs` endpoint response to health page (optional)
+`BaseScout.consecutiveFailures` is in-memory and resets to 0 on process restart. Every Railway redeploy re-triggers error logs for any broken endpoint.
 
-The backend already has a `/admin/costs` endpoint (or similar from ModelRouter cost tracking). Consider surfacing the running total in the `/health` response:
+**Fix:** Store `circuit:open:{scout}` and `circuit:failures:{scout}` keys in Redis with a TTL. The circuit stays open across restarts — broken endpoint silences itself without per-deploy noise.
+
+**File:** `server/src/scouts/BaseScout.ts`
+
+### 0C — `/health/scouts` endpoint
+
+Expose per-scout circuit state for ops visibility:
 
 ```json
-{ "status": "ok", ..., "total_cost_usd": 0.87 }
+GET /health/scouts
+{
+  "nasa_firms":       { "status": "healthy", "consecutiveFailures": 0 },
+  "coral_reef_watch": { "status": "circuit_open", "openUntil": "2026-04-02T18:30:00Z" }
+}
 ```
 
-Low effort, useful for monitoring. Implement only if the endpoint already exists — do not add a new DB query to the health check.
+Surface this in the frontend Agent Activity panel as a "Scout Health" row per source.
+
+**Files:** `server/src/routes/health.ts`, `client/components/AgentActivity.tsx`
 
 ---
 
-## Acceptance Criteria
+## Expansion Area 1 — Global Data Sources
 
-1. Clicking an alert in the feed no longer navigates away from the page
-2. Recent alerts appear as colored `circleMarker`s on the Leaflet map; clicking a marker shows a popup
-3. Mobile layout: map is at least 40vh by default; panels are independently scrollable
-4. Drag handles between panels work on both mouse and touch
-5. `#sentinel-ops` no longer receives a log entry for every 0-sighting GBIF result
-6. Weekly digest includes AI cost for the week
+Phase 4 shipped scouts with limited geographic coverage as a deliberate MVP trade-off.
+
+| Scout | Coverage Gap | Replacement |
+|---|---|---|
+| `NhcScout.ts` | Atlantic + E. Pacific only | IBTrACS or GDACS (all ocean basins) |
+| `UsgsScout.ts` | US only | GloFAS / Copernicus (global river discharge) |
+| `DroughtScout.ts` | US only | GRACE-FO or CHIRPS (global drought indices) |
+
+NASA FIRMS and NOAA Coral Reef Watch are already global — no replacement needed.
+
+**Migration strategy:** Build new scouts alongside existing ones. Run both in parallel for 2 weeks to compare event volumes. Disable the old scout once the new one is validated. `RawDisasterEvent` schema and all downstream agents are unchanged — zero pipeline disruption.
+
+### 1A — Tropical Cyclone: Global Coverage
+
+**Replace:** `NhcScout.ts`
+
+**Target:** GDACS (Global Disaster Alert and Coordination System) tropical cyclone RSS — single endpoint covering all ocean basins. Alternatively, direct RSMC feeds (Tokyo, New Delhi, La Réunion, BOM).
+
+**Species unlocked:** Philippine tamaraw + pygmy tarsier (Pacific typhoons), Irrawaddy dolphin + Bengal tiger (Bay of Bengal cyclones), northern quoll + cassowary (Australian cyclones).
+
+### 1B — Flood Gauges: Global Coverage
+
+**Replace:** `UsgsScout.ts` + `usgs-sites.json`
+
+**Target:** GloFAS (Global Flood Awareness System) via Copernicus/ECMWF CDS API (`cds.climate.copernicus.eu` — free registration). Alternative: NASA GFMS (familiar auth pattern from FIRMS).
+
+**Implementation note:** Replace static `usgs-sites.json` with a dynamic PostGIS query at startup — find all gauge stations within 75km of any species range. Eliminates the hand-maintained static file.
+
+**Species unlocked:** Amazon (giant river otter, tapir), Congo (forest elephant, gorilla, bonobo), Mekong (Irrawaddy dolphin, giant catfish), Ganges (river dolphin, gharial).
+
+### 1C — Drought: Global Coverage
+
+**Replace:** `DroughtScout.ts` + `drought-fips.json`
+
+**Target options (evaluate at build time):**
+- GRACE-FO (NASA): satellite groundwater anomaly, global, monthly cadence
+- CHIRPS: precipitation anomaly, ~5-day updates, higher temporal resolution
+- GDACS drought alerts: same pattern as cyclone replacement — simplest integration
+
+**Species unlocked:** Sub-Saharan Africa (African elephant, black rhino, cheetah), Australian outback (bilby, numbat), Central Asian steppes (snow leopard, saiga antelope).
 
 ---
 
-## File Manifest
+## Expansion Area 2 — Frontend Enhancements
 
-**Modify (client):**
-- `client/src/components/RecentAlerts.tsx` (or equivalent) — remove broken navigation
-- `client/src/components/DisasterMap.tsx` / `DisasterMapInner.tsx` — add alert markers
-- `client/src/app/page.tsx` (or layout file) — resizable panels
+### 2A — Map Layer Toggles
 
-**Install (client):**
-- `react-resizable-panels`
+Show/hide map layers independently: event type markers, habitat polygons, GBIF sighting markers. Small toggle panel in the map corner (already has the light/dark toggle as a model).
 
-**Modify (server):**
-- `server/src/agents/HabitatAgent.ts` — suppress 0-sighting warRoom logs
-- `server/src/discord/weeklyDigest.ts` — add cost line
+### 2B — Alert Detail Page
+
+`/alerts/[id]` — full agent reasoning, confidence breakdown, compounding factors, Refiner score history for that specific event (if the Refiner has run on it). Server-rendered with `generateStaticParams` for known alert IDs, fallback to dynamic for new ones.
+
+**Prerequisite:** The alert click in AlertsFeed currently expands inline. Add a "View full detail →" link to the expanded view instead of navigating on the initial click.
+
+### 2C — Alert History / Archive Page
+
+`/alerts` — searchable/filterable list of all past alerts. Filter by event type, threat level, species, or date range. Paginated. Read-only.
+
+### 2D — Species Profile Pages
+
+`/species/[slug]` — one page per species in the DB. Shows:
+- IUCN status + range map (from PostGIS polygon)
+- Recent alerts involving this species
+- Refiner accuracy score trend for predictions about this species
+
+Statically generated at build time (`generateStaticParams` from DB query).
+
+### 2E — Dark Mode
+
+Tailwind CSS v4 dark theme. The map already supports light/dark tile layers — extend this to the full UI. Use the `prefers-color-scheme` media query as the default; add a manual toggle in the header.
+
+---
+
+## Expansion Area 3 — Pipeline Enhancements
+
+### 3A — Multi-Species Event Correlation
+
+When multiple species in the same habitat are threatened by the same event, generate one combined alert instead of N individual ones. The ThreatAssembler currently assembles per-event — add a correlation pass that groups co-located events within a configurable radius (e.g. 50km) and time window (e.g. 1 hour).
+
+### 3B — Historical Trend Analysis
+
+Dashboard widget: threat frequency by region over time. Query `alerts` table grouped by `event_type` and month. Display as a simple line chart (same library as RefinerChart).
+
+---
+
+## Expansion Area 4 — Additional Data Sources
+
+New disaster streams beyond the original five. Add as separate scouts following the same `BaseScout` pattern.
+
+| Source | Why |
+|---|---|
+| USGS Earthquake Hazards (`earthquake.usgs.gov/fdsnws/event/1/`) | Species in tectonically active habitats (Sumatran rhino, Javan rhino — near active fault zones) |
+| NOAA Emergency Response (oil spill alerts) | Marine and coastal species (sea turtles, marine iguanas, seabirds) |
+| Global Forest Watch / GLAD alerts | Near-real-time deforestation detection — the slow disaster no other scout covers |
+| AirNow / OpenAQ | Species sensitive to wildfire smoke + particulate (great apes, mountain gorilla) |
 
 ---
 
@@ -236,8 +227,15 @@ Low effort, useful for monitoring. Implement only if the endpoint already exists
 
 | Session | Work |
 |---|---|
-| A | Track 1: fix broken alert link + add map markers (read map component first) |
-| B | Track 2: resizable panels (read current layout first, install dep, implement) |
-| C | Track 3 + 4: sentinel-ops noise + cost line in digest (small, quick) |
+| A ✅ | Track 1 — bug fixes (coordinates parsing, map markers, alert click crash) |
+| B ✅ | Track 2 — resizable panels (react-resizable-panels v4) |
+| C | Track 3 + 4 — sentinel-ops noise + cost line in weekly digest (quick, 1 session) |
+| D | Expansion 0B + 0C — Redis circuit breaker persistence + /health/scouts endpoint |
+| E | Expansion 1A — global cyclone scout (GDACS) |
+| F | Expansion 1B — global flood scout (GloFAS) |
+| G | Expansion 1C — global drought scout |
+| H | Expansion 2B — alert detail page |
+| I | Expansion 2A + 2E — map layer toggles + dark mode |
+| J | Expansion 4 — additional scouts (seismic, oil spill, deforestation, air quality) |
 
-Read source files before touching anything. The map component has an established two-effect pattern that must be preserved.
+Read the relevant source files completely before starting any session. Sessions C and D are the only near-term blockers; everything else can be reordered based on interest.
