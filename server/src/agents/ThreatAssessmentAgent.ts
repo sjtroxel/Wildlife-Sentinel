@@ -153,7 +153,7 @@ export async function processEvent(event: FullyEnrichedEvent): Promise<void> {
     model: MODELS.CLAUDE_HAIKU,
     systemPrompt,
     userMessage,
-    maxTokens: 512,
+    maxTokens: 1500,
     temperature: 0.2,
     jsonMode: true,
   });
