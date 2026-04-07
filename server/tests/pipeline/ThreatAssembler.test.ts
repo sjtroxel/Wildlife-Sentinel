@@ -66,10 +66,10 @@ describe('storeEventForAssembly', () => {
     );
   });
 
-  it('sets TTL of 3600s on the assembly hash', async () => {
+  it('sets TTL of 86400s on the assembly hash', async () => {
     await storeEventForAssembly('event-1', BASE_EVENT);
 
-    expect(mockRedis.expire).toHaveBeenCalledWith('assembly:event-1', 3600);
+    expect(mockRedis.expire).toHaveBeenCalledWith('assembly:event-1', 86_400);
   });
 });
 
