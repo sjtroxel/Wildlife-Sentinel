@@ -52,28 +52,29 @@ export async function startBot(): Promise<void> {
   client.on('interactionCreate', async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
+    // Acknowledge immediately — Discord requires a response within 3 seconds
+    await interaction.deferReply();
+
     try {
       if (interaction.commandName === 'pause') {
         await redis.set(PAUSE_KEY, new Date().toISOString());
-        await interaction.reply('⏸️ **Pipeline paused.** Scouts will stop publishing new events. Use `/resume` to restart.');
+        await interaction.editReply('⏸️ **Pipeline paused.** Scouts will stop publishing new events. Use `/resume` to restart.');
 
       } else if (interaction.commandName === 'resume') {
         await redis.del(PAUSE_KEY);
-        await interaction.reply('▶️ **Pipeline resumed.** Scouts will pick up on their next cycle.');
+        await interaction.editReply('▶️ **Pipeline resumed.** Scouts will pick up on their next cycle.');
 
       } else if (interaction.commandName === 'status') {
         const pausedSince = await redis.get(PAUSE_KEY);
         if (pausedSince) {
-          await interaction.reply(`⏸️ **Pipeline is PAUSED** (since ${pausedSince}). Use \`/resume\` to restart.`);
+          await interaction.editReply(`⏸️ **Pipeline is PAUSED** (since ${pausedSince}). Use \`/resume\` to restart.`);
         } else {
-          await interaction.reply('✅ **Pipeline is running.**');
+          await interaction.editReply('✅ **Pipeline is running.**');
         }
       }
     } catch (err) {
       console.error('[discord] Slash command error:', err);
-      if (!interaction.replied) {
-        await interaction.reply({ content: 'Command failed — check server logs.', ephemeral: true });
-      }
+      await interaction.editReply('Command failed — check server logs.').catch(() => undefined);
     }
   });
 
