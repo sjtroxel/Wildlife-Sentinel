@@ -18,6 +18,7 @@ vi.mock('../../src/redis/client.js', () => ({
     xadd: vi.fn().mockResolvedValue('1234-0'),
     xreadgroup: vi.fn(),
     xack: vi.fn().mockResolvedValue(1),
+    get: vi.fn().mockResolvedValue(null),
     on: vi.fn(),
     quit: vi.fn(),
   },

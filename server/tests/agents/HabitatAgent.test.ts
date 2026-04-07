@@ -11,10 +11,11 @@ const habitatFixture = JSON.parse(
 ) as { sighting_confidence: string; most_recent_sighting: string | null; summary: string };
 
 // vi.hoisted: these mock fns are referenced inside vi.mock factories, so must be hoisted
-const { mockXreadgroup, mockXack, mockExists } = vi.hoisted(() => ({
+const { mockXreadgroup, mockXack, mockExists, mockGet } = vi.hoisted(() => ({
   mockXreadgroup: vi.fn(),
   mockXack: vi.fn(),
   mockExists: vi.fn(),
+  mockGet: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock('../../src/redis/client.js', () => ({
@@ -22,6 +23,7 @@ vi.mock('../../src/redis/client.js', () => ({
     xreadgroup: mockXreadgroup,
     xack: mockXack,
     exists: mockExists,
+    get: mockGet,
     on: vi.fn(),
     quit: vi.fn(),
   },

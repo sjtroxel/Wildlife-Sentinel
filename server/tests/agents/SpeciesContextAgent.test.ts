@@ -17,11 +17,12 @@ const speciesFixture = JSON.parse(
 };
 
 // vi.hoisted: these mock fns are referenced inside vi.mock factories, so must be hoisted
-const { mockXreadgroup, mockXack, mockRedisExists, mockSql } = vi.hoisted(() => ({
+const { mockXreadgroup, mockXack, mockRedisExists, mockSql, mockGet } = vi.hoisted(() => ({
   mockXreadgroup: vi.fn(),
   mockXack: vi.fn(),
   mockRedisExists: vi.fn().mockResolvedValue(1), // default: assembly hash exists → process event
   mockSql: vi.fn(),
+  mockGet: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock('../../src/redis/client.js', () => ({
@@ -29,6 +30,7 @@ vi.mock('../../src/redis/client.js', () => ({
     xreadgroup: mockXreadgroup,
     xack: mockXack,
     exists: mockRedisExists,
+    get: mockGet,
     publish: vi.fn().mockResolvedValue(0),
     on: vi.fn(),
     quit: vi.fn(),
