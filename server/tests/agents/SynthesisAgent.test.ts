@@ -113,6 +113,7 @@ function makeAlert(overrides: Partial<AssessedAlert> = {}): AssessedAlert {
     confidence_score: 0.82,
     prediction_timestamp: new Date().toISOString(),
     sources: ['nasa_firms', 'gbif'],
+    db_alert_id: 'db-uuid-test-001',
     ...overrides,
   };
 }
@@ -142,13 +143,13 @@ describe('SynthesisAgent.processAlert', () => {
     );
   });
 
-  it('routes high threat to wildlife-alerts channel', async () => {
+  it('routes high threat to sentinel-ops-review channel (HITL)', async () => {
     await processAlert(makeAlert({ threat_level: 'high' }));
 
     const xaddCall = vi.mocked(redis.xadd).mock.calls[0];
     expect(xaddCall?.[0]).toBe('discord:queue');
     const payload = JSON.parse(xaddCall?.[3] as string) as { channel: string };
-    expect(payload.channel).toBe('wildlife-alerts');
+    expect(payload.channel).toBe('sentinel-ops-review');
   });
 
   it('routes medium threat to wildlife-alerts channel', async () => {
@@ -222,7 +223,7 @@ describe('SynthesisAgent.processAlert', () => {
     expect(logToWarRoom).toHaveBeenCalledWith(
       expect.objectContaining({
         agent: 'synthesis',
-        detail: expect.stringContaining('wildlife-alerts'),
+        detail: expect.stringContaining('sentinel-ops-review'),
       })
     );
   });
@@ -241,13 +242,13 @@ describe('SynthesisAgent.processAlert', () => {
     );
   });
 
-  it('stored_alert_id matches alert_id in discord queue item', async () => {
-    await processAlert(makeAlert({ threat_level: 'high', id: 'alert-match-test' }));
+  it('stored_alert_id uses db_alert_id (UUID) not the raw event id', async () => {
+    await processAlert(makeAlert({ threat_level: 'high', id: 'alert-match-test', db_alert_id: 'db-uuid-from-neon' }));
     const payload = JSON.parse(
       vi.mocked(redis.xadd).mock.calls[0]?.[3] as string
     ) as { alert_id: string; stored_alert_id: string };
     expect(payload.alert_id).toBe('alert-match-test');
-    expect(payload.stored_alert_id).toBe('alert-match-test');
+    expect(payload.stored_alert_id).toBe('db-uuid-from-neon');
   });
 
   it('uses CLAUDE_HAIKU model for embed generation', async () => {

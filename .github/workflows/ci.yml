@@ -39,6 +39,7 @@ jobs:
           DATABASE_URL: postgresql://fake:fake@fake.neon.tech/fake?sslmode=require
           REDIS_URL: redis://localhost:6379
           DISCORD_BOT_TOKEN: fake_token
+          DISCORD_CLIENT_ID: "123456789"
           DISCORD_GUILD_ID: "123456789"
           DISCORD_CHANNEL_WILDLIFE_ALERTS: "123456789"
           DISCORD_CHANNEL_SENTINEL_OPS: "123456789"
