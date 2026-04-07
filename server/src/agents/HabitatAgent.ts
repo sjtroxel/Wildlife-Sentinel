@@ -31,6 +31,7 @@ export async function startHabitatAgent(): Promise<void> {
   console.log('[habitat] Consumer group ready. Waiting for enriched events...');
 
   while (true) {
+    if (await redis.get('pipeline:paused')) { await new Promise(r => setTimeout(r, 5_000)); continue; }
     const messages = await redis.xreadgroup(
       'GROUP', CONSUMER_GROUPS.HABITAT, 'habitat-worker-1',
       'COUNT', '10', 'BLOCK', '5000',

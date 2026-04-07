@@ -51,6 +51,7 @@ export async function startSynthesisAgent(): Promise<void> {
   console.log('[synthesis] Consumer group ready. Waiting for assessed alerts...');
 
   while (true) {
+    if (await redis.get('pipeline:paused')) { await new Promise(r => setTimeout(r, 5_000)); continue; }
     const messages = await redis.xreadgroup(
       'GROUP', CONSUMER_GROUPS.SYNTHESIS, 'synthesis-worker-1',
       'COUNT', '5', 'BLOCK', '5000',

@@ -97,6 +97,7 @@ export async function startThreatAssessmentAgent(): Promise<void> {
   console.log('[threat-assess] Consumer group ready. Waiting for assembled events...');
 
   while (true) {
+    if (await redis.get('pipeline:paused')) { await new Promise(r => setTimeout(r, 5_000)); continue; }
     const messages = await redis.xreadgroup(
       'GROUP', CONSUMER_GROUPS.THREAT, 'threat-worker-1',
       'COUNT', '5', 'BLOCK', '5000',

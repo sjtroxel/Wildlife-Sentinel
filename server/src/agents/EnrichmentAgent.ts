@@ -27,6 +27,7 @@ export async function startEnrichmentAgent(): Promise<void> {
   console.log('[enrichment] Consumer group ready. Waiting for events...');
 
   while (true) {
+    if (await redis.get('pipeline:paused')) { await new Promise(r => setTimeout(r, 5_000)); continue; }
     const messages = await redis.xreadgroup(
       'GROUP', CONSUMER_GROUPS.ENRICHMENT, 'enrichment-worker-1',
       'COUNT', '10', 'BLOCK', '5000',

@@ -40,6 +40,7 @@ export async function startSpeciesContextAgent(): Promise<void> {
   console.log('[species-context] Consumer group ready. Waiting for enriched events...');
 
   while (true) {
+    if (await redis.get('pipeline:paused')) { await new Promise(r => setTimeout(r, 5_000)); continue; }
     const messages = await redis.xreadgroup(
       'GROUP', CONSUMER_GROUPS.SPECIES, 'species-worker-1',
       'COUNT', '10', 'BLOCK', '5000',
