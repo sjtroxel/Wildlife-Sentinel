@@ -74,6 +74,7 @@ export interface AssessedAlert extends FullyEnrichedEvent {
   confidence_score: number;       // 0-1, computed from observable fields
   prediction_timestamp: string;   // used by Refiner
   sources: string[];
+  db_alert_id: string;            // UUID from alerts table — used for discord_message_id update
 }
 
 export interface RouterRequest {

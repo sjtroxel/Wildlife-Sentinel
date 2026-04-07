@@ -14,6 +14,21 @@ Unlike Phases 0–9 (which have defined scopes), Phase 10 is a **rolling backlog
 
 ---
 
+## Expansion Area 0A — Pipeline Pause/Resume (HIGH PRIORITY — portfolio demo QoL)
+
+Discord slash commands `/pause`, `/resume`, `/status` to stop scout agents from publishing new events
+overnight or during off hours. Prevents unnecessary LLM charges while the demo is unattended.
+
+**Status:** ✅ COMPLETE (2026-04-07)
+
+**Implementation:**
+- `BaseScout.run()` checks `pipeline:paused` Redis key before publishing — covers all 5 scouts
+- `/pause` sets the key, `/resume` deletes it, `/status` reports state
+- Commands registered as guild slash commands (instant, no propagation delay)
+- Requires `DISCORD_CLIENT_ID` env var on Railway
+
+---
+
 ## Expansion Area 0 — Data Source Hardening (HIGH PRIORITY)
 
 ### Lesson Learned in Phase 9

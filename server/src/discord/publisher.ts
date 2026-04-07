@@ -56,8 +56,8 @@ async function publishItem(item: DiscordQueueItem): Promise<void> {
   const embed = EmbedBuilder.from(item.embed as Parameters<typeof EmbedBuilder.from>[0]);
 
   if (item.channel === 'sentinel-ops-review') {
-    // Critical alert — post to #sentinel-ops for HITL review
-    await postCriticalForReview(embed, item.alert_id);
+    // Critical/high alert — post to #sentinel-ops for HITL review
+    await postCriticalForReview(embed, item.alert_id, item.threat_level);
     await logToWarRoom({
       agent: 'discord',
       action: 'Critical posted for review',

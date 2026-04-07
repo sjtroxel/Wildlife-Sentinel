@@ -15,6 +15,7 @@ export const config = {
   databaseUrl: requireEnv('DATABASE_URL'),
   redisUrl: requireEnv('REDIS_URL'),
   discordToken: requireEnv('DISCORD_BOT_TOKEN'),
+  discordClientId: requireEnv('DISCORD_CLIENT_ID'),
   discordGuildId: requireEnv('DISCORD_GUILD_ID'),
   discordChannelWildlifeAlerts: requireEnv('DISCORD_CHANNEL_WILDLIFE_ALERTS'),
   discordChannelSentinelOps: requireEnv('DISCORD_CHANNEL_SENTINEL_OPS'),

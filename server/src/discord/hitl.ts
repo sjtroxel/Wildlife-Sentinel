@@ -10,12 +10,14 @@ import { getSentinelOpsChannel, getWildlifeAlertsChannel } from './bot.js';
 import { logToWarRoom } from './warRoom.js';
 import { sql } from '../db/client.js';
 
-export async function postCriticalForReview(embed: EmbedBuilder, alertId: string): Promise<void> {
+export async function postCriticalForReview(embed: EmbedBuilder, alertId: string, threatLevel = 'critical'): Promise<void> {
   const opsChannel = getSentinelOpsChannel();
+  const levelLabel = threatLevel.toUpperCase();
+  const icon = threatLevel === 'critical' ? '🔴' : '🟠';
 
   const reviewMsg = await opsChannel.send({
     content: [
-      `🔴 **CRITICAL ALERT — Human review required**`,
+      `${icon} **${levelLabel} ALERT — Human review required**`,
       `Alert ID: \`${alertId}\``,
       `React ✅ to approve for public posting | React ❌ to suppress`,
     ].join('\n'),

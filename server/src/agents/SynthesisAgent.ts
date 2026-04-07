@@ -165,16 +165,17 @@ export async function processAlert(assessed: AssessedAlert): Promise<void> {
     .setFooter({ text: `Wildlife Sentinel • Data: ${SOURCE_LABELS[assessed.source] ?? assessed.source} • ${synthesis.footer_note}` })
     .setTimestamp();
 
-  const channel: DiscordQueueItem['channel'] = assessed.threat_level === 'critical'
-    ? 'sentinel-ops-review'
-    : 'wildlife-alerts';
+  const channel: DiscordQueueItem['channel'] =
+    assessed.threat_level === 'critical' || assessed.threat_level === 'high'
+      ? 'sentinel-ops-review'
+      : 'wildlife-alerts';
 
   const queueItem: DiscordQueueItem = {
     alert_id: assessed.id,
     channel,
     embed: embed.toJSON() as Record<string, unknown>,
     threat_level: assessed.threat_level,
-    stored_alert_id: assessed.id,
+    stored_alert_id: assessed.db_alert_id,
   };
 
   await redis.xadd(STREAMS.DISCORD, '*', 'data', JSON.stringify(queueItem));

@@ -23,6 +23,12 @@ export abstract class BaseScout {
       return;
     }
 
+    const paused = await redis.get('pipeline:paused');
+    if (paused) {
+      console.log(`[${this.config.name}] Pipeline paused — skipping`);
+      return;
+    }
+
     try {
       const events = await this.fetchEvents();
       this.consecutiveFailures = 0;

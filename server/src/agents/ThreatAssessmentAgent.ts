@@ -167,19 +167,8 @@ export async function processEvent(event: FullyEnrichedEvent): Promise<void> {
 
   const confidence = computeConfidence(event);
 
-  const assessed: AssessedAlert = {
-    ...event,
-    threat_level: threatLevel,
-    predicted_impact: parsed.predicted_impact,
-    compounding_factors: Array.isArray(parsed.compounding_factors) ? parsed.compounding_factors : [],
-    recommended_action: parsed.recommended_action,
-    confidence_score: confidence,
-    prediction_timestamp: new Date().toISOString(),
-    sources: [event.source, 'open_meteo', 'gbif', 'iucn_postgis'],
-  };
-
   // Upsert alert record — store prediction + original raw_data for Refiner to compare against actuals later
-  await sql`
+  const alertRows = await sql<{ id: string }[]>`
     INSERT INTO alerts (raw_event_id, source, event_type, coordinates, severity, enrichment_data, threat_level, confidence_score, prediction_data, raw_data)
     VALUES (
       ${event.id},
@@ -198,7 +187,21 @@ export async function processEvent(event: FullyEnrichedEvent): Promise<void> {
       confidence_score = EXCLUDED.confidence_score,
       prediction_data  = EXCLUDED.prediction_data,
       raw_data         = EXCLUDED.raw_data
+    RETURNING id
   `;
+  const dbAlertId = alertRows[0]?.id ?? event.id;
+
+  const assessed: AssessedAlert = {
+    ...event,
+    threat_level: threatLevel,
+    predicted_impact: parsed.predicted_impact,
+    compounding_factors: Array.isArray(parsed.compounding_factors) ? parsed.compounding_factors : [],
+    recommended_action: parsed.recommended_action,
+    confidence_score: confidence,
+    prediction_timestamp: new Date().toISOString(),
+    sources: [event.source, 'open_meteo', 'gbif', 'iucn_postgis'],
+    db_alert_id: dbAlertId,
+  };
 
   // Queue Refiner evaluations — drought uses weekly cadence (Drought Monitor is Thursday-only)
   if (event.event_type === 'drought') {
