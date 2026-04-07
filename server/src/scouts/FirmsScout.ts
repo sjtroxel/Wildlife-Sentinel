@@ -73,13 +73,13 @@ export class FirmsScout extends BaseScout {
         const lng = parseFloat(row.longitude);
 
         // Pre-filter: weak burns and low-confidence detections
-        if (frp < 10) continue;
+        if (frp < 25) continue;
         if (row.confidence === 'l') continue; // l=low, n=nominal, h=high
 
         if (isNaN(lat) || isNaN(lng) || isNaN(frp)) continue;
 
         // Unique ID: coordinates + date + time (same fire in consecutive scans = duplicate)
-        const eventId = `firms_${row.acq_date}_${row.acq_time}_${lat.toFixed(3)}_${lng.toFixed(3)}`;
+        const eventId = `firms_${row.acq_date}_${row.acq_time}_${lat.toFixed(2)}_${lng.toFixed(2)}`;
 
         // acq_time is an integer in the CSV (e.g. 145 for 01:45) — pad to 4 digits
         const acqTimePadded = row.acq_time.padStart(4, '0');
