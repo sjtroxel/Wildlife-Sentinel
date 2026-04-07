@@ -341,7 +341,7 @@ async function generateCorrectionNote(
   const refinerPrompt = await getAgentPrompt('refiner');
 
   const response = await modelRouter.complete({
-    model: MODELS.CLAUDE_SONNET,
+    model: MODELS.CLAUDE_HAIKU,
     systemPrompt: refinerPrompt,
     userMessage: [
       `Original prediction: "${alert.prediction_data?.predicted_impact ?? 'unknown'}"`,
@@ -367,7 +367,12 @@ async function applySystemPromptCorrection(
 ): Promise<string> {
   const correctionNote = await generateCorrectionNote(alert, score, evaluationTime);
   const existing = await getAgentPrompt('threat_assessment');
-  const updated = `${correctionNote}\n\n---\n\n${existing}`;
+
+  // Cap at 2 prior corrections + 1 new = 3 total. Prevents unbounded input token growth.
+  const parts = existing.split('\n\n---\n\n');
+  const base = parts[parts.length - 1]!;
+  const recentCorrections = parts.slice(0, -1).slice(-2);
+  const updated = [correctionNote, ...recentCorrections, base].join('\n\n---\n\n');
 
   await sql`
     UPDATE agent_prompts

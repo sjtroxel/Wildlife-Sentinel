@@ -113,11 +113,13 @@ async function processEvent(event: EnrichedDisasterEvent): Promise<void> {
     `confidence: ${analysis.sighting_confidence} | most_recent: ${analysis.most_recent_sighting ?? 'none'}`
   );
 
-  await logToWarRoom({
-    agent: 'habitat',
-    action: 'GBIF',
-    detail: `${sightingCount} sightings | confidence: ${analysis.sighting_confidence} | most_recent: ${analysis.most_recent_sighting ?? 'none'}`,
-  });
+  if (sightingCount > 0) {
+    await logToWarRoom({
+      agent: 'habitat',
+      action: 'GBIF',
+      detail: `${sightingCount} sightings | confidence: ${analysis.sighting_confidence} | most_recent: ${analysis.most_recent_sighting ?? 'none'}`,
+    });
+  }
 
   await storeHabitatResult(event.id, {
     gbif_recent_sightings: allSightings,

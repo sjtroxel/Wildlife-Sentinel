@@ -150,10 +150,10 @@ export async function processEvent(event: FullyEnrichedEvent): Promise<void> {
   const userMessage = buildUserMessage(event);
 
   const response = await modelRouter.complete({
-    model: MODELS.CLAUDE_SONNET,
+    model: MODELS.CLAUDE_HAIKU,
     systemPrompt,
     userMessage,
-    maxTokens: 1024,
+    maxTokens: 512,
     temperature: 0.2,
     jsonMode: true,
   });

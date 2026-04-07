@@ -5,8 +5,11 @@
  * Current stable family is 2.5.
  */
 export const MODELS = {
-  // Quality-critical agents — ~$3/M input, $15/M output
+  // Quality-critical agents (kept for ModelRouter routing tests and future use)
   CLAUDE_SONNET: 'claude-sonnet-4-6',
+
+  // Active agent model — ~$0.80/M input, $4/M output (~3.75x cheaper than Sonnet)
+  CLAUDE_HAIKU: 'claude-haiku-4-5-20251001',
 
   // Species Context Agent — Tier 1 (paid): ~1,500 RPD / 30 RPM. $0.30/1M input.
   GEMINI_FLASH: 'gemini-2.5-flash',

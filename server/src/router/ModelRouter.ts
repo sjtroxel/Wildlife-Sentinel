@@ -11,7 +11,8 @@ import { logModelUsage } from '../db/modelUsage.js';
 
 // Pricing per million tokens — Tier 1 paid (upgraded 2026-03-31)
 const PRICING: Record<string, { input: number; output: number }> = {
-  'claude-sonnet-4-6':     { input: 3.00,  output: 15.00 },
+  'claude-sonnet-4-6':          { input: 3.00,  output: 15.00 },
+  'claude-haiku-4-5-20251001':  { input: 0.80,  output: 4.00  },
   'gemini-2.5-flash':      { input: 0.30,  output: 2.50  },
   'gemini-2.5-flash-lite': { input: 0.10,  output: 0.40  },
   'gemini-embedding-001':  { input: 0.00,  output: 0.00  },  // verify in AI Studio

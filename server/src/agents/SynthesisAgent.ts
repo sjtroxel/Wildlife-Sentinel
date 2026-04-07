@@ -140,10 +140,10 @@ export async function processAlert(assessed: AssessedAlert): Promise<void> {
   ].join('\n');
 
   const response = await modelRouter.complete({
-    model: MODELS.CLAUDE_SONNET,
+    model: MODELS.CLAUDE_HAIKU,
     systemPrompt,
     userMessage,
-    maxTokens: 512,
+    maxTokens: 300,
     temperature: 0.4,
     jsonMode: true,
   });

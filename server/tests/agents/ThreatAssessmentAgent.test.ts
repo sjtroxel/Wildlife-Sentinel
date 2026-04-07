@@ -109,7 +109,7 @@ describe('ThreatAssessmentAgent.processEvent', () => {
     mockSql.mockResolvedValue([]);
     vi.mocked(modelRouter.complete).mockResolvedValue({
       content: JSON.stringify(threatFixture),
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5-20251001',
       inputTokens: 500,
       outputTokens: 200,
       estimatedCostUsd: 0.004,
@@ -139,7 +139,7 @@ describe('ThreatAssessmentAgent.processEvent', () => {
   it('falls back to medium threat_level if LLM returns invalid value', async () => {
     vi.mocked(modelRouter.complete).mockResolvedValueOnce({
       content: JSON.stringify({ ...threatFixture as object, threat_level: 'catastrophic' }),
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5-20251001',
       inputTokens: 500,
       outputTokens: 200,
       estimatedCostUsd: 0.004,
@@ -197,7 +197,7 @@ describe('ThreatAssessmentAgent.processEvent', () => {
   it('publishes alert with alert level logToWarRoom for critical threat', async () => {
     vi.mocked(modelRouter.complete).mockResolvedValueOnce({
       content: JSON.stringify({ ...threatFixture as object, threat_level: 'critical' }),
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5-20251001',
       inputTokens: 500,
       outputTokens: 200,
       estimatedCostUsd: 0.004,
@@ -242,7 +242,7 @@ describe('ThreatAssessmentAgent.processEvent', () => {
   it('malformed LLM JSON → processEvent throws (caught by outer loop)', async () => {
     vi.mocked(modelRouter.complete).mockResolvedValueOnce({
       content: '{ not valid json',
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5-20251001',
       inputTokens: 100,
       outputTokens: 50,
       estimatedCostUsd: 0,
@@ -280,7 +280,7 @@ describe('startThreatAssessmentAgent loop', () => {
     mockSql.mockResolvedValue([]);
     vi.mocked(modelRouter.complete).mockResolvedValue({
       content: JSON.stringify(threatFixture),
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5-20251001',
       inputTokens: 500,
       outputTokens: 200,
       estimatedCostUsd: 0.004,

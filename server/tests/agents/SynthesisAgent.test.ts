@@ -126,7 +126,7 @@ describe('SynthesisAgent.processAlert', () => {
     vi.mocked(retrieveConservationContext).mockResolvedValue([]);
     vi.mocked(modelRouter.complete).mockResolvedValue({
       content: JSON.stringify(synthesisFixture),
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5-20251001',
       inputTokens: 400,
       outputTokens: 150,
       estimatedCostUsd: 0.003,
@@ -250,17 +250,17 @@ describe('SynthesisAgent.processAlert', () => {
     expect(payload.stored_alert_id).toBe('alert-match-test');
   });
 
-  it('uses CLAUDE_SONNET model for embed generation', async () => {
+  it('uses CLAUDE_HAIKU model for embed generation', async () => {
     await processAlert(makeAlert({ threat_level: 'high' }));
     expect(modelRouter.complete).toHaveBeenCalledWith(
-      expect.objectContaining({ model: 'claude-sonnet-4-6' })
+      expect.objectContaining({ model: 'claude-haiku-4-5-20251001' })
     );
   });
 
   it('malformed LLM JSON → processAlert throws (caught by outer loop)', async () => {
     vi.mocked(modelRouter.complete).mockResolvedValueOnce({
       content: 'not json at all',
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5-20251001',
       inputTokens: 100,
       outputTokens: 50,
       estimatedCostUsd: 0,
@@ -294,7 +294,7 @@ describe('startSynthesisAgent loop', () => {
     mockSql.mockResolvedValue([]);
     vi.mocked(modelRouter.complete).mockResolvedValue({
       content: JSON.stringify(synthesisFixture),
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5-20251001',
       inputTokens: 400,
       outputTokens: 150,
       estimatedCostUsd: 0.003,
@@ -331,7 +331,7 @@ describe('startSynthesisAgent loop', () => {
   it('ACKs message even when processAlert throws (malformed JSON) — no message loss', async () => {
     vi.mocked(modelRouter.complete).mockResolvedValueOnce({
       content: 'not json',
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5-20251001',
       inputTokens: 100,
       outputTokens: 50,
       estimatedCostUsd: 0,
@@ -346,7 +346,7 @@ describe('startSynthesisAgent loop', () => {
   it('logs error status to pipeline_events when processAlert throws', async () => {
     vi.mocked(modelRouter.complete).mockResolvedValueOnce({
       content: 'not json',
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5-20251001',
       inputTokens: 100,
       outputTokens: 50,
       estimatedCostUsd: 0,
@@ -362,6 +362,7 @@ describe('startSynthesisAgent loop', () => {
 
   it('skips null poll without ACKing', async () => {
     vi.mocked(redis.xreadgroup)
+      // @ts-expect-error — null simulates empty xreadgroup poll (no messages available)
       .mockImplementationOnce(() => Promise.resolve(null))
       .mockRejectedValueOnce(new Error('stop'));
     await expect(startSynthesisAgent()).rejects.toThrow('stop');

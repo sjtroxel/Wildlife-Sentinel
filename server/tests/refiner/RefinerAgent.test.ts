@@ -73,7 +73,7 @@ beforeEach(() => {
   // Restore defaults after reset — vi.resetAllMocks() clears all return values
   mockComplete.mockResolvedValue({
     content: 'CORRECTION (wildfire): Weight offshore wind more heavily when predicting spread direction.',
-    model: 'claude-sonnet-4-6',
+    model: 'claude-haiku-4-5-20251001',
     inputTokens: 150,
     outputTokens: 40,
     estimatedCostUsd: 0.001,
