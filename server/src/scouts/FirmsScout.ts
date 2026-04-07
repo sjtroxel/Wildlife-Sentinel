@@ -29,7 +29,7 @@ export class FirmsScout extends BaseScout {
   constructor() {
     super({
       name: 'nasa_firms',
-      dedupTtlSeconds: 7_200,       // 2 hours — FIRMS refreshes every 10 min
+      dedupTtlSeconds: 7 * 86_400,   // 7 days — FIRMS data spans multiple days; 2h caused re-publication floods
       maxConsecutiveFailures: 5,
       circuitOpenMinutes: 30,
     });

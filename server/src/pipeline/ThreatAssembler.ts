@@ -16,7 +16,7 @@ import { redis } from '../redis/client.js';
 import { STREAMS } from '../pipeline/streams.js';
 import { logToWarRoom } from '../discord/warRoom.js';
 
-const ASSEMBLY_TTL_SECONDS = 3600;
+const ASSEMBLY_TTL_SECONDS = 86_400; // 24h — allows SpeciesContextAgent to clear deep backlogs
 
 function assemblyKey(eventId: string): string {
   return `assembly:${eventId}`;
