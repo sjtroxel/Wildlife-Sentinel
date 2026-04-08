@@ -17,6 +17,7 @@ vi.mock('../src/redis/client.js', () => ({
 import { app } from '../src/app.js';
 import { setDbConnected, setRedisConnected, resetHealthState } from '../src/routes/health.js';
 import { redis } from '../src/redis/client.js';
+import { getBotStatus } from '../src/discord/bot.js';
 
 const request = supertest(app);
 
@@ -78,6 +79,7 @@ describe('GET /health', () => {
     vi.clearAllMocks();
     resetHealthState();
     vi.mocked(redis.get).mockResolvedValue(null);
+    vi.mocked(getBotStatus).mockReturnValue('connected');
   });
 
   it('returns 200 when all services are healthy', async () => {
