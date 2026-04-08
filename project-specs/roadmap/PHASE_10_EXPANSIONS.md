@@ -2,7 +2,7 @@
 
 **Goal:** Post-launch improvements. This phase is a living backlog — items are added as they're identified after Phase 9 ships. Not all items need to ship together; they can be batched into sub-releases.
 
-**Status:** In progress — Tracks 1 (bug fixes) and 2 (resizable panels) complete as of 2026-04-06. See PHASE_10_IMPLEMENTATION_PLAN.md for full status.
+**Status:** In progress — Tracks 1–4, Expansions 0A/0B/0C complete as of 2026-04-08. Next: Expansion 1 (global data sources). See PHASE_10_IMPLEMENTATION_PLAN.md for full status.
 **Depends on:** Phase 9 complete (system deployed and stable)
 **Priority:** Bonus / expansion — system is fully functional at Phase 9 without any of this
 
@@ -53,25 +53,16 @@ curl -s "https://coralreefwatch.noaa.gov/product/vs/vs_polygons.json" | python3 
 Also add a `server/tests/integration/scoutEndpoints.test.ts` with `describe.skip` — run manually
 pre-deploy to verify all sources are live. See phase-0-foundation.md for the updated checklist item.
 
-### B — Persist circuit breaker state in Redis
+### B — Persist circuit breaker state in Redis ✅ COMPLETE (2026-04-08)
 
-`BaseScout.consecutiveFailures` is in-memory and resets to 0 on process restart. Every Railway redeploy
-re-triggers the error log for any broken endpoint.
+`circuit:failures:<name>` (INCR + EXPIRE) and `circuit:open_until:<name>` (SETEX) in Redis.
+TTL = `circuitOpenMinutes * 60` seconds on both keys. Circuit survives Railway redeploys.
 
-**Fix:** Store circuit open/failures keys in Redis with TTL (see BaseScout.ts). This keeps the circuit
-open across restarts — broken endpoint silences itself without per-deployment noise.
+### C — `/health/scouts` endpoint ✅ COMPLETE (2026-04-08)
 
-### C — `/health/scouts` endpoint
-
-Expose per-scout circuit state so ops can see which scouts are healthy without reading logs:
-```json
-GET /health/scouts
-{
-  "nasa_firms":       { "status": "healthy", "consecutiveFailures": 0 },
-  "coral_reef_watch": { "status": "circuit_open", "openUntil": "2026-04-02T18:30:00Z" }
-}
-```
-Also surface in the frontend's Agent Activity panel.
+`GET /health/scouts` — returns `status: ok | degraded | tripped`, `consecutiveFailures`, and
+`circuitOpenUntil` for each of the 5 scouts. Always HTTP 200 (observability, not liveness).
+Frontend Agent Activity panel surface deferred to Expansion 2.
 
 ---
 

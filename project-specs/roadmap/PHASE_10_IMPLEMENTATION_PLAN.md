@@ -15,6 +15,53 @@ See also `PHASE_10_EXPANSIONS.md` for the living backlog document.
 
 ## Completed ✅
 
+### Expansion 0C — `/health/scouts` Endpoint (2026-04-08)
+
+- ✅ `GET /health/scouts` added to `server/src/routes/health.ts`
+- ✅ Reads `circuit:failures:<name>` and `circuit:open_until:<name>` from Redis for all 5 scouts
+- ✅ Returns `status: ok | degraded | tripped`, `consecutiveFailures`, and `circuitOpenUntil` per scout
+- ✅ Always HTTP 200 — observability endpoint, not a liveness signal
+- ✅ 3 new test cases in `server/tests/health.test.ts`
+
+### Expansion 0B — Circuit Breaker Redis Persistence (2026-04-08)
+
+- ✅ Removed in-memory `consecutiveFailures` and `circuitOpenUntil` fields from `BaseScout`
+- ✅ Failure counter stored as `circuit:failures:<name>` via INCR + EXPIRE (TTL = circuitOpenMinutes)
+- ✅ Circuit state stored as `circuit:open_until:<name>` via SETEX (same TTL)
+- ✅ On success: DEL `circuit:failures:<name>` resets the counter
+- ✅ Circuit survives Railway redeploys for its full intended duration, then auto-expires
+- ✅ `del`, `incr`, `expire` added to all 5 scout test file redis mocks; circuit breaker tests rewritten with stateful mock closures
+- ✅ 241 tests passing
+
+### Expansion 0A — Pipeline Pause/Resume (2026-04-07)
+
+- ✅ Discord slash commands: `/pause`, `/resume`, `/status`
+- ✅ All 5 scout `run()` methods + all agent loops check `pipeline:paused` Redis key before processing
+- ✅ `DISCORD_CLIENT_ID` env var required on Railway (bot's Application ID)
+- ✅ `deferReply()` acknowledges within 3s, `editReply()` with result
+- ✅ Messages queue safely in Redis Streams while paused; no data loss
+
+### Track 4 — Cost Visibility (2026-04-07)
+
+- ✅ Weekly digest already included cost line in `server/src/discord/weeklyDigest.ts`
+
+### Track 3 — Sentinel-Ops Noise Reduction (2026-04-07)
+
+- ✅ `HabitatAgent.ts`: `logToWarRoom` gated on `sightingCount > 0`
+- ✅ 0-sighting GBIF lookups now log to `console.log` only — no war room noise
+
+### Pipeline Hardening + Cost Reduction (2026-04-07)
+
+- ✅ All 3 Claude agents (ThreatAssessment, Synthesis, Refiner) switched to `CLAUDE_HAIKU` (~3.75x cheaper than Sonnet) — **do not revert**
+- ✅ ThreatAssessmentAgent `maxTokens` 512 → 1500 (was causing JSON truncation)
+- ✅ FirmsScout dedup TTL 2h → 7 days
+- ✅ ThreatAssembler assembly TTL 1h → 24h
+- ✅ FirmsScout FRP minimum 10 → 25 MW (filters weak/spurious detections)
+- ✅ FirmsScout event ID coordinate precision `toFixed(3)` → `toFixed(2)` (~1.1km grid, deduplicates adjacent pixels from same fire)
+- ✅ Threat assessment system prompt updated in Neon: CRITICAL requires severity > 10%, low-intensity fires at 0km → HIGH not CRITICAL
+- ✅ HIGH alerts now route through HITL (#sentinel-ops review) same as CRITICAL
+- ✅ UUID bug fixed: ThreatAssessmentAgent INSERT uses RETURNING id; `db_alert_id` field added to `AssessedAlert` type
+
 ### Track 1 — Bug Fixes (2026-04-05/06)
 
 **Root cause:** `coordinates`, `severity`, and `confidence_score` come back from postgres as strings (postgres.js only auto-parses JSONB columns, not JSON). The `AlertRow` type declared the right types but the raw DB response didn't match.
@@ -38,45 +85,6 @@ See also `PHASE_10_EXPANSIONS.md` for the living backlog document.
 
 ---
 
-## Near-Term Tracks (Next Sessions)
-
-### Track 3 — Sentinel-Ops Noise Reduction
-
-**File:** `server/src/agents/HabitatAgent.ts`
-
-**Problem:** Every GBIF lookup posts to #sentinel-ops even when 0 sightings found. Generates significant noise that buries meaningful signals.
-
-**Fix:** Only call `logToWarRoom` when `sightings.length > 0`. Log 0-sighting results to `console.log` only.
-
-```typescript
-if (sightings.length > 0) {
-  await logToWarRoom({ agent: 'habitat', action: 'gbif_sightings',
-    detail: `${sightings.length} sightings for ${species}` });
-} else {
-  console.log(`[habitat] 0 GBIF sightings for ${species} — skipping warRoom log`);
-}
-```
-
-Small change, high signal-to-noise impact on #sentinel-ops.
-
-### Track 4 — Cost Visibility
-
-**File:** `server/src/discord/weeklyDigest.ts`
-
-Add a cost line to the weekly digest embed querying `model_usage`:
-
-```sql
-SELECT COALESCE(SUM(estimated_cost_usd), 0)::numeric(6,4) AS total
-FROM model_usage
-WHERE created_at > NOW() - INTERVAL '7 days';
-```
-
-Embed line: `• AI cost this week: $X.XX`
-
-This surfaces the cost trend without requiring a separate dashboard visit.
-
----
-
 ## Expansion Area 0 — Data Source Hardening (HIGH PRIORITY)
 
 ### Lesson Learned in Phase 9
@@ -96,29 +104,15 @@ curl -s "https://coralreefwatch.noaa.gov/product/vs/vs_polygons.json" | python3 
 
 Add `server/tests/integration/scoutEndpoints.test.ts` with `describe.skip` — run manually pre-deploy to verify all sources are live.
 
-### 0B — Persist circuit breaker state in Redis
+### 0B — Persist circuit breaker state in Redis ✅ COMPLETE (2026-04-08)
 
-`BaseScout.consecutiveFailures` is in-memory and resets to 0 on process restart. Every Railway redeploy re-triggers error logs for any broken endpoint.
+See Completed section above.
 
-**Fix:** Store `circuit:open:{scout}` and `circuit:failures:{scout}` keys in Redis with a TTL. The circuit stays open across restarts — broken endpoint silences itself without per-deploy noise.
+### 0C — `/health/scouts` endpoint ✅ COMPLETE (2026-04-08)
 
-**File:** `server/src/scouts/BaseScout.ts`
+See Completed section above.
 
-### 0C — `/health/scouts` endpoint
-
-Expose per-scout circuit state for ops visibility:
-
-```json
-GET /health/scouts
-{
-  "nasa_firms":       { "status": "healthy", "consecutiveFailures": 0 },
-  "coral_reef_watch": { "status": "circuit_open", "openUntil": "2026-04-02T18:30:00Z" }
-}
-```
-
-Surface this in the frontend Agent Activity panel as a "Scout Health" row per source.
-
-**Files:** `server/src/routes/health.ts`, `client/components/AgentActivity.tsx`
+**Future:** Surface scout health in the frontend Agent Activity panel (`client/components/AgentActivity.tsx`) — deferred to Expansion 2.
 
 ---
 
@@ -229,13 +223,14 @@ New disaster streams beyond the original five. Add as separate scouts following 
 |---|---|
 | A ✅ | Track 1 — bug fixes (coordinates parsing, map markers, alert click crash) |
 | B ✅ | Track 2 — resizable panels (react-resizable-panels v4) |
-| C | Track 3 + 4 — sentinel-ops noise + cost line in weekly digest (quick, 1 session) |
-| D | Expansion 0B + 0C — Redis circuit breaker persistence + /health/scouts endpoint |
-| E | Expansion 1A — global cyclone scout (GDACS) |
-| F | Expansion 1B — global flood scout (GloFAS) |
-| G | Expansion 1C — global drought scout |
-| H | Expansion 2B — alert detail page |
-| I | Expansion 2A + 2E — map layer toggles + dark mode |
-| J | Expansion 4 — additional scouts (seismic, oil spill, deforestation, air quality) |
+| C ✅ | Track 3 + 4 — sentinel-ops noise + cost line; pipeline hardening + cost reduction |
+| D ✅ | Expansion 0A — Discord pause/resume/status slash commands |
+| E ✅ | Expansion 0B + 0C — Redis circuit breaker persistence + /health/scouts endpoint |
+| F | Expansion 1A — global cyclone scout (GDACS) |
+| G | Expansion 1B — global flood scout (GloFAS) |
+| H | Expansion 1C — global drought scout |
+| I | Expansion 2B — alert detail page |
+| J | Expansion 2A + 2E — map layer toggles + dark mode |
+| K | Expansion 4 — additional scouts (seismic, oil spill, deforestation, air quality) |
 
-Read the relevant source files completely before starting any session. Sessions C and D are the only near-term blockers; everything else can be reordered based on interest.
+**Next session: F — Expansion 1A (global cyclone coverage via GDACS)**

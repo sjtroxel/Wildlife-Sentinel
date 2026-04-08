@@ -18,7 +18,7 @@
 | 7 | Refiner / Evaluator Loop | ✅ Complete | 5 event-type scorers, hourly scheduler, correction notes, 121 tests pass |
 | 8 | Frontend | ✅ Complete | Next.js 16.2.1, Leaflet map, alerts feed, SSE, refiner chart, logos/favicon. 139 tests pass. |
 | 9 | Hardening + Deploy | ✅ Complete | 295 tests, 91.4% coverage, Railway + Vercel live, pipeline end-to-end verified 2026-04-05 |
-| 10 | Expansions & Enhancements | 🔄 In Progress | Bug fixes + resizable panels done. Next: sentinel-ops noise, cost line, global scouts. See PHASE_10_IMPLEMENTATION_PLAN.md |
+| 10 | Expansions & Enhancements | 🔄 In Progress | Tracks 1–4 + Expansion 0A/0B/0C complete. Next: Expansion 1 (global data sources). See PHASE_10_IMPLEMENTATION_PLAN.md |
 
 ---
 
@@ -205,7 +205,7 @@
 - [x] Railway deployment (server + Redis + bot)
 - [x] Vercel deployment (Next.js frontend)
 - [x] Environment variables set on Railway + Vercel
-- [ ] End-to-end smoke test on production — **IN PROGRESS** (watching logs after 2026-04-04 pipeline fixes)
+- [x] End-to-end smoke test on production — passed 2026-04-05 (8/8 automated + 4/4 manual)
 
 → See [PHASE_9_HARDENING.md](roadmap/PHASE_9_HARDENING.md)
 
@@ -214,13 +214,19 @@
 ## Phase 10 — Expansions & Enhancements
 **Goal:** Post-launch improvements — global data coverage, UI polish, and new features. Items are added here as they're identified. Not all need to ship together.
 
-- [ ] **Global flood monitoring:** Replace USGS NWIS with GloFAS (Copernicus) for Amazon, Congo, Mekong coverage
-- [ ] **Global cyclone coverage:** Replace NOAA NHC with IBTrACS/GDACS for Western Pacific, Indian Ocean basins
-- [ ] **Global drought coverage:** Replace US Drought Monitor with GRACE-FO or CHIRPS for sub-Saharan Africa, Australia, Central Asia
-- [ ] **Dynamic gauge selection:** Replace static `usgs-sites.json` with PostGIS spatial query at startup
-- [ ] **Frontend enhancements:** Additional map layers, filtering by event type or threat level, dark mode
-- [ ] **Alert history:** Searchable archive page on the frontend
-- [ ] **Weekly digest:** Automated Sunday summary post to #wildlife-alerts
-- [ ] *(add more items here as they come up)*
+- [x] **Bug fixes** — Alert click crash, map markers, TypeScript cast errors (2026-04-05/06)
+- [x] **Resizable panels** — react-resizable-panels v4, mobile + desktop layouts (2026-04-06)
+- [x] **Sentinel-ops noise** — HabitatAgent `logToWarRoom` gated on sightings > 0 (2026-04-07)
+- [x] **Cost visibility** — weekly digest includes 7-day AI cost line (2026-04-07)
+- [x] **Pipeline hardening** — FirmsScout dedup TTL 7d, FRP threshold 25MW, coordinate grid dedup, HIGH→HITL routing, UUID fix (2026-04-07)
+- [x] **Cost reduction** — all 3 Claude agents switched to CLAUDE_HAIKU (~3.75x cheaper) (2026-04-07)
+- [x] **Expansion 0A** — `/pause`, `/resume`, `/status` Discord slash commands (2026-04-07)
+- [x] **Expansion 0B** — Circuit breaker state persisted in Redis; survives Railway redeploys (2026-04-08)
+- [x] **Expansion 0C** — `GET /health/scouts` endpoint — per-scout circuit state (2026-04-08)
+- [ ] **Expansion 1A** — Global cyclone coverage (GDACS — all ocean basins)
+- [ ] **Expansion 1B** — Global flood coverage (GloFAS — Amazon, Congo, Mekong, Ganges)
+- [ ] **Expansion 1C** — Global drought coverage (GRACE-FO or CHIRPS)
+- [ ] **Expansion 2** — Frontend enhancements (alert detail page, map layer toggles, dark mode)
+- [ ] **Expansion 4** — Additional scouts (seismic, oil spill, deforestation, air quality)
 
 → See [PHASE_10_EXPANSIONS.md](roadmap/PHASE_10_EXPANSIONS.md)

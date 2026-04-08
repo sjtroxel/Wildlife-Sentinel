@@ -6,6 +6,9 @@ vi.mock('../../src/redis/client.js', () => ({
     xadd: vi.fn().mockResolvedValue('1234-0'),
     get: vi.fn().mockResolvedValue(null),
     setex: vi.fn().mockResolvedValue('OK'),
+    del: vi.fn().mockResolvedValue(1),
+    incr: vi.fn().mockResolvedValue(1),
+    expire: vi.fn().mockResolvedValue(1),
     on: vi.fn(),
     quit: vi.fn(),
   },
@@ -99,21 +102,38 @@ describe('BaseScout circuit breaker', () => {
     scout = new AlwaysFailScout();
     vi.mocked(redis.get).mockResolvedValue(null);
     vi.mocked(redis.xadd).mockResolvedValue('1234-0');
+    vi.mocked(redis.del).mockResolvedValue(1);
+    vi.mocked(redis.expire).mockResolvedValue(1);
+    vi.mocked(redis.setex).mockResolvedValue('OK');
   });
 
   it('opens circuit after maxConsecutiveFailures', async () => {
-    // Run to exhaustion (3 failures)
-    await scout.run(); // failure 1
-    await scout.run(); // failure 2
-    await scout.run(); // failure 3 — circuit opens
+    // incr returns 1, 2, 3 across the three failure runs
+    vi.mocked(redis.incr)
+      .mockResolvedValueOnce(1)
+      .mockResolvedValueOnce(2)
+      .mockResolvedValueOnce(3);
 
-    // Track how many times fetchEvents would be called after circuit opens
+    // Capture the open_until value written by setex so we can return it from get
+    let circuitOpenUntilVal: string | null = null;
+    vi.mocked(redis.setex).mockImplementation(async (key: string, _ttl: number, value: string) => {
+      if (key.startsWith('circuit:open_until:')) circuitOpenUntilVal = value;
+      return 'OK';
+    });
+    vi.mocked(redis.get).mockImplementation(async (key: string) => {
+      if (key.startsWith('circuit:open_until:')) return circuitOpenUntilVal;
+      return null; // pipeline:paused = null
+    });
+
+    await scout.run(); // failure 1 — incr→1
+    await scout.run(); // failure 2 — incr→2
+    await scout.run(); // failure 3 — incr→3, circuit opens
+
     const xaddCallsBefore = vi.mocked(redis.xadd).mock.calls.length;
 
     // Circuit is now open — this run should be skipped entirely
     await scout.run();
 
-    // xadd was never called (no events processed), and fetchEvents was skipped
     expect(vi.mocked(redis.xadd).mock.calls.length).toBe(xaddCallsBefore);
   });
 
@@ -135,13 +155,29 @@ describe('BaseScout circuit breaker', () => {
       }
     }
 
+    // incr returns 1 (run1), 1 (run3 — fresh after del), 2 (run4), 3 (run5)
+    vi.mocked(redis.incr)
+      .mockResolvedValueOnce(1)
+      .mockResolvedValueOnce(1)
+      .mockResolvedValueOnce(2)
+      .mockResolvedValueOnce(3);
+
+    let circuitOpenUntilVal: string | null = null;
+    vi.mocked(redis.setex).mockImplementation(async (key: string, _ttl: number, value: string) => {
+      if (key.startsWith('circuit:open_until:')) circuitOpenUntilVal = value;
+      return 'OK';
+    });
+    vi.mocked(redis.get).mockImplementation(async (key: string) => {
+      if (key.startsWith('circuit:open_until:')) return circuitOpenUntilVal;
+      return null;
+    });
+
     const s = new SometimesFailScout();
-    await s.run(); // failure 1
-    await s.run(); // success — resets counter
-    await s.run(); // failure 1 again (counter was reset)
-    await s.run(); // failure 2
-    // Circuit still closed (only 2 consecutive failures, threshold is 3)
-    await s.run(); // failure 3 — circuit opens
+    await s.run(); // failure 1 — incr→1
+    await s.run(); // success — del resets counter
+    await s.run(); // failure 1 again — incr→1
+    await s.run(); // failure 2 — incr→2
+    await s.run(); // failure 3 — incr→3, circuit opens
 
     // 6th run skipped
     const callsBefore = vi.mocked(redis.xadd).mock.calls.length;

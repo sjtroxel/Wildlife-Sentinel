@@ -10,16 +10,14 @@ export interface ScoutConfig {
 }
 
 export abstract class BaseScout {
-  private consecutiveFailures = 0;
-  private circuitOpenUntil: Date | null = null;
-
   constructor(protected readonly config: ScoutConfig) {}
 
   protected abstract fetchEvents(): Promise<RawDisasterEvent[]>;
 
   async run(): Promise<void> {
-    if (this.circuitOpenUntil && new Date() < this.circuitOpenUntil) {
-      console.log(`[${this.config.name}] Circuit open until ${this.circuitOpenUntil.toISOString()} — skipping`);
+    const openUntilStr = await redis.get(`circuit:open_until:${this.config.name}`);
+    if (openUntilStr && new Date() < new Date(openUntilStr)) {
+      console.log(`[${this.config.name}] Circuit open until ${openUntilStr} — skipping`);
       return;
     }
 
@@ -31,7 +29,7 @@ export abstract class BaseScout {
 
     try {
       const events = await this.fetchEvents();
-      this.consecutiveFailures = 0;
+      await redis.del(`circuit:failures:${this.config.name}`);
 
       let published = 0;
       let deduped = 0;
@@ -49,12 +47,19 @@ export abstract class BaseScout {
         console.log(`[${this.config.name}] Published: ${published}, Deduped: ${deduped}`);
       }
     } catch (err) {
-      this.consecutiveFailures++;
-      console.error(`[${this.config.name}] Fetch error (${this.consecutiveFailures}/${this.config.maxConsecutiveFailures}):`, err);
+      const failKey = `circuit:failures:${this.config.name}`;
+      const count = await redis.incr(failKey);
+      await redis.expire(failKey, this.config.circuitOpenMinutes * 60);
+      console.error(`[${this.config.name}] Fetch error (${count}/${this.config.maxConsecutiveFailures}):`, err);
 
-      if (this.consecutiveFailures >= this.config.maxConsecutiveFailures) {
-        this.circuitOpenUntil = new Date(Date.now() + this.config.circuitOpenMinutes * 60_000);
-        console.error(`[${this.config.name}] Circuit OPEN until ${this.circuitOpenUntil.toISOString()}`);
+      if (count >= this.config.maxConsecutiveFailures) {
+        const openUntil = new Date(Date.now() + this.config.circuitOpenMinutes * 60_000);
+        await redis.setex(
+          `circuit:open_until:${this.config.name}`,
+          this.config.circuitOpenMinutes * 60,
+          openUntil.toISOString()
+        );
+        console.error(`[${this.config.name}] Circuit OPEN until ${openUntil.toISOString()}`);
       }
     }
   }

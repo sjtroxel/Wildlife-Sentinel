@@ -7,11 +7,14 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 vi.mock('../../src/redis/client.js', () => ({
   redis: {
-    xadd:  vi.fn().mockResolvedValue('1234-0'),
-    get:   vi.fn().mockResolvedValue(null),
-    setex: vi.fn().mockResolvedValue('OK'),
-    on:    vi.fn(),
-    quit:  vi.fn(),
+    xadd:   vi.fn().mockResolvedValue('1234-0'),
+    get:    vi.fn().mockResolvedValue(null),
+    setex:  vi.fn().mockResolvedValue('OK'),
+    del:    vi.fn().mockResolvedValue(1),
+    incr:   vi.fn().mockResolvedValue(1),
+    expire: vi.fn().mockResolvedValue(1),
+    on:     vi.fn(),
+    quit:   vi.fn(),
   },
 }));
 
