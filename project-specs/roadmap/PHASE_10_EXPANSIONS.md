@@ -87,18 +87,15 @@ NASA FIRMS (wildfire) and NOAA Coral Reef Watch are already global — no replac
 
 **What this unlocks:** Philippine typhoon impacts on tamaraw, pygmy tarsier. Bay of Bengal cyclone impacts on Irrawaddy dolphin, Bengal tiger. Australian cyclones on northern quoll, cassowary.
 
-### 1b. Flood Gauges — Global Coverage
+### 1b. Flood Gauges — Global Coverage ✅ COMPLETE (2026-04-08)
 
-**Replace:** `UsgsScout.ts` + `usgs-sites.json`
-**Target source:** GloFAS (Global Flood Awareness System) — Copernicus/ECMWF
-- API: `cds.climate.copernicus.eu` (free registration required)
-- Provides global river discharge forecasts and flood alerts
-
-**Alternative:** NASA GFMS (same infrastructure as FIRMS, familiar auth pattern)
+**Approach:** Supplemented (not replaced) `UsgsScout.ts` — both run in parallel.
+**Source:** GDACS `geteventlist/FL` endpoint — global major flood events.
+**Scout:** `GdacsFloodScout.ts`, `source: 'gdacs_flood'`, 30-min schedule.
+**Severity:** `alertscore / 3.0` (GDACS composite, 0–3); falls back to alertlevel map (Green=0.25, Orange=0.60, Red=0.90) when alertscore is absent.
+**Note:** GloFAS (Copernicus CDS) would provide more granular river discharge data but requires a Python CDS client — not practical for TypeScript. GDACS covers major flood events globally. UsgsScout retained for fine-grained US gauge data.
 
 **What this unlocks:** Amazon (tapir, giant river otter), Congo (forest elephant, gorilla, bonobo), Mekong (Irrawaddy dolphin, giant catfish), Ganges (river dolphin, gharial).
-
-**Implementation note:** Replace static `usgs-sites.json` with a dynamic PostGIS query at startup — find all gauge stations within 75km of any species range. Eliminates hand-maintained static files entirely.
 
 ### 1c. Drought — Global Coverage
 

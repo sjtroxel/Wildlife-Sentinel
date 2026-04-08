@@ -4,6 +4,7 @@ export type DisasterSource =
   | 'nasa_firms'
   | 'noaa_nhc'
   | 'gdacs'
+  | 'gdacs_flood'
   | 'usgs_nwis'
   | 'drought_monitor'
   | 'coral_reef_watch';
