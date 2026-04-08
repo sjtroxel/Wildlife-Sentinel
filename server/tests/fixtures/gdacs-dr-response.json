@@ -1,0 +1,79 @@
+{
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [40.5, 8.6]
+      },
+      "properties": {
+        "eventtype": "DR",
+        "eventid": 1005101,
+        "episodeid": 6,
+        "eventname": "Drought in Horn of Africa, Ethiopia",
+        "alertlevel": "Red",
+        "alertscore": 2.7,
+        "severity": {
+          "value": -2.1,
+          "unit": "SPI",
+          "unitshortname": "SPI",
+          "severitytext": "Extreme drought (SPI -2.1)"
+        },
+        "country": "Ethiopia",
+        "fromdate": "2025-01-01T00:00:00",
+        "todate": "2025-04-01T00:00:00",
+        "datemodified": "2025-04-01T00:00:00"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [67.4, 47.8]
+      },
+      "properties": {
+        "eventtype": "DR",
+        "eventid": 1005102,
+        "episodeid": 3,
+        "eventname": "Drought in Central Asia, Kazakhstan",
+        "alertlevel": "Orange",
+        "alertscore": 1.6,
+        "severity": {
+          "value": -1.6,
+          "unit": "SPI",
+          "unitshortname": "SPI",
+          "severitytext": "Severe drought (SPI -1.6)"
+        },
+        "country": "Kazakhstan",
+        "fromdate": "2025-02-01T00:00:00",
+        "todate": "2025-05-01T00:00:00",
+        "datemodified": "2025-05-01T00:00:00"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [143.2, -22.4]
+      },
+      "properties": {
+        "eventtype": "DR",
+        "eventid": 1005103,
+        "episodeid": 2,
+        "eventname": "Drought in Queensland, Australia",
+        "alertlevel": "Orange",
+        "alertscore": 1.9,
+        "severity": {
+          "value": -1.8,
+          "unit": "SPI",
+          "unitshortname": "SPI",
+          "severitytext": "Severe drought (SPI -1.8)"
+        },
+        "country": "Australia",
+        "fromdate": "2025-03-01T00:00:00",
+        "todate": "2025-06-01T00:00:00",
+        "datemodified": "2025-06-01T00:00:00"
+      }
+    }
+  ]
+}

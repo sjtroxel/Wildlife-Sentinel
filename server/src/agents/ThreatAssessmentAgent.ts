@@ -33,6 +33,7 @@ const SOURCE_QUALITY: Record<DisasterSource, number> = {
   noaa_nhc: 0.90,
   gdacs: 0.88,
   gdacs_flood: 0.88,
+  gdacs_drought: 0.88,
   usgs_nwis: 0.85,
   coral_reef_watch: 0.85,
   drought_monitor: 0.75,

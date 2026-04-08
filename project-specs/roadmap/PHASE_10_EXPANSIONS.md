@@ -97,13 +97,13 @@ NASA FIRMS (wildfire) and NOAA Coral Reef Watch are already global — no replac
 
 **What this unlocks:** Amazon (tapir, giant river otter), Congo (forest elephant, gorilla, bonobo), Mekong (Irrawaddy dolphin, giant catfish), Ganges (river dolphin, gharial).
 
-### 1c. Drought — Global Coverage
+### 1c. Drought — Global Coverage ✅ COMPLETE (2026-04-08)
 
-**Replace:** `DroughtScout.ts` + `drought-fips.json`
-**Options (evaluate at implementation time):**
-- **GRACE-FO** (NASA): satellite groundwater anomaly, global, monthly cadence
-- **CHIRPS**: precipitation anomaly, ~5-day updates, higher temporal resolution
-- **GDACS drought alerts**: single endpoint, same pattern as cyclone replacement
+**Approach:** Supplemented (not replaced) `DroughtScout.ts` — both run in parallel.
+**Source:** GDACS `geteventlist/DR` endpoint — global active drought events.
+**Scout:** `GdacsDroughtScout.ts`, `source: 'gdacs_drought'`, every 6 hours.
+**Severity:** `alertscore / 3.0`; fallback alertlevel map (Green=0.25, Orange=0.60, Red=0.90).
+**Note:** GRACE-FO (monthly) and CHIRPS (NetCDF/GeoTIFF) are impractical for TypeScript without a wrapper service. GDACS covers declared major drought events. DroughtScout retained for fine-grained US county-level D3/D4 data.
 
 **What this unlocks:** Sub-Saharan Africa (African elephant, black rhino, cheetah), Australian outback (bilby, numbat), Central Asian steppes (snow leopard, saiga antelope).
 

@@ -5,6 +5,7 @@ export type DisasterSource =
   | 'noaa_nhc'
   | 'gdacs'
   | 'gdacs_flood'
+  | 'gdacs_drought'
   | 'usgs_nwis'
   | 'drought_monitor'
   | 'coral_reef_watch';
