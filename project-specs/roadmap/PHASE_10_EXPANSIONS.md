@@ -78,16 +78,12 @@ Phase 4 shipped three scouts with limited geographic coverage as a deliberate MV
 
 NASA FIRMS (wildfire) and NOAA Coral Reef Watch are already global — no replacement needed.
 
-### 1a. Tropical Cyclone — Global Coverage
+### 1a. Tropical Cyclone — Global Coverage ✅ COMPLETE (2026-04-08)
 
-**Replace:** `NhcScout.ts`
-**Target source:** IBTrACS (International Best Track Archive for Climate Stewardship) real-time feed, or direct RSMC feeds:
-- RSMC Tokyo (Western Pacific typhoons)
-- RSMC New Delhi (North Indian Ocean)
-- RSMC La Réunion (South Indian Ocean)
-- BOM (Australian region)
-
-**Alternative:** GDACS (Global Disaster Alert and Coordination System) tropical cyclone RSS — single endpoint covering all basins.
+**Approach:** Supplemented (not replaced) `NhcScout.ts` — both run in parallel.
+**Source:** GDACS `geteventlist/TC` endpoint — single JSON feed covering all ocean basins.
+**Scout:** `GdacsScout.ts`, `source: 'gdacs'`, 30-min schedule, same dedup/circuit-breaker pattern.
+**Migration:** NhcScout retained for Atlantic/E. Pacific continuity. Disable NhcScout once GDACS is validated over 2+ weeks.
 
 **What this unlocks:** Philippine typhoon impacts on tamaraw, pygmy tarsier. Bay of Bengal cyclone impacts on Irrawaddy dolphin, Bengal tiger. Australian cyclones on northern quoll, cassowary.
 

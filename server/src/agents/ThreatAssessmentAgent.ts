@@ -31,6 +31,7 @@ interface ClaudeThreatResponse {
 const SOURCE_QUALITY: Record<DisasterSource, number> = {
   nasa_firms: 0.95,
   noaa_nhc: 0.90,
+  gdacs: 0.88,
   usgs_nwis: 0.85,
   coral_reef_watch: 0.85,
   drought_monitor: 0.75,
