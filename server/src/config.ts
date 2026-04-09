@@ -27,4 +27,6 @@ export const config = {
   nodeEnv: optionalEnv('NODE_ENV', 'development'),
   allowedOrigins: optionalEnv('ALLOWED_ORIGINS', 'http://localhost:3001').split(','),
   isProduction: process.env['NODE_ENV'] === 'production',
+  // Falls back to first ALLOWED_ORIGINS entry so only one variable is needed in practice.
+  frontendUrl: optionalEnv('FRONTEND_URL', optionalEnv('ALLOWED_ORIGINS', '').split(',')[0] ?? ''),
 } as const;

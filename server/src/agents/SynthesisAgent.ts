@@ -16,6 +16,7 @@ import { modelRouter } from '../router/ModelRouter.js';
 import { getAgentPrompt } from '../db/agentPrompts.js';
 import { logToWarRoom } from '../discord/warRoom.js';
 import { retrieveConservationContext } from '../rag/retrieve.js';
+import { config } from '../config.js';
 
 const THREAT_COLORS: Record<ThreatLevel, number> = {
   critical: 0xdc2626,  // red
@@ -165,6 +166,10 @@ export async function processAlert(assessed: AssessedAlert): Promise<void> {
     )
     .setFooter({ text: `Wildlife Sentinel • Data: ${SOURCE_LABELS[assessed.source] ?? assessed.source} • ${synthesis.footer_note}` })
     .setTimestamp();
+
+  if (config.frontendUrl) {
+    embed.setURL(`${config.frontendUrl}/alerts/${assessed.db_alert_id}`);
+  }
 
   const channel: DiscordQueueItem['channel'] =
     assessed.threat_level === 'critical' || assessed.threat_level === 'high'

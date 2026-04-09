@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { api } from '@/lib/api';
 import { formatRelativeTime } from '@/lib/utils';
 import type { AlertRow, ThreatLevel } from '@wildlife-sentinel/shared/types';
@@ -70,6 +71,13 @@ export default function AlertsFeed() {
                         {alert.coordinates.lng.toFixed(3)}
                       </p>
                     )}
+                    <Link
+                      href={`/alerts/${alert.id}`}
+                      className="inline-block mt-1 text-[10px] text-blue-400 hover:text-blue-300 transition-colors"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      View full details →
+                    </Link>
                   </div>
                 )}
               </button>

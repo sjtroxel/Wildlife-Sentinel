@@ -90,3 +90,99 @@ describe('GET /alerts/recent', () => {
     expect(vi.mocked(sql)).toHaveBeenCalledOnce();
   });
 });
+
+const VALID_UUID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+
+const mockAlertDetail = {
+  id: VALID_UUID,
+  raw_event_id: 'firms_2026-04-05_557_16.62_106.41',
+  source: 'nasa_firms',
+  event_type: 'wildfire',
+  coordinates: { lat: 16.623, lng: 106.41 },
+  severity: 0.7,
+  threat_level: 'high',
+  confidence_score: 0.78,
+  enrichment_data: {
+    weather: 'Dry, low humidity',
+    habitats: ['hab-1'],
+    species_at_risk: ['Panthera tigris'],
+    habitat_distance_km: 0.0,
+    species_status: 'EN',
+  },
+  prediction_data: {
+    predicted_impact: 'Fire likely to spread NW.',
+    reasoning: 'Low humidity + wind favors spread.',
+    compounding_factors: ['Dry season'],
+    recommended_action: 'Monitor satellite data.',
+  },
+  discord_message_id: null,
+  created_at: new Date().toISOString(),
+  refiner_scores: [],
+};
+
+describe('GET /alerts/:id', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('returns 200 with full alert detail', async () => {
+    vi.mocked(sql).mockResolvedValueOnce([mockAlertDetail] as never);
+    const res = await request.get(`/alerts/${VALID_UUID}`);
+    expect(res.status).toBe(200);
+    expect(res.body.id).toBe(VALID_UUID);
+    expect(res.body.prediction_data?.predicted_impact).toBe('Fire likely to spread NW.');
+    expect(Array.isArray(res.body.refiner_scores)).toBe(true);
+  });
+
+  it('returns 404 when alert does not exist', async () => {
+    vi.mocked(sql).mockResolvedValueOnce([] as never);
+    const res = await request.get(`/alerts/${VALID_UUID}`);
+    expect(res.status).toBe(404);
+    expect(res.body).toMatchObject({ error: 'Alert not found' });
+  });
+
+  it('returns 400 for invalid UUID format', async () => {
+    const res = await request.get('/alerts/not-a-uuid');
+    expect(res.status).toBe(400);
+    expect(res.body).toMatchObject({ error: 'Invalid alert ID format' });
+  });
+
+  it('parses string-encoded JSONB fields from DB', async () => {
+    const rawRow = {
+      ...mockAlertDetail,
+      coordinates: '{"lat":16.623,"lng":106.41}',
+      severity: '0.7',
+      confidence_score: '0.78',
+      enrichment_data: JSON.stringify(mockAlertDetail.enrichment_data),
+      prediction_data: JSON.stringify(mockAlertDetail.prediction_data),
+      refiner_scores: '[]',
+    };
+    vi.mocked(sql).mockResolvedValueOnce([rawRow] as never);
+    const res = await request.get(`/alerts/${VALID_UUID}`);
+    expect(res.status).toBe(200);
+    expect(res.body.coordinates).toEqual({ lat: 16.623, lng: 106.41 });
+    expect(typeof res.body.severity).toBe('number');
+    expect(res.body.enrichment_data?.species_at_risk).toEqual(['Panthera tigris']);
+    expect(Array.isArray(res.body.refiner_scores)).toBe(true);
+  });
+
+  it('returns refiner scores when present', async () => {
+    const withScores = {
+      ...mockAlertDetail,
+      refiner_scores: [
+        {
+          evaluation_time: '24h',
+          composite_score: 0.72,
+          direction_accuracy: 0.8,
+          magnitude_accuracy: 0.6,
+          correction_generated: false,
+          correction_note: null,
+          evaluated_at: new Date().toISOString(),
+        },
+      ],
+    };
+    vi.mocked(sql).mockResolvedValueOnce([withScores] as never);
+    const res = await request.get(`/alerts/${VALID_UUID}`);
+    expect(res.status).toBe(200);
+    expect(res.body.refiner_scores).toHaveLength(1);
+    expect(res.body.refiner_scores[0].composite_score).toBe(0.72);
+  });
+});

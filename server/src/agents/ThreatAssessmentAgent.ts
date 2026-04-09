@@ -180,10 +180,21 @@ export async function processEvent(event: FullyEnrichedEvent): Promise<void> {
       ${event.event_type},
       ${JSON.stringify(event.coordinates)},
       ${event.severity},
-      ${JSON.stringify({ weather: event.weather_summary, habitats: event.nearby_habitat_ids })},
+      ${JSON.stringify({
+        weather: event.weather_summary,
+        habitats: event.nearby_habitat_ids,
+        species_at_risk: event.species_at_risk,
+        habitat_distance_km: event.habitat_distance_km,
+        species_status: event.species_briefs[0]?.iucn_status ?? null,
+      })},
       ${threatLevel},
       ${confidence},
-      ${JSON.stringify({ predicted_impact: parsed.predicted_impact, reasoning: parsed.reasoning })},
+      ${JSON.stringify({
+        predicted_impact: parsed.predicted_impact,
+        reasoning: parsed.reasoning,
+        compounding_factors: Array.isArray(parsed.compounding_factors) ? parsed.compounding_factors : [],
+        recommended_action: parsed.recommended_action ?? null,
+      })},
       ${JSON.stringify(event.raw_data)}
     )
     ON CONFLICT (raw_event_id) DO UPDATE SET

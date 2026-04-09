@@ -117,11 +117,11 @@ Build new scouts alongside existing ones. Run both in parallel for 2 weeks to co
 
 Items to improve the Next.js frontend beyond the Phase 8 baseline.
 
-- **Alert history / archive page** — searchable past alerts, filterable by event type, threat level, or species
-- **Map layer toggles** — show/hide event types, habitat polygons, GBIF sighting markers independently
-- **Dark mode** — Tailwind CSS v4 dark theme variant
-- **Alert detail page** — `/alerts/[id]` with full agent reasoning, confidence breakdown, Refiner score history for that event
-- **Species profile pages** — `/species/[slug]` — static-generated pages for each species in the DB, showing range map + recent alerts
+- ✅ **2A — Alert detail page** — `/alerts/[id]` with full agent reasoning, confidence breakdown, Refiner score history. Discord embeds gain clickable title link via `embed.setURL()`. (2026-04-09)
+- **2B — Dark mode** — Tailwind CSS v4 `@custom-variant dark` + system-preference default + manual toggle (localStorage)
+- **2C — Map layer toggles** — show/hide event types independently; toggle state in DisasterMap, prop-drilled to DisasterMapInner
+- **2D — Alert history / archive page** — `/alerts` filterable by event type, threat level; paginated with "Load more"
+- **2E — Species profile pages** — `/species/[slug]` — dynamic pages per species in DB, showing range map + recent alerts
 
 ---
 

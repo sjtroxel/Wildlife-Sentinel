@@ -176,3 +176,40 @@ export interface BboxQuery {
   maxLng: number;
   maxLat: number;
 }
+
+export interface AlertDetailRefinerScore {
+  evaluation_time: string;
+  composite_score: number;
+  direction_accuracy: number;
+  magnitude_accuracy: number;
+  correction_generated: boolean;
+  correction_note: string | null;
+  evaluated_at: string;
+}
+
+export interface AlertDetail {
+  id: string;
+  raw_event_id: string;
+  source: DisasterSource;
+  event_type: EventType;
+  coordinates: { lat: number; lng: number };
+  severity: number | null;
+  threat_level: ThreatLevel | null;
+  confidence_score: number | null;
+  enrichment_data: {
+    weather?: string;
+    habitats?: string[];
+    species_at_risk?: string[];
+    habitat_distance_km?: number;
+    species_status?: string | null;
+  } | null;
+  prediction_data: {
+    predicted_impact?: string;
+    reasoning?: string;
+    compounding_factors?: string[];
+    recommended_action?: string | null;
+  } | null;
+  discord_message_id: string | null;
+  created_at: string;
+  refiner_scores: AlertDetailRefinerScore[];
+}
