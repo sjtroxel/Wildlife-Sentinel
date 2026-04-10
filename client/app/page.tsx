@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Group, Panel, Separator } from 'react-resizable-panels';
 import AlertsFeed from '@/components/AlertsFeed';
 import AgentActivity from '@/components/AgentActivity';
@@ -67,6 +68,14 @@ export default function Home() {
         <span className="flex-1 text-xs text-zinc-500 hidden sm:inline">
           Real-time disaster monitoring for endangered species
         </span>
+        <nav className="flex items-center gap-3 text-xs">
+          <Link href="/alerts" className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">
+            Alerts
+          </Link>
+          <Link href="/species" className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">
+            Species
+          </Link>
+        </nav>
         <ThemeToggle />
       </header>
 

@@ -121,7 +121,9 @@ Items to improve the Next.js frontend beyond the Phase 8 baseline.
 - **2B — Dark mode** — Tailwind CSS v4 `@custom-variant dark` + system-preference default + manual toggle (localStorage)
 - **2C — Map layer toggles** — show/hide event types independently; toggle state in DisasterMap, prop-drilled to DisasterMapInner
 - **2D — Alert history / archive page** — `/alerts` filterable by event type, threat level; paginated with "Load more"
-- **2E — Species profile pages** — `/species/[slug]` — dynamic pages per species in DB, showing range map + recent alerts
+- ✅ **2E — Species profile pages** — `/species/[slug]` — dynamic pages per species in DB, showing range map + recent alerts. `/species` index lists all monitored species ordered by IUCN threat status. (2026-04-10)
+- **2F — Discord `/species` slash command** — Bot command: user types `/species Sumatran Orangutan`, bot returns a color-coded embed (IUCN status, alert count, centroid, link to web profile). Autocomplete: bot queries `species_ranges` as user types, returns up to 25 matching suggestions. Lookup matches on common name or Latin binomial. Spec in `PHASE_10_IMPLEMENTATION_PLAN.md`.
+- **2G — Discord `/help` slash command** — Onboarding command for new server members. Returns a structured embed explaining what Wildlife Sentinel does, how to read alerts (threat levels, IUCN status key), what channels to watch, and all available slash commands (`/species`, `/status`, `/pause`, `/resume`, `/help`). Static content — no DB queries. Build after 2F so the commands list is complete.
 
 ---
 

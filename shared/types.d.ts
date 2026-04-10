@@ -187,6 +187,20 @@ export interface AlertDetailRefinerScore {
   evaluated_at: string;
 }
 
+export interface SpeciesListItem {
+  species_name: string;
+  common_name: string | null;
+  iucn_status: IUCNStatus;
+  iucn_species_id: string | null;
+  slug: string;
+}
+
+export interface SpeciesDetail extends SpeciesListItem {
+  centroid: { lat: number; lng: number };
+  range_geojson: Record<string, unknown> | null;
+  recent_alerts: AlertRow[];
+}
+
 export interface AlertDetail {
   id: string;
   raw_event_id: string;

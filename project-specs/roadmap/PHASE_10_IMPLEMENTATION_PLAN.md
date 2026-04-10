@@ -362,16 +362,220 @@ Note: `app/alerts/page.tsx` and `app/alerts/[id]/page.tsx` coexist cleanly — N
 
 ---
 
-### 2E — Species Profile Pages (defer to fresh session if context tight)
+### 2E — Species Profile Pages ✅ COMPLETE (2026-04-10)
 
-**Backend:**
-- `GET /species` — distinct species names from `species_ranges` (sorted alphabetically)
-- `GET /species/:slug` — species detail: IUCN status, recent alerts where `enrichment_data->>'species_at_risk'` contains species name
+**Backend (`server/src/routes/species.ts` — new, registered in `app.ts`):**
+- `GET /species?limit=50&offset=0` — distinct species from `species_ranges`, ordered by IUCN severity (CR→EN→VU→NT→LC), then name. Slug derived via `REPLACE(LOWER(species_name), ' ', '-')`.
+- `GET /species/:slug` — species detail: name, common name, IUCN status, centroid (`ST_X`/`ST_Y` on `ST_Centroid(ST_Collect(geom))`), range GeoJSON (`ST_AsGeoJSON(ST_Collect(geom))::jsonb`), recent alerts via `enrichment_data->'species_at_risk' @> jsonb_build_array($name)`.
+- Returns 404 if slug matches no species; 400 if slug contains non-`[a-z0-9-]` characters.
 
-**Frontend:**
-- `client/app/species/page.tsx` — species grid/index
-- `client/app/species/[slug]/page.tsx` — individual species: range map (Leaflet, `dynamic`/`ssr:false`) + recent alerts list
-- Slug convention: species name lowercased, spaces → hyphens (`panthera-tigris`)
+**Shared (`shared/types.d.ts`):** Added `SpeciesListItem`, `SpeciesDetail`.
+
+**Client:**
+- `client/lib/api.ts` — `getSpeciesList(limit, offset)` and `getSpecies(slug)` added.
+- `client/app/species/page.tsx` — responsive card grid (1 col → 2 col → 3 col), IUCN badge, paginated "Load more".
+- `client/app/species/[slug]/page.tsx` — detail: IUCN status badge, Leaflet range map, recent alerts list (each linking to `/alerts/[id]`). Skeleton loading + 404 error state.
+- `client/components/SpeciesRangeMapInner.tsx` — Leaflet map: green range polygon (`L.geoJSON`), auto-fit bounds, dark/light tile toggle (mirrors `DisasterMapInner` pattern).
+- `client/components/SpeciesRangeMap.tsx` — `dynamic()` wrapper (`ssr: false`).
+- `client/app/page.tsx` header — "Alerts" and "Species" nav links added.
+
+**Tests:** `server/tests/routes/species.test.ts` — 10 tests (list, detail, 404, 400 validation, numeric normalization).
+
+**349 tests passing.**
+
+---
+
+### 2F — Discord `/species` Slash Command
+
+**Goal:** Give Discord users a way to look up any monitored species directly in the bot, without leaving Discord. Returns a rich embed: species name, IUCN status (color-coded), centroid, recent alert count, and a link to the web profile page.
+
+#### Command definition
+
+```typescript
+new SlashCommandBuilder()
+  .setName('species')
+  .setDescription('Look up a monitored species')
+  .addStringOption(opt =>
+    opt.setName('name')
+       .setDescription('Common name or Latin binomial (e.g. "Sumatran Orangutan" or "pongo abelii")')
+       .setRequired(true)
+       .setAutocomplete(true)
+  )
+```
+
+#### Lookup logic
+
+Convert the user's input to a slug (`toLowerCase().replace(/ /g, '-')`), then run:
+```sql
+SELECT species_name, MAX(common_name) AS common_name, MAX(iucn_status) AS iucn_status,
+       MAX(iucn_species_id) AS iucn_species_id,
+       REPLACE(LOWER(species_name), ' ', '-') AS slug
+FROM species_ranges
+WHERE REPLACE(LOWER(species_name), ' ', '-') = $slug
+   OR LOWER(common_name) = LOWER($input)
+GROUP BY species_name
+LIMIT 1
+```
+
+If not found, reply with "Species not found. Try `/species Sumatran Orangutan`."
+
+#### Recent alert count
+
+Second query:
+```sql
+SELECT COUNT(*)::int AS alert_count
+FROM alerts
+WHERE threat_level IS NOT NULL
+  AND enrichment_data->'species_at_risk' @> jsonb_build_array($speciesName::text)
+```
+
+#### Embed structure
+
+```typescript
+const iucnColors: Record<IUCNStatus, number> = {
+  EX: 0x3f3f46, EW: 0x52525b, CR: 0xdc2626,
+  EN: 0xea580c, VU: 0xd97706, NT: 0xca8a04, LC: 0x16a34a,
+};
+
+const embed = new EmbedBuilder()
+  .setColor(iucnColors[species.iucn_status] ?? 0x6b7280)
+  .setTitle(`${species.common_name ?? species.species_name}`)
+  .setDescription(`*${species.species_name}*`)
+  .addFields(
+    { name: 'IUCN Status', value: `**${species.iucn_status}** · ${IUCN_LABEL[species.iucn_status]}`, inline: true },
+    { name: 'Alerts (all time)', value: String(alertCount), inline: true },
+    { name: 'Range Centroid', value: `${centroid.lat.toFixed(2)}°, ${centroid.lng.toFixed(2)}°`, inline: true },
+  )
+  .setFooter({ text: 'Wildlife Sentinel · IUCN Red List / GBIF' });
+
+if (config.frontendUrl && species.slug) {
+  embed.setURL(`${config.frontendUrl}/species/${species.slug}`);
+}
+```
+
+#### Autocomplete handler
+
+When `interaction.isAutocomplete()` and `commandName === 'species'`:
+```sql
+SELECT DISTINCT ON (COALESCE(common_name, species_name))
+  species_name, common_name
+FROM species_ranges
+WHERE common_name ILIKE ${'%' + input + '%'}
+   OR species_name ILIKE ${'%' + input + '%'}
+ORDER BY COALESCE(common_name, species_name)
+LIMIT 25
+```
+Return as `{ name: common_name ?? species_name, value: (common_name ?? species_name).toLowerCase() }` — the `value` is what gets sent when the user selects it.
+
+#### Files to change
+
+| File | Change |
+|---|---|
+| `server/src/discord/commands.ts` (or equivalent) | Register `/species` command alongside `/pause`, `/resume`, `/status` |
+| `server/src/discord/bot.ts` | Handle `interactionCreate` for `/species` command + autocomplete |
+| `server/src/db/speciesQueries.ts` (new, or inline) | `lookupSpecies(input)` + `getSpeciesAlertCount(name)` |
+| `server/tests/discord/speciesCommand.test.ts` | Tests: found → embed, not found → error message, autocomplete returns suggestions |
+
+#### Railway action (user)
+No new env vars needed. `FRONTEND_URL` is already set (from 2A). The web profile link in the embed will work immediately.
+
+---
+
+### 2G — Discord `/help` Slash Command
+
+**Goal:** Onboard new Discord server members — anyone who joins the server and wonders what Wildlife Sentinel is or what they can do here gets a single command that answers everything.
+
+**Build order:** After 2F, so the commands list in the embed is complete.
+
+#### Command definition
+
+```typescript
+new SlashCommandBuilder()
+  .setName('help')
+  .setDescription('Learn what Wildlife Sentinel does and how to use this bot')
+```
+
+No options — no autocomplete needed. Single static response.
+
+#### Embed structure
+
+Three fields organized as a natural onboarding flow:
+
+```typescript
+const embed = new EmbedBuilder()
+  .setColor(0x16a34a)                           // green — informational, not an alert
+  .setTitle('Wildlife Sentinel — Quick Guide')
+  .setDescription(
+    'An autonomous 24/7 system that monitors global disaster data streams ' +
+    '(wildfires, cyclones, floods, drought, coral bleaching) and fires alerts ' +
+    'whenever a disaster threatens IUCN-listed critical habitat.'
+  )
+  .addFields(
+    {
+      name: '📢 Channels',
+      value:
+        '**#wildlife-alerts** — Public alerts for medium/high threat events.\n' +
+        '**#sentinel-ops** — Pipeline activity + critical alerts awaiting review (react ✅ to approve).',
+    },
+    {
+      name: '⚠️ Reading an Alert',
+      value:
+        '**CRITICAL / HIGH** — Severe threat, habitat overlap confirmed.\n' +
+        '**MEDIUM** — Moderate threat, species at risk identified.\n' +
+        '**LOW** — Logged to DB only, not posted here.\n\n' +
+        'IUCN status: **CR** = Critically Endangered · **EN** = Endangered · **VU** = Vulnerable',
+    },
+    {
+      name: '🤖 Slash Commands',
+      value:
+        '`/species <name>` — Look up any monitored species (autocomplete supported).\n' +
+        '`/status` — Show pipeline health and whether monitoring is active.\n' +
+        '`/pause` / `/resume` — Pause or resume the pipeline (admin only).\n' +
+        '`/help` — Show this message.',
+    },
+  )
+  .setFooter({ text: 'Wildlife Sentinel · Data: NASA FIRMS / NOAA / USGS / IUCN' });
+
+if (config.frontendUrl) {
+  embed.addFields({
+    name: '🌐 Web Dashboard',
+    value: `[wildlife-sentinel.vercel.app](${config.frontendUrl}) — Live map, alert archive, species profiles, and prediction accuracy charts.`,
+  });
+}
+```
+
+#### Maintainability: data-driven command list
+
+The commands field should be built from an array, not hardcoded prose, so adding a future slash command is a one-line change:
+
+```typescript
+// server/src/discord/helpContent.ts
+export const SLASH_COMMANDS = [
+  { name: '/species <name>', description: 'Look up any monitored species (autocomplete supported).' },
+  { name: '/status',         description: 'Show pipeline health and whether monitoring is active.' },
+  { name: '/pause',          description: 'Pause the pipeline (admin only).' },
+  { name: '/resume',         description: 'Resume the pipeline (admin only).' },
+  { name: '/help',           description: 'Show this message.' },
+] as const;
+
+// Used in the embed:
+const commandsValue = SLASH_COMMANDS
+  .map(c => `\`${c.name}\` — ${c.description}`)
+  .join('\n');
+```
+
+When a new command ships, add one entry to `SLASH_COMMANDS`. The embed rebuilds automatically. No prose to hunt down and edit.
+
+#### Files to change
+
+| File | Change |
+|---|---|
+| `server/src/discord/helpContent.ts` (new) | `SLASH_COMMANDS` array + any other static copy that may need updating over time |
+| `server/src/discord/commands.ts` (or equivalent) | Register `/help` command alongside others |
+| `server/src/discord/bot.ts` | Handle `interactionCreate` for `/help` — build embed from `helpContent.ts`, call `deferReply()` then `editReply({ embeds: [embed] })` |
+| `server/tests/discord/helpCommand.test.ts` | Test: command returns embed with correct fields; `FRONTEND_URL` set → web dashboard field present; not set → absent |
+
+**No DB queries. No new env vars.** Entirely self-contained. Fastest command to ship.
 
 ---
 
@@ -446,11 +650,11 @@ New disaster streams beyond the original five. Add as separate scouts following 
 | G ✅ | Expansion 1B — global flood scout (GDACS FL) |
 | H ✅ | Expansion 1C — global drought scout (GDACS DR) |
 | I ✅ | Expansion 2A — alert detail page + Discord embed link (2026-04-09) |
-| J | Expansion 2B + 2C — dark mode + map layer toggles |
-| K | Expansion 2D — alert history/archive page |
-| L | Expansion 2E — species profile pages |
-| M | Expansion 4 — additional scouts (seismic, oil spill, deforestation, air quality) |
+| J ✅ | Expansion 2B + 2C — dark mode + map layer toggles (2026-04-10) |
+| K ✅ | Expansion 2D — alert history/archive page (2026-04-10) |
+| L ✅ | Expansion 2E — species profile pages (2026-04-10) |
+| M | Expansion 2F — Discord `/species` slash command |
+| N | Expansion 2G — Discord `/help` slash command (build after 2F so commands list is complete) |
+| O | Expansion 4 — additional scouts (seismic, oil spill, deforestation, air quality) |
 
-**Session J ✅ Complete — Expansion 2B (dark mode) + 2C (map layer toggles) (2026-04-10)**
-
-**Next session: K — Expansion 2D (alert history/archive page)**
+**Current: Expansion 2F spec written — awaiting user review before implementation.**
