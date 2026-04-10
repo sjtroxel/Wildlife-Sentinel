@@ -15,6 +15,14 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
+const EVENT_TYPES: EventType[] = [
+  'wildfire',
+  'tropical_storm',
+  'flood',
+  'drought',
+  'coral_bleaching',
+];
+
 const EVENT_COLORS: Record<EventType, string> = {
   wildfire: '#ef4444',
   tropical_storm: '#3b82f6',
@@ -34,18 +42,20 @@ const TILE_LAYERS = {
   },
 };
 
-export default function DisasterMapInner() {
+interface DisasterMapInnerProps {
+  activeLayers: Set<EventType>;
+}
+
+export default function DisasterMapInner({ activeLayers }: DisasterMapInnerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const layerGroupsRef = useRef<Partial<Record<EventType, L.LayerGroup>>>({});
   const [isDark, setIsDark] = useState(false);
 
   // Effect 1: initialize map
   useEffect(() => {
     if (!containerRef.current) return;
-    // Allow infinite horizontal scrolling (worldCopyJump handles seamless wrapping),
-    // but clamp latitude to the Mercator projection limits (±85°).
-    // The large longitude range (±100000°) is effectively infinite for any user interaction.
     const m = L.map(containerRef.current, {
       zoomControl: true,
       worldCopyJump: true,
@@ -78,38 +88,67 @@ export default function DisasterMapInner() {
     }).addTo(map);
   }, [isDark, map]);
 
-  // Effect 3: load alert markers
+  // Effect 3: load alert markers into per-type layer groups
   useEffect(() => {
     if (!map) return;
+
+    // Create one LayerGroup per event type and add all to the map
+    const groups: Partial<Record<EventType, L.LayerGroup>> = {};
+    EVENT_TYPES.forEach((type) => {
+      groups[type] = L.layerGroup().addTo(map);
+    });
+    layerGroupsRef.current = groups;
+
     api.getRecentAlerts(50).then((alerts) => {
       alerts.forEach((alert) => {
         if (!alert.coordinates) return;
-        const color = EVENT_COLORS[alert.event_type] ?? '#6b7280';
+        const color = EVENT_COLORS[alert.event_type as EventType] ?? '#6b7280';
         const radius = 6 + (alert.severity ?? 0) * 8;
-        L.circleMarker([alert.coordinates.lat, alert.coordinates.lng], {
-          color,
-          fillColor: color,
-          fillOpacity: 0.7,
-          radius,
-          weight: 1,
-        })
-          .bindPopup(
-            `<strong>${alert.event_type.replace(/_/g, ' ')}</strong><br>` +
-            `Threat: ${alert.threat_level ?? 'unknown'}<br>` +
-            `${new Date(alert.created_at).toLocaleDateString()}`
-          )
-          .addTo(map);
+        const marker = L.circleMarker(
+          [alert.coordinates.lat, alert.coordinates.lng],
+          { color, fillColor: color, fillOpacity: 0.7, radius, weight: 1 }
+        ).bindPopup(
+          `<strong>${alert.event_type.replace(/_/g, ' ')}</strong><br>` +
+          `Threat: ${alert.threat_level ?? 'unknown'}<br>` +
+          `${new Date(alert.created_at).toLocaleDateString()}`
+        );
+
+        const group = groups[alert.event_type as EventType];
+        if (group) {
+          marker.addTo(group);
+        } else {
+          marker.addTo(map);
+        }
       });
     }).catch(() => {
       // Map renders without markers — fail silently
     });
+
+    return () => {
+      Object.values(layerGroupsRef.current).forEach((g) => g?.remove());
+      layerGroupsRef.current = {};
+    };
   }, [map]);
+
+  // Effect 4: sync layer group visibility with activeLayers prop
+  useEffect(() => {
+    if (!map) return;
+    EVENT_TYPES.forEach((type) => {
+      const group = layerGroupsRef.current[type];
+      if (!group) return;
+      if (activeLayers.has(type)) {
+        if (!map.hasLayer(group)) group.addTo(map);
+      } else {
+        if (map.hasLayer(group)) map.removeLayer(group);
+      }
+    });
+  }, [activeLayers, map]);
 
   return (
     <div className="relative w-full h-full">
       <div ref={containerRef} className="w-full h-full" />
       <button
-        onClick={() => setIsDark(d => !d)}
+        onClick={() => setIsDark((d) => !d)}
         className="absolute bottom-8 right-2 z-1000 flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium shadow-md transition-colors bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
         aria-label="Toggle map theme"
         title="Toggle map theme"

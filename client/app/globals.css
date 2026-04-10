@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-threat-critical: #dc2626;
   --color-threat-high:     #ea580c;

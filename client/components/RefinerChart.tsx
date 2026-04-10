@@ -39,18 +39,27 @@ export default function RefinerChart() {
 
   if (data.length === 0) return null;
 
+  const isDark = typeof document !== 'undefined'
+    ? document.documentElement.classList.contains('dark')
+    : true;
+
+  const gridColor = isDark ? '#27272a' : '#e4e4e7';
+  const tickColor = isDark ? '#71717a' : '#71717a';
+  const tooltipBg = isDark ? '#18181b' : '#ffffff';
+  const tooltipBorder = isDark ? '#3f3f46' : '#e4e4e7';
+
   return (
     <div className="p-3">
-      <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-2">
+      <h2 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-2">
         Prediction Accuracy
       </h2>
       <ResponsiveContainer width="100%" height={120}>
         <LineChart data={data} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-          <XAxis dataKey="index" tick={{ fontSize: 10, fill: '#71717a' }} />
-          <YAxis domain={[0, 1]} tick={{ fontSize: 10, fill: '#71717a' }} />
+          <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+          <XAxis dataKey="index" tick={{ fontSize: 10, fill: tickColor }} />
+          <YAxis domain={[0, 1]} tick={{ fontSize: 10, fill: tickColor }} />
           <Tooltip
-            contentStyle={{ background: '#18181b', border: '1px solid #3f3f46', fontSize: 11 }}
+            contentStyle={{ background: tooltipBg, border: `1px solid ${tooltipBorder}`, fontSize: 11 }}
             formatter={(value) => [typeof value === 'number' ? value.toFixed(2) : value, 'Score']}
           />
           <ReferenceLine y={0.6} stroke="#ef4444" strokeDasharray="4 2" label={{ value: '0.60', fontSize: 9, fill: '#ef4444' }} />

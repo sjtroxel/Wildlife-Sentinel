@@ -28,21 +28,21 @@ export default function AlertsFeed() {
 
   return (
     <div className="p-3">
-      <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-2">
+      <h2 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-2">
         Recent Alerts
       </h2>
       {alerts.length === 0 ? (
-        <p className="text-xs text-zinc-600 py-4 text-center">No alerts yet</p>
+        <p className="text-xs text-zinc-400 dark:text-zinc-600 py-4 text-center">No alerts yet</p>
       ) : (
         <ul className="space-y-2">
           {alerts.map((alert) => (
             <li key={alert.id}>
               <button
-                className="w-full text-left rounded bg-zinc-900 hover:bg-zinc-800 transition-colors px-3 py-2"
+                className="w-full text-left rounded bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 transition-colors px-3 py-2"
                 onClick={() => setExpandedId(expandedId === alert.id ? null : alert.id)}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-medium text-zinc-200 truncate">
+                  <span className="text-xs font-medium text-zinc-800 dark:text-zinc-200 truncate">
                     {alert.event_type.replace(/_/g, ' ')}
                   </span>
                   <div className="flex items-center gap-2 shrink-0">
@@ -57,7 +57,7 @@ export default function AlertsFeed() {
                   </div>
                 </div>
                 {expandedId === alert.id && (
-                  <div className="mt-2 text-xs text-zinc-400 space-y-1">
+                  <div className="mt-2 text-xs text-zinc-500 dark:text-zinc-400 space-y-1">
                     <p>Source: {alert.source.replace(/_/g, ' ')}</p>
                     {alert.confidence_score !== null && (
                       <p>Confidence: {(alert.confidence_score * 100).toFixed(0)}%</p>
@@ -73,7 +73,7 @@ export default function AlertsFeed() {
                     )}
                     <Link
                       href={`/alerts/${alert.id}`}
-                      className="inline-block mt-1 text-[10px] text-blue-400 hover:text-blue-300 transition-colors"
+                      className="inline-block mt-1 text-[10px] text-blue-500 hover:text-blue-400 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
                       onClick={(e) => e.stopPropagation()}
                     >
                       View full details →

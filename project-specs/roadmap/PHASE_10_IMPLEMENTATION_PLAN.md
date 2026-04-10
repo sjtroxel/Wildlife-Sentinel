@@ -15,6 +15,21 @@ See also `PHASE_10_EXPANSIONS.md` for the living backlog document.
 
 ## Completed ✅
 
+### Expansion 2C — Map Layer Toggles (2026-04-10)
+
+- ✅ `DisasterMap.tsx` rewritten as stateful wrapper: holds `activeLayers: Set<EventType>`, renders per-type toggle buttons (top-left overlay, `z-1000`)
+- ✅ `DisasterMapInner.tsx`: accepts `activeLayers` prop; markers placed into per-type `L.LayerGroup`; Effect 4 shows/hides groups reactively
+- ✅ `page.tsx` dynamic import unchanged — `ssr: false` still covers the entire module
+
+### Expansion 2B — Dark Mode (2026-04-10)
+
+- ✅ `globals.css`: `@custom-variant dark (&:where(.dark, .dark *))` — class-based dark variant
+- ✅ `layout.tsx`: anti-flash inline script reads `localStorage` + `prefers-color-scheme` before hydration
+- ✅ `ThemeToggle.tsx` (new): lazy `useState` initializer reads `.dark` class; toggle flips class on `<html>` + writes `localStorage`
+- ✅ `page.tsx`: ThemeToggle in header; logo uses `dark:hidden`/`dark:block` on two `<Image>` tags; all panel border/bg classes updated
+- ✅ `AlertsFeed`, `AgentActivity`, `RefinerChart`: light defaults + `dark:` prefixes throughout
+- ✅ Fixed pre-existing lint error: `setIsDesktop` in `useEffect` → lazy `useState` initializer
+
 ### Expansion 0C — `/health/scouts` Endpoint (2026-04-08)
 
 - ✅ `GET /health/scouts` added to `server/src/routes/health.ts`
@@ -303,9 +318,9 @@ const toggleLayer = (type: string) => setActiveLayers(prev => {
   return next;
 });
 ```
-Overlay UI (absolute positioned, `z-[1000]`, top-left of map — same corner pattern as existing dark-mode button):
+Overlay UI (absolute positioned, `z-1000`, top-left of map — same corner pattern as existing dark-mode button):
 ```tsx
-<div className="absolute top-2 left-2 z-[1000] flex flex-wrap gap-1">
+<div className="absolute top-2 left-2 z-1000 flex flex-wrap gap-1">
   {EVENT_TYPES.map(type => (
     <button key={type} onClick={() => toggleLayer(type)}
       style={{ borderColor: EVENT_COLORS[type] }}
@@ -436,4 +451,6 @@ New disaster streams beyond the original five. Add as separate scouts following 
 | L | Expansion 2E — species profile pages |
 | M | Expansion 4 — additional scouts (seismic, oil spill, deforestation, air quality) |
 
-**Next session: J — Expansion 2B (dark mode) + 2C (map layer toggles)**
+**Session J ✅ Complete — Expansion 2B (dark mode) + 2C (map layer toggles) (2026-04-10)**
+
+**Next session: K — Expansion 2D (alert history/archive page)**

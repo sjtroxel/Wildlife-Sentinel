@@ -227,8 +227,8 @@
 - [x] **Expansion 1B** — Global flood coverage (GDACS FL — Amazon, Congo, Mekong, Ganges) (2026-04-08)
 - [x] **Expansion 1C** — Global drought coverage (GDACS DR — sub-Saharan, Central Asia) (2026-04-08)
 - [x] **Expansion 2A** — Alert detail page `/alerts/[id]` + Discord embed clickable title link (2026-04-09)
-- [ ] **Expansion 2B** — Dark mode (system preference default + manual toggle, Tailwind v4)
-- [ ] **Expansion 2C** — Map layer toggles (show/hide by event type independently)
+- [x] **Expansion 2B** — Dark mode (system preference default + manual toggle, Tailwind v4) (2026-04-10)
+- [x] **Expansion 2C** — Map layer toggles (show/hide by event type independently) (2026-04-10)
 - [ ] **Expansion 2D** — Alert history/archive page (filterable by type, threat level)
 - [ ] **Expansion 2E** — Species profile pages `/species/[slug]`
 - [ ] **Expansion 4** — Additional scouts (seismic, oil spill, deforestation, air quality)
