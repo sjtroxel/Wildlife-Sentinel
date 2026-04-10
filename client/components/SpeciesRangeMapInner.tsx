@@ -38,9 +38,7 @@ export default function SpeciesRangeMapInner({ rangeGeojson, centroid }: Species
     m.setView([centroid.lat, centroid.lng], 4);
     setMap(m);
     return () => { m.remove(); };
-    // centroid is stable — intentionally not in deps to avoid re-init on re-render
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // centroid is stable — intentionally omitted to prevent map re-init on re-render
 
   // Effect 2: swap tile layer when dark mode toggles
   useEffect(() => {
@@ -77,7 +75,7 @@ export default function SpeciesRangeMapInner({ rangeGeojson, centroid }: Species
       <div ref={containerRef} className="w-full h-full" />
       <button
         onClick={() => setIsDark((d) => !d)}
-        className="absolute bottom-8 right-2 z-[1000] flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium shadow-md transition-colors bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+        className="absolute bottom-8 right-2 z-1000 flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium shadow-md transition-colors bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
         aria-label="Toggle map theme"
         title="Toggle map theme"
       >
