@@ -32,6 +32,62 @@ const mockAlert = {
   discord_message_id: null,
 };
 
+describe('GET /alerts', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('returns 200 with alert rows', async () => {
+    vi.mocked(sql).mockResolvedValueOnce([mockAlert] as never);
+    const res = await request.get('/alerts');
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body[0]).toMatchObject({ id: 'uuid-1', threat_level: 'high' });
+  });
+
+  it('returns empty array when no alerts match', async () => {
+    vi.mocked(sql).mockResolvedValueOnce([] as never);
+    const res = await request.get('/alerts?event_type=flood');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([]);
+  });
+
+  it('accepts valid event_type filter', async () => {
+    vi.mocked(sql).mockResolvedValueOnce([mockAlert] as never);
+    const res = await request.get('/alerts?event_type=wildfire');
+    expect(res.status).toBe(200);
+  });
+
+  it('accepts valid threat_level filter', async () => {
+    vi.mocked(sql).mockResolvedValueOnce([mockAlert] as never);
+    const res = await request.get('/alerts?threat_level=high');
+    expect(res.status).toBe(200);
+  });
+
+  it('accepts limit and offset params', async () => {
+    vi.mocked(sql).mockResolvedValueOnce([] as never);
+    const res = await request.get('/alerts?limit=10&offset=20');
+    expect(res.status).toBe(200);
+  });
+
+  it('caps limit at 100', async () => {
+    vi.mocked(sql).mockResolvedValueOnce([] as never);
+    const res = await request.get('/alerts?limit=999');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([]);
+  });
+
+  it('returns 400 for invalid event_type', async () => {
+    const res = await request.get('/alerts?event_type=earthquake');
+    expect(res.status).toBe(400);
+    expect(res.body).toMatchObject({ error: expect.stringContaining('event_type') });
+  });
+
+  it('returns 400 for invalid threat_level', async () => {
+    const res = await request.get('/alerts?threat_level=extreme');
+    expect(res.status).toBe(400);
+    expect(res.body).toMatchObject({ error: expect.stringContaining('threat_level') });
+  });
+});
+
 describe('GET /alerts/recent', () => {
   beforeEach(() => vi.clearAllMocks());
 

@@ -229,7 +229,7 @@
 - [x] **Expansion 2A** — Alert detail page `/alerts/[id]` + Discord embed clickable title link (2026-04-09)
 - [x] **Expansion 2B** — Dark mode (system preference default + manual toggle, Tailwind v4) (2026-04-10)
 - [x] **Expansion 2C** — Map layer toggles (show/hide by event type independently) (2026-04-10)
-- [ ] **Expansion 2D** — Alert history/archive page (filterable by type, threat level)
+- [x] **Expansion 2D** — Alert history/archive page (filterable by type, threat level) (2026-04-10)
 - [ ] **Expansion 2E** — Species profile pages `/species/[slug]`
 - [ ] **Expansion 4** — Additional scouts (seismic, oil spill, deforestation, air quality)
 

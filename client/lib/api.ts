@@ -1,4 +1,11 @@
-import type { AlertRow, AlertDetail, RefinerScoreRow, BboxQuery } from '@wildlife-sentinel/shared/types';
+import type { AlertRow, AlertDetail, RefinerScoreRow, BboxQuery, EventType, ThreatLevel } from '@wildlife-sentinel/shared/types';
+
+export interface AlertFilters {
+  event_type?: EventType;
+  threat_level?: ThreatLevel;
+  limit?: number;
+  offset?: number;
+}
 
 const BASE = process.env.NEXT_PUBLIC_API_URL;
 if (!BASE) throw new Error('NEXT_PUBLIC_API_URL is not set');
@@ -6,6 +13,16 @@ if (!BASE) throw new Error('NEXT_PUBLIC_API_URL is not set');
 export const api = {
   getRecentAlerts: (limit = 20): Promise<AlertRow[]> =>
     fetch(`${BASE}/alerts/recent?limit=${limit}`).then((r) => r.json()),
+
+  getAlerts: (filters: AlertFilters = {}): Promise<AlertRow[]> => {
+    const params = new URLSearchParams();
+    if (filters.event_type) params.set('event_type', filters.event_type);
+    if (filters.threat_level) params.set('threat_level', filters.threat_level);
+    if (filters.limit !== undefined) params.set('limit', String(filters.limit));
+    if (filters.offset !== undefined) params.set('offset', String(filters.offset));
+    const qs = params.toString();
+    return fetch(`${BASE}/alerts${qs ? `?${qs}` : ''}`).then((r) => r.json());
+  },
 
   getAlert: (id: string): Promise<AlertDetail> =>
     fetch(`${BASE}/alerts/${id}`).then((r) => {
