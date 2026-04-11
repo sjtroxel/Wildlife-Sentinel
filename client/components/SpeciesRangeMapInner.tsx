@@ -25,6 +25,9 @@ export default function SpeciesRangeMapInner({ rangeGeojson, centroid }: Species
   const [map, setMap] = useState<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const [isDark, setIsDark] = useState(false);
+  // Capture initial centroid in a ref so the map-init effect has no prop dependency.
+  // The map is created once; Effect 3 handles all subsequent range/bounds updates.
+  const initialCentroid = useRef(centroid);
 
   // Effect 1: initialize map
   useEffect(() => {
@@ -35,10 +38,10 @@ export default function SpeciesRangeMapInner({ rangeGeojson, centroid }: Species
     });
     const { url, attribution } = TILE_LAYERS.light;
     tileLayerRef.current = L.tileLayer(url, { attribution, maxZoom: 18, minZoom: 2 }).addTo(m);
-    m.setView([centroid.lat, centroid.lng], 4);
+    m.setView([initialCentroid.current.lat, initialCentroid.current.lng], 4);
     setMap(m);
     return () => { m.remove(); };
-  }, []); // centroid is stable — intentionally omitted to prevent map re-init on re-render
+  }, []);
 
   // Effect 2: swap tile layer when dark mode toggles
   useEffect(() => {
