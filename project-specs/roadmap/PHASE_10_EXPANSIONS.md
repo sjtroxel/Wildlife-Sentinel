@@ -118,20 +118,20 @@ Build new scouts alongside existing ones. Run both in parallel for 2 weeks to co
 Items to improve the Next.js frontend beyond the Phase 8 baseline.
 
 - ✅ **2A — Alert detail page** — `/alerts/[id]` with full agent reasoning, confidence breakdown, Refiner score history. Discord embeds gain clickable title link via `embed.setURL()`. (2026-04-09)
-- **2B — Dark mode** — Tailwind CSS v4 `@custom-variant dark` + system-preference default + manual toggle (localStorage)
-- **2C — Map layer toggles** — show/hide event types independently; toggle state in DisasterMap, prop-drilled to DisasterMapInner
-- **2D — Alert history / archive page** — `/alerts` filterable by event type, threat level; paginated with "Load more"
-- ✅ **2E — Species profile pages** — `/species/[slug]` — dynamic pages per species in DB, showing range map + recent alerts. `/species` index lists all monitored species ordered by IUCN threat status. (2026-04-10)
-- **2F — Discord `/species` slash command** — Bot command: user types `/species Sumatran Orangutan`, bot returns a color-coded embed (IUCN status, alert count, centroid, link to web profile). Autocomplete: bot queries `species_ranges` as user types, returns up to 25 matching suggestions. Lookup matches on common name or Latin binomial. Spec in `PHASE_10_IMPLEMENTATION_PLAN.md`.
-- **2G — Discord `/help` slash command** — Onboarding command for new server members. Returns a structured embed explaining what Wildlife Sentinel does, how to read alerts (threat levels, IUCN status key), what channels to watch, and all available slash commands (`/species`, `/status`, `/pause`, `/resume`, `/help`). Static content — no DB queries. Build after 2F so the commands list is complete.
+- ✅ **2B — Dark mode** — Tailwind CSS v4 `@custom-variant dark` + system-preference default + manual toggle (localStorage). (2026-04-10)
+- ✅ **2C — Map layer toggles** — show/hide event types independently; toggle state in DisasterMap, prop-drilled to DisasterMapInner. (2026-04-10)
+- ✅ **2D — Alert history / archive page** — `/alerts` filterable by event type, threat level; paginated with "Load more". (2026-04-10)
+- ✅ **2E — Species profile pages** — `/species/[slug]` — dynamic pages per species in DB, showing range map + recent alerts. `/species` index lists all monitored species ordered by IUCN threat status. (2026-04-11)
+- ✅ **2F — Discord `/species` slash command** — Color-coded embed with IUCN status, alert count, centroid, link to web profile. Autocomplete queries `species_ranges` as user types (up to 25 suggestions). (2026-04-11)
+- ✅ **2G — Discord `/help` slash command** — Onboarding embed: system description, channel guide, threat level key, all slash commands. Static content, no DB queries. (2026-04-11)
 
 ---
 
 ## Expansion Area 3 — Pipeline Enhancements
 
-- **Weekly digest automation** — every Sunday, Synthesis Agent generates a weekly summary of the past 7 days' alerts, posted to #wildlife-alerts (moved here from Phase 9 if not shipped there)
-- **Multi-species event correlation** — detect when multiple species in the same habitat are threatened by the same event and generate a combined alert instead of N individual ones
-- **Historical trend analysis** — dashboard widget showing threat frequency by region over time
+- ✅ **Weekly digest automation** — already shipped in weeklyDigest.ts (Phase 9)
+- ✅ **3A — Multi-species event correlation** — `correlationKey()` in EnrichmentAgent.ts; 0.45° bins (~50km), 1h TTL Redis key per `(event_type, cell)`; duplicate events dropped before any LLM work begins. (2026-04-12)
+- **3B — Historical trend analysis** — dashboard widget showing threat frequency by region over time
 
 ---
 

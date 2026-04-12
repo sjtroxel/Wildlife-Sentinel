@@ -20,6 +20,7 @@ vi.mock('../../src/redis/client.js', () => ({
     xreadgroup: vi.fn(),
     xack: vi.fn().mockResolvedValue(1),
     get: vi.fn().mockResolvedValue(null),
+    setex: vi.fn().mockResolvedValue('OK'),
     on: vi.fn(),
     quit: vi.fn(),
   },
@@ -87,6 +88,8 @@ describe('EnrichmentAgent.processEvent', () => {
     vi.resetAllMocks();
     vi.mocked(logPipelineEvent).mockResolvedValue(undefined);
     vi.mocked(redis.xadd).mockResolvedValue('1234-0');
+    vi.mocked(redis.get).mockResolvedValue(null);       // no correlation by default
+    vi.mocked(redis.setex).mockResolvedValue('OK');
   });
 
   afterEach(() => {
@@ -320,6 +323,81 @@ describe('EnrichmentAgent.processEvent', () => {
       vi.mocked(redis.xadd).mock.calls[0]![3] as string
     ) as { raw_data: Record<string, unknown> };
     expect(payload.raw_data['projected_24h_lat']).toBeUndefined();
+  });
+
+  // ── Correlation tests ─────────────────────────────────────────────────────
+
+  it('correlated event (same type/cell within 1h) is dropped — no publish, no assembly', async () => {
+    mockSql.mockResolvedValueOnce([{
+      id: 'h-1', species_name: 'Pongo abelii', iucn_status: 'CR', distance_km: 18.3,
+    }]);
+    // Simulate a prior event already claiming this 50km cell
+    vi.mocked(redis.get).mockResolvedValueOnce('test-event-000');
+
+    await processEvent(nearSumatraEvent);
+
+    expect(redis.xadd).not.toHaveBeenCalled();
+    expect(storeEventForAssembly).not.toHaveBeenCalled();
+    expect(logPipelineEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'filtered',
+        reason: expect.stringContaining('correlated_with:test-event-000'),
+      })
+    );
+  });
+
+  it('non-correlated event sets the correlation key and proceeds normally', async () => {
+    mockSql.mockResolvedValueOnce([{
+      id: 'h-1', species_name: 'Pongo abelii', iucn_status: 'CR', distance_km: 18.3,
+    }]);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => weatherFixture,
+    }));
+    // redis.get returns null → no prior event in this cell
+
+    await processEvent(nearSumatraEvent);
+
+    expect(redis.setex).toHaveBeenCalledWith(
+      expect.stringContaining('corr:wildfire:'),
+      3600,
+      'test-event-001'
+    );
+    expect(redis.xadd).toHaveBeenCalledWith('disaster:enriched', '*', 'data', expect.any(String));
+  });
+
+  it('different event_type in same cell is not correlated — uses a separate key', async () => {
+    const floodEvent: RawDisasterEvent = {
+      id: 'flood-001',
+      source: 'gdacs_flood',
+      event_type: 'flood',
+      // Same coordinates as nearSumatraEvent → same lat/lng bins
+      coordinates: { lat: 3.5, lng: 97.0 },
+      severity: 0.6,
+      timestamp: new Date().toISOString(),
+      raw_data: {},
+    };
+    mockSql.mockResolvedValueOnce([{
+      id: 'h-1', species_name: 'Pongo abelii', iucn_status: 'CR', distance_km: 18.3,
+    }]);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => weatherFixture,
+    }));
+    // Wildfire key is occupied; flood key should be clear
+    vi.mocked(redis.get).mockImplementation(async (key: string) => {
+      return (key as string).startsWith('corr:wildfire:') ? 'test-event-001' : null;
+    });
+
+    await processEvent(floodEvent);
+
+    // Flood event proceeds — different event_type → different corr key
+    expect(redis.xadd).toHaveBeenCalledWith('disaster:enriched', '*', 'data', expect.any(String));
+    expect(redis.setex).toHaveBeenCalledWith(
+      expect.stringContaining('corr:flood:'),
+      3600,
+      'flood-001'
+    );
   });
 });
 

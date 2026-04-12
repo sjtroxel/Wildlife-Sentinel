@@ -8,6 +8,18 @@ import { modelRouter } from '../router/ModelRouter.js';
 import { storeEventForAssembly } from '../pipeline/ThreatAssembler.js';
 
 const HABITAT_RADIUS_METERS = 75_000; // 75 km
+const CORRELATION_TTL_SECONDS = 3_600; // 1 hour — same disaster, 50km radius
+
+/**
+ * Returns a Redis key that buckets events by type and ~50km geographic cell.
+ * 0.45° ≈ 50km at the equator. Events of the same type in the same cell within
+ * CORRELATION_TTL_SECONDS are considered the same physical disaster.
+ */
+function correlationKey(event: RawDisasterEvent): string {
+  const latBin = (Math.round(event.coordinates.lat / 0.45) * 0.45).toFixed(2);
+  const lngBin = (Math.round(event.coordinates.lng / 0.45) * 0.45).toFixed(2);
+  return `corr:${event.event_type}:${latBin}:${lngBin}`;
+}
 
 interface HabitatMatch {
   id: string;
@@ -89,6 +101,25 @@ export async function processEvent(event: RawDisasterEvent): Promise<void> {
     });
     return;
   }
+
+  // Correlation check — drop events that are part of the same physical disaster.
+  // A 50km / 1h window prevents N separate pipeline runs (and N Discord alerts)
+  // for a single large fire or storm. The first event through claims the cell;
+  // subsequent events within the TTL are silently dropped.
+  const corrKey = correlationKey(event);
+  const existingId = await redis.get(corrKey);
+  if (existingId) {
+    console.log(`[enrichment] ${event.id} correlated with ${existingId} (${event.event_type} within 50km/1h) — dropping`);
+    await logPipelineEvent({
+      event_id: event.id,
+      source: event.source,
+      stage: 'enrichment',
+      status: 'filtered',
+      reason: `correlated_with:${existingId}`,
+    });
+    return;
+  }
+  await redis.setex(corrKey, CORRELATION_TTL_SECONDS, event.id);
 
   const weather = await fetchWeather(lat, lng);
 

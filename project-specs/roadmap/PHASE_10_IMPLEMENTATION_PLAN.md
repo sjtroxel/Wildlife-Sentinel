@@ -362,6 +362,23 @@ Note: `app/alerts/page.tsx` and `app/alerts/[id]/page.tsx` coexist cleanly — N
 
 ---
 
+### 2G — Discord `/help` Slash Command ✅ COMPLETE (2026-04-11)
+
+- ✅ `server/src/discord/helpContent.ts` — `SLASH_COMMANDS` array; embed rebuilt from array so adding a command is one line
+- ✅ `/help` registered in commands.ts alongside `/pause`, `/resume`, `/status`, `/species`
+- ✅ `bot.ts` handles `interactionCreate` for `/help`: `deferReply()` → `editReply({ embeds: [embed] })`
+- ✅ `FRONTEND_URL` set → web dashboard field added to embed; unset → field omitted
+- ✅ `server/tests/discord/helpCommand.test.ts` — embed fields test; conditional dashboard field test
+
+### 2F — Discord `/species` Slash Command ✅ COMPLETE (2026-04-11)
+
+- ✅ `/species <name>` registered with `addStringOption` + `setAutocomplete(true)`
+- ✅ Lookup by slug or common name; fallback "not found" reply
+- ✅ Second query: alert count for species via `enrichment_data @> jsonb_build_array($name)`
+- ✅ Embed: IUCN-color-coded, common name title, Latin binomial description, status/alert count/centroid fields; `setURL()` to web profile when `FRONTEND_URL` set
+- ✅ Autocomplete: `ILIKE %input%` on both name fields, `DISTINCT ON`, up to 25 results
+- ✅ `server/tests/discord/speciesCommand.test.ts` — found → embed, not found → error, autocomplete suggestions
+
 ### 2E — Species Profile Pages ✅ COMPLETE (2026-04-10)
 
 **Backend (`server/src/routes/species.ts` — new, registered in `app.ts`):**
@@ -616,11 +633,98 @@ When a new command ships, add one entry to `SLASH_COMMANDS`. The embed rebuilds 
 
 ### 3A — Multi-Species Event Correlation
 
-When multiple species in the same habitat are threatened by the same event, generate one combined alert instead of N individual ones. The ThreatAssembler currently assembles per-event — add a correlation pass that groups co-located events within a configurable radius (e.g. 50km) and time window (e.g. 1 hour).
+**Problem:** NASA FIRMS reports large wildfires as many separate pixel events. FirmsScout deduplicates within a ~1.1km grid (toFixed(2) coordinate precision), but a 20km-wide fire generates multiple distinct events that survive dedup. Each flows through the full pipeline — Gemini enrichment, GBIF lookup, Claude Haiku threat assessment + synthesis — and generates a separate Discord alert for the same physical fire.
+
+**Fix:** After the habitat query confirms overlap, check whether a recent event of the same type already passed through the same geographic area. If yes, drop the new event before any expensive downstream work begins.
+
+#### Where to implement
+
+**`EnrichmentAgent.ts`** — after habitat query, before weather fetch.
+
+This is the earliest possible point where we know (a) the event overlaps a habitat, and (b) the event type. Dropping here saves all downstream costs: Gemini weather summary, GBIF lookup, Species Context RAG, Claude Haiku threat + synthesis.
+
+#### Correlation bucket key
+
+```typescript
+function correlationKey(event: RawDisasterEvent): string {
+  const latBin = (Math.round(event.coordinates.lat / 0.45) * 0.45).toFixed(2);
+  const lngBin = (Math.round(event.coordinates.lng / 0.45) * 0.45).toFixed(2);
+  return `corr:${event.event_type}:${latBin}:${lngBin}`;
+}
+```
+
+- 0.45° ≈ 50km bins (equatorial). Matches the spec's 50km radius.
+- Key encodes `event_type` so a flood doesn't correlate with a wildfire in the same cell.
+
+#### Check + set in processEvent()
+
+Insert this block **after** the `habitats.length === 0` early return, **before** `fetchWeather()`:
+
+```typescript
+// Correlation check — drop duplicate events from the same disaster (50km / 1h window)
+const corrKey = correlationKey(event);
+const existingId = await redis.get(corrKey);
+if (existingId) {
+  console.log(`[enrichment] ${event.id} correlated with ${existingId} (${event.event_type} within 50km/1h) — dropping`);
+  await logPipelineEvent({
+    event_id: event.id,
+    source: event.source,
+    stage: 'enrichment',
+    status: 'filtered',
+    reason: `correlated_with:${existingId}`,
+  });
+  return;
+}
+await redis.setex(corrKey, 3600, event.id);
+```
+
+No new imports needed — `redis` and `logPipelineEvent` are already imported.
+
+#### Redis mock update (test file only)
+
+Add `setex` to the redis mock in `server/tests/agents/EnrichmentAgent.test.ts`:
+
+```typescript
+setex: vi.fn().mockResolvedValue('OK'),
+```
+
+#### New tests
+
+**Test A** — correlated event is dropped:
+- `redis.get` returns an existing event ID
+- Verify `redis.xadd` NOT called, `storeEventForAssembly` NOT called
+- Verify `logPipelineEvent` called with `status: 'filtered'`, reason containing `'correlated_with'`
+
+**Test B** — non-correlated event proceeds:
+- `redis.get` returns `null`
+- Verify `redis.setex` called with `corr:wildfire:...` key and TTL `3600`
+- Verify `redis.xadd` called normally
+
+**Test C** — different event_type in same cell is not correlated:
+- Separate corr keys per event_type — flood at same coords as wildfire proceeds independently
+
+#### Files changed
+
+| File | Change |
+|---|---|
+| `server/src/agents/EnrichmentAgent.ts` | Add `correlationKey()` helper + check/set block in `processEvent()` |
+| `server/tests/agents/EnrichmentAgent.test.ts` | Add `setex` to redis mock; add 3 new correlation tests |
+
+#### Verification
+
+```bash
+npm test -- --reporter=verbose
+npm run typecheck
+```
+
+- All existing EnrichmentAgent tests still pass; 3 new correlation tests green
+- Deploy: large active fire → one Discord alert per 1h window instead of multiples
+
+---
 
 ### 3B — Historical Trend Analysis
 
-Dashboard widget: threat frequency by region over time. Query `alerts` table grouped by `event_type` and month. Display as a simple line chart (same library as RefinerChart).
+Dashboard widget: threat frequency by region over time. Query `alerts` table grouped by `event_type` and month. Display as a simple line chart (same recharts library as RefinerChart).
 
 ---
 
@@ -653,8 +757,10 @@ New disaster streams beyond the original five. Add as separate scouts following 
 | J ✅ | Expansion 2B + 2C — dark mode + map layer toggles (2026-04-10) |
 | K ✅ | Expansion 2D — alert history/archive page (2026-04-10) |
 | L ✅ | Expansion 2E — species profile pages (2026-04-10) |
-| M | Expansion 2F — Discord `/species` slash command |
-| N | Expansion 2G — Discord `/help` slash command (build after 2F so commands list is complete) |
-| O | Expansion 4 — additional scouts (seismic, oil spill, deforestation, air quality) |
+| M ✅ | Expansion 2F — Discord `/species` slash command (2026-04-11) |
+| N ✅ | Expansion 2G — Discord `/help` slash command (2026-04-11) |
+| O ✅ | Expansion 3A — multi-event correlation in EnrichmentAgent (50km / 1h dedup) (2026-04-12) |
+| P | Expansion 3B — historical trend analysis dashboard widget |
+| Q | Expansion 4 — additional scouts (seismic, oil spill, deforestation, air quality) |
 
-**Current: Expansion 2F spec written — awaiting user review before implementation.**
+**Current: Expansion 3A complete. Next: 3B (historical trend chart) or 4 (additional scouts).**

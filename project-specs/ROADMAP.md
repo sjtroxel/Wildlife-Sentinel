@@ -230,7 +230,11 @@
 - [x] **Expansion 2B** — Dark mode (system preference default + manual toggle, Tailwind v4) (2026-04-10)
 - [x] **Expansion 2C** — Map layer toggles (show/hide by event type independently) (2026-04-10)
 - [x] **Expansion 2D** — Alert history/archive page (filterable by type, threat level) (2026-04-10)
-- [ ] **Expansion 2E** — Species profile pages `/species/[slug]`
+- [x] **Expansion 2E** — Species profile pages `/species/[slug]` + `/species` index (2026-04-11)
+- [x] **Expansion 2F** — Discord `/species` slash command with autocomplete (2026-04-11)
+- [x] **Expansion 2G** — Discord `/help` slash command (2026-04-11)
+- [x] **Expansion 3A** — Multi-species event correlation (50km/1h dedup in EnrichmentAgent) (2026-04-12)
+- [ ] **Expansion 3B** — Historical trend analysis dashboard widget
 - [ ] **Expansion 4** — Additional scouts (seismic, oil spill, deforestation, air quality)
 
 → See [PHASE_10_EXPANSIONS.md](roadmap/PHASE_10_EXPANSIONS.md)
