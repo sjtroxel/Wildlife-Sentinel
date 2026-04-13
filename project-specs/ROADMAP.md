@@ -234,7 +234,7 @@
 - [x] **Expansion 2F** — Discord `/species` slash command with autocomplete (2026-04-11)
 - [x] **Expansion 2G** — Discord `/help` slash command (2026-04-11)
 - [x] **Expansion 3A** — Multi-species event correlation (50km/1h dedup in EnrichmentAgent) (2026-04-12)
-- [ ] **Expansion 3B** — Historical trend analysis dashboard widget
+- [x] **Expansion 3B** — Historical trend analysis widget + Discord `/trends` slash command (2026-04-13)
 - [ ] **Expansion 4** — Additional scouts (seismic, oil spill, deforestation, air quality)
 
 → See [PHASE_10_EXPANSIONS.md](roadmap/PHASE_10_EXPANSIONS.md)

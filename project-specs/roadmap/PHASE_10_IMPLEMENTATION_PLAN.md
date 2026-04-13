@@ -722,9 +722,63 @@ npm run typecheck
 
 ---
 
-### 3B — Historical Trend Analysis
+### 3B — Historical Trend Analysis ✅ COMPLETE (2026-04-13)
 
-Dashboard widget: threat frequency by region over time. Query `alerts` table grouped by `event_type` and month. Display as a simple line chart (same recharts library as RefinerChart).
+Dashboard widget + Discord `/trends` slash command showing alert frequency breakdown by event type over the last 30 days.
+
+#### Backend
+
+**`server/src/db/statsQueries.ts`** (new) — shared query function:
+```typescript
+export async function getAlertTrends(days: number): Promise<TrendPoint[]>
+```
+SQL: `COUNT(*) FILTER (WHERE event_type = ...)` pivot — one row per day, one column per event type.
+Normalizes `bigint` → `number` via `parseInt(String(...), 10)`.
+
+**`server/src/routes/stats.ts`** (new):
+- `GET /stats/trends?days=30` — default 30, capped at 90, 400 on `days < 1`
+- Calls `getAlertTrends(days)`, returns `TrendPoint[]`
+
+**`server/src/app.ts`** — registered `statsRouter` at `/stats`.
+
+**`shared/types.d.ts`** — added `TrendPoint` interface.
+
+#### Frontend
+
+**`client/lib/api.ts`** — added `getTrends(days = 30): Promise<TrendPoint[]>` → `GET /stats/trends`.
+
+**`client/components/TrendChart.tsx`** (new) — recharts `BarChart` (stacked):
+- 30-day window; one bar per day; segments colored by event type using `EVENT_COLORS`
+- X-axis date labels formatted MM/DD; Y-axis integer counts
+- Dark/light styling mirrors `RefinerChart.tsx` pattern
+- Renders nothing when data is empty
+
+**`client/app/page.tsx`** — TrendChart added as 4th panel in right column:
+- Desktop: AlertsFeed(45%), AgentActivity(18%), RefinerChart(17%), TrendChart(20%)
+- Mobile: Map(35%), AlertsFeed(28%), AgentActivity(13%), RefinerChart(12%), TrendChart(12%)
+
+#### Discord
+
+**`server/src/discord/helpContent.ts`** — added `/trends [days]` to `SLASH_COMMANDS`.
+
+**`server/src/discord/bot.ts`**:
+- `/trends` command registered with optional `days` integer option (choices: 7, 14, 30, 90)
+- `handleTrendsCommand()` calls `getAlertTrends(days)`, sums totals, builds embed:
+  - Inline field per event type: count + percentage
+  - Footer: total alerts, active days of N
+  - `embed.setURL(config.frontendUrl)` when set
+  - Plain string reply when total = 0
+
+#### Tests
+
+**`server/tests/routes/stats.test.ts`** (new, 5 tests):
+- 200 + trend rows; empty array; days param forwarded; days capped at 90; 400 on days=0
+
+**`server/tests/discord/trendsCommand.test.ts`** (new, 5 tests):
+- embed has all 5 event-type fields; correct counts/percentages; empty string when no data;
+  footer shows active days; URL omitted when frontendUrl empty
+
+**369 tests passing** (up from 359).
 
 ---
 
@@ -760,7 +814,7 @@ New disaster streams beyond the original five. Add as separate scouts following 
 | M ✅ | Expansion 2F — Discord `/species` slash command (2026-04-11) |
 | N ✅ | Expansion 2G — Discord `/help` slash command (2026-04-11) |
 | O ✅ | Expansion 3A — multi-event correlation in EnrichmentAgent (50km / 1h dedup) (2026-04-12) |
-| P | Expansion 3B — historical trend analysis dashboard widget |
+| P ✅ | Expansion 3B — historical trend analysis widget + `/trends` Discord command (2026-04-13) |
 | Q | Expansion 4 — additional scouts (seismic, oil spill, deforestation, air quality) |
 
-**Current: Expansion 3A complete. Next: 3B (historical trend chart) or 4 (additional scouts).**
+**Current: Expansion 3B complete. Next: Expansion 4 (additional scouts).**

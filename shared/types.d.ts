@@ -201,6 +201,16 @@ export interface SpeciesDetail extends SpeciesListItem {
   recent_alerts: AlertRow[];
 }
 
+export interface TrendPoint {
+  date: string;             // 'YYYY-MM-DD'
+  wildfire: number;
+  tropical_storm: number;
+  flood: number;
+  drought: number;
+  coral_bleaching: number;
+  total: number;
+}
+
 export interface AlertDetail {
   id: string;
   raw_event_id: string;

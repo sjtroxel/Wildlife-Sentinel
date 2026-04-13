@@ -8,6 +8,7 @@ import { Group, Panel, Separator } from 'react-resizable-panels';
 import AlertsFeed from '@/components/AlertsFeed';
 import AgentActivity from '@/components/AgentActivity';
 import RefinerChart from '@/components/RefinerChart';
+import TrendChart from '@/components/TrendChart';
 import ThemeToggle from '@/components/ThemeToggle';
 
 const DisasterMap = dynamic(() => import('@/components/DisasterMap'), {
@@ -88,16 +89,20 @@ export default function Home() {
           <HResizeHandle />
           <Panel defaultSize={35} minSize={18} className="flex flex-col border-l border-zinc-200 dark:border-zinc-800">
             <Group orientation="vertical" className="h-full">
-              <Panel defaultSize={55} minSize={15} className="min-h-0 overflow-y-auto">
+              <Panel defaultSize={45} minSize={15} className="min-h-0 overflow-y-auto">
                 <AlertsFeed />
               </Panel>
               <VResizeHandle />
-              <Panel defaultSize={25} minSize={8} className="min-h-0 overflow-y-auto border-t border-zinc-200 dark:border-zinc-800">
+              <Panel defaultSize={18} minSize={8} className="min-h-0 overflow-y-auto border-t border-zinc-200 dark:border-zinc-800">
                 <AgentActivity />
               </Panel>
               <VResizeHandle />
-              <Panel defaultSize={20} minSize={8} className="min-h-0 overflow-y-auto border-t border-zinc-200 dark:border-zinc-800">
+              <Panel defaultSize={17} minSize={8} className="min-h-0 overflow-y-auto border-t border-zinc-200 dark:border-zinc-800">
                 <RefinerChart />
+              </Panel>
+              <VResizeHandle />
+              <Panel defaultSize={20} minSize={8} className="min-h-0 overflow-y-auto border-t border-zinc-200 dark:border-zinc-800">
+                <TrendChart />
               </Panel>
             </Group>
           </Panel>
@@ -105,20 +110,24 @@ export default function Home() {
       ) : (
         // ── Mobile: vertical stack — map / alerts / activity / chart ────────
         <Group orientation="vertical" className="flex-1 min-h-0">
-          <Panel defaultSize={40} minSize={15} className="relative">
+          <Panel defaultSize={35} minSize={15} className="relative">
             <DisasterMap />
           </Panel>
           <VResizeHandle />
-          <Panel defaultSize={35} minSize={10} className="min-h-0 overflow-y-auto border-t border-zinc-200 dark:border-zinc-800">
+          <Panel defaultSize={28} minSize={10} className="min-h-0 overflow-y-auto border-t border-zinc-200 dark:border-zinc-800">
             <AlertsFeed />
           </Panel>
           <VResizeHandle />
-          <Panel defaultSize={15} minSize={5} className="min-h-0 overflow-y-auto border-t border-zinc-200 dark:border-zinc-800">
+          <Panel defaultSize={13} minSize={5} className="min-h-0 overflow-y-auto border-t border-zinc-200 dark:border-zinc-800">
             <AgentActivity />
           </Panel>
           <VResizeHandle />
-          <Panel defaultSize={10} minSize={5} className="min-h-0 overflow-y-auto border-t border-zinc-200 dark:border-zinc-800">
+          <Panel defaultSize={12} minSize={5} className="min-h-0 overflow-y-auto border-t border-zinc-200 dark:border-zinc-800">
             <RefinerChart />
+          </Panel>
+          <VResizeHandle />
+          <Panel defaultSize={12} minSize={5} className="min-h-0 overflow-y-auto border-t border-zinc-200 dark:border-zinc-800">
+            <TrendChart />
           </Panel>
         </Group>
       )}

@@ -1,4 +1,4 @@
-import type { AlertRow, AlertDetail, RefinerScoreRow, BboxQuery, EventType, ThreatLevel, SpeciesListItem, SpeciesDetail } from '@wildlife-sentinel/shared/types';
+import type { AlertRow, AlertDetail, RefinerScoreRow, BboxQuery, EventType, ThreatLevel, SpeciesListItem, SpeciesDetail, TrendPoint } from '@wildlife-sentinel/shared/types';
 
 export interface AlertFilters {
   event_type?: EventType;
@@ -41,6 +41,9 @@ export const api = {
       if (!r.ok) throw new Error('Species not found');
       return r.json();
     }),
+
+  getTrends: (days = 30): Promise<TrendPoint[]> =>
+    fetch(`${BASE}/stats/trends?days=${days}`).then((r) => r.json()),
 
   getHabitats: (bbox: BboxQuery): Promise<GeoJSON.FeatureCollection> => {
     const params = new URLSearchParams({

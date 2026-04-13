@@ -11,6 +11,7 @@ import { refinerRouter } from './routes/refiner.js';
 import { habitatsRouter } from './routes/habitats.js';
 import { agentActivityRouter } from './routes/agentActivity.js';
 import { speciesRouter } from './routes/species.js';
+import { statsRouter } from './routes/stats.js';
 
 export const app = express();
 
@@ -30,6 +31,7 @@ app.use('/refiner', refinerRouter);
 app.use('/habitats', habitatsRouter);
 app.use('/agent-activity', agentActivityRouter);
 app.use('/species', speciesRouter);
+app.use('/stats', statsRouter);
 
 // Error handler — must have exactly 4 params for Express to recognize it
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {

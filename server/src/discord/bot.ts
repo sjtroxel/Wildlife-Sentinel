@@ -16,6 +16,7 @@ import {
   getSpeciesCentroid,
   autocompleteSpecies,
 } from '../db/speciesQueries.js';
+import { getAlertTrends } from '../db/statsQueries.js';
 import { SLASH_COMMANDS } from './helpContent.js';
 import type { IUCNStatus } from '../../../shared/types.js';
 
@@ -60,6 +61,21 @@ const commands = [
         .setDescription('Common name or Latin binomial (e.g. "Sumatran Orangutan" or "pongo abelii")')
         .setRequired(true)
         .setAutocomplete(true)
+    ),
+  new SlashCommandBuilder()
+    .setName('trends')
+    .setDescription('Show alert frequency breakdown for the last N days')
+    .addIntegerOption(opt =>
+      opt
+        .setName('days')
+        .setDescription('How many days to look back (default: 30)')
+        .setRequired(false)
+        .addChoices(
+          { name: '7 days',  value: 7  },
+          { name: '14 days', value: 14 },
+          { name: '30 days', value: 30 },
+          { name: '90 days', value: 90 },
+        )
     ),
   new SlashCommandBuilder()
     .setName('help')
@@ -146,6 +162,9 @@ export async function startBot(): Promise<void> {
       } else if (interaction.commandName === 'species') {
         await handleSpeciesCommand(interaction);
 
+      } else if (interaction.commandName === 'trends') {
+        await handleTrendsCommand(interaction);
+
       } else if (interaction.commandName === 'help') {
         await handleHelpCommand(interaction);
       }
@@ -211,6 +230,60 @@ async function handleSpeciesCommand(
 
   if (config.frontendUrl && species.slug) {
     embed.setURL(`${config.frontendUrl}/species/${species.slug}`);
+  }
+
+  await interaction.editReply({ embeds: [embed] });
+}
+
+const EVENT_LABELS: Record<string, string> = {
+  wildfire:        '🔥 Wildfire',
+  tropical_storm:  '🌀 Tropical Storm',
+  flood:           '🌊 Flood',
+  drought:         '🌵 Drought',
+  coral_bleaching: '🪸 Coral Bleaching',
+};
+
+async function handleTrendsCommand(
+  interaction: ChatInputCommandInteraction
+): Promise<void> {
+  const days = interaction.options.getInteger('days') ?? 30;
+  const trends = await getAlertTrends(days);
+
+  // Sum totals across all days
+  let wildfire = 0, tropical_storm = 0, flood = 0, drought = 0, coral_bleaching = 0, total = 0;
+  for (const p of trends) {
+    wildfire        += p.wildfire;
+    tropical_storm  += p.tropical_storm;
+    flood           += p.flood;
+    drought         += p.drought;
+    coral_bleaching += p.coral_bleaching;
+    total           += p.total;
+  }
+
+  if (total === 0) {
+    await interaction.editReply(`📊 No alerts recorded in the last ${days} days.`);
+    return;
+  }
+
+  const activeDays = trends.filter(p => p.total > 0).length;
+  const pct = (n: number) => `${Math.round((n / total) * 100)}%`;
+
+  const embed = new EmbedBuilder()
+    .setColor(0x3b82f6)
+    .setTitle(`📊 Alert Trends — Last ${days} Days`)
+    .addFields(
+      { name: EVENT_LABELS['wildfire']!,        value: `${wildfire} (${pct(wildfire)})`,               inline: true },
+      { name: EVENT_LABELS['tropical_storm']!,  value: `${tropical_storm} (${pct(tropical_storm)})`,   inline: true },
+      { name: EVENT_LABELS['flood']!,           value: `${flood} (${pct(flood)})`,                     inline: true },
+      { name: EVENT_LABELS['drought']!,         value: `${drought} (${pct(drought)})`,                 inline: true },
+      { name: EVENT_LABELS['coral_bleaching']!, value: `${coral_bleaching} (${pct(coral_bleaching)})`, inline: true },
+    )
+    .setFooter({
+      text: `Total: ${total} alert${total !== 1 ? 's' : ''} · ${activeDays} active day${activeDays !== 1 ? 's' : ''} of ${days} · Wildlife Sentinel`,
+    });
+
+  if (config.frontendUrl) {
+    embed.setURL(config.frontendUrl);
   }
 
   await interaction.editReply({ embeds: [embed] });
