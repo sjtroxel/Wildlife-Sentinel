@@ -782,16 +782,25 @@ Normalizes `bigint` → `number` via `parseInt(String(...), 10)`.
 
 ---
 
-## Expansion Area 4 — Additional Data Sources
+## Expansion Area 4 — Additional Global Data Sources
 
-New disaster streams beyond the original five. Add as separate scouts following the same `BaseScout` pattern.
+New disaster streams beyond the original scouts. All five are genuinely global. Ordered by build priority.
+Oil spill (NOAA ER) and air quality (AirNow) were dropped — US-only coverage, not worth the effort.
 
-| Source | Why |
-|---|---|
-| USGS Earthquake Hazards (`earthquake.usgs.gov/fdsnws/event/1/`) | Species in tectonically active habitats (Sumatran rhino, Javan rhino — near active fault zones) |
-| NOAA Emergency Response (oil spill alerts) | Marine and coastal species (sea turtles, marine iguanas, seabirds) |
-| Global Forest Watch / GLAD alerts | Near-real-time deforestation detection — the slow disaster no other scout covers |
-| AirNow / OpenAQ | Species sensitive to wildfire smoke + particulate (great apes, mountain gorilla) |
+| # | Source | Scout | Species Unlocked |
+|---|---|---|---|
+| 4A ✅ | USGS Earthquake Hazards (`earthquake.usgs.gov/fdsnws`) | `UsgsEarthquakeScout.ts` M5.5+, 15-min | Mountain gorilla near Virunga, giant panda (Sichuan), Sumatran rhino |
+| 4B | Smithsonian GVP + USGS Volcano Hazards | `GvpVolcanoScout.ts` Orange/Red only, 6h | Galápagos finches/tortoises, Hawaiian honeycreeper, gorillas near Nyiragongo |
+| 4C | FAO Desert Locust Watch (`locust.fao.org/api`) | `FaoLocustScout.ts` 6h | East African savanna species, one-horned rhino, Bengal florican — novel threat class |
+| 4D | Global Forest Watch GLAD alerts | `GladDeforestationScout.ts` daily | Orangutan, jaguar, bonobo, okapi — highest conservation impact addition |
+| 4E | NSIDC Sea Ice Index (daily anomaly trigger) | `NsidcSeaIceScout.ts` daily | Polar bear, walrus, emperor penguin — zero current coverage |
+
+### Future — Expansion 5 (revisit after 4A–4E)
+
+| # | Source | Notes |
+|---|---|---|
+| 5A | NOAA CPC ENSO declarations | Macro-signal, not a point event — needs different pipeline pattern |
+| 5B | Global Fishing Watch (illegal fishing in MPAs) | Anthropogenic threat class; needs MPA spatial join against PostGIS |
 
 ---
 
@@ -815,6 +824,12 @@ New disaster streams beyond the original five. Add as separate scouts following 
 | N ✅ | Expansion 2G — Discord `/help` slash command (2026-04-11) |
 | O ✅ | Expansion 3A — multi-event correlation in EnrichmentAgent (50km / 1h dedup) (2026-04-12) |
 | P ✅ | Expansion 3B — historical trend analysis widget + `/trends` Discord command (2026-04-13) |
-| Q | Expansion 4 — additional scouts (seismic, oil spill, deforestation, air quality) |
+| Q ✅ | Expansion 4A — seismic scout (USGS EHP, global M5.5+, purple map markers) (2026-04-14) |
+| R | Expansion 4B — volcanic eruption scout (Smithsonian GVP, Orange/Red only) |
+| S | Expansion 4C — desert locust scout (FAO, Africa/Middle East/South Asia) |
+| T | Expansion 4D — deforestation scout (Global Forest Watch GLAD, daily) |
+| U | Expansion 4E — sea ice extent scout (NSIDC, daily anomaly trigger) |
+| V | Expansion 5A — ENSO declarations (macro-signal, pipeline design needed) |
+| W | Expansion 5B — illegal fishing in MPAs (Global Fishing Watch API) |
 
-**Current: Expansion 3B complete. Next: Expansion 4 (additional scouts).**
+**Current: Expansion 4A complete (2026-04-14). Next: Expansion 4B (volcanic eruptions).**

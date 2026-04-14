@@ -35,6 +35,7 @@ const SOURCE_QUALITY: Record<DisasterSource, number> = {
   gdacs_flood: 0.88,
   gdacs_drought: 0.88,
   usgs_nwis: 0.85,
+  usgs_earthquake: 0.95,  // USGS EHP — seismograph network, very high quality
   coral_reef_watch: 0.85,
   drought_monitor: 0.75,
 };

@@ -131,17 +131,63 @@ Items to improve the Next.js frontend beyond the Phase 8 baseline.
 
 - ✅ **Weekly digest automation** — already shipped in weeklyDigest.ts (Phase 9)
 - ✅ **3A — Multi-species event correlation** — `correlationKey()` in EnrichmentAgent.ts; 0.45° bins (~50km), 1h TTL Redis key per `(event_type, cell)`; duplicate events dropped before any LLM work begins. (2026-04-12)
-- **3B — Historical trend analysis** — dashboard widget showing threat frequency by region over time
+- ✅ **3B — Historical trend analysis** — `GET /stats/trends?days=30`, stacked BarChart widget (recharts), Discord `/trends [days]` slash command. (2026-04-13)
 
 ---
 
-## Expansion Area 4 — Additional Data Sources
+## Expansion Area 4 — Additional Global Data Sources
 
-New disaster or habitat data streams beyond the original five:
-- **Seismic events** (USGS Earthquake Hazards Program) — for species in tectonically active habitats
-- **Oil spill alerts** (NOAA Emergency Response) — marine and coastal species
-- **Deforestation alerts** (Global Forest Watch / GLAD alerts) — near-real-time forest loss detection
-- **Air quality** (AirNow / OpenAQ) — for species sensitive to smoke and particulate matter
+New disaster or habitat data streams beyond the original scouts. All five are genuinely global in coverage — no US-only sources. Ordered by build priority.
+
+### 4A — Seismic Events (USGS Earthquake Hazards Program)
+
+**Source:** `https://earthquake.usgs.gov/fdsnws/event/1/query` — JSON REST API, free, no auth.
+**Scout:** `UsgsEarthquakeScout.ts`, `source: 'usgs_earthquake'`, `event_type: 'earthquake'`, every 15 min.
+**Filter:** `minmagnitude=5.5` — below this threshold habitat damage is minimal.
+**Severity:** `(magnitude - 5.5) / 3.5` clamped 0–1 (M5.5 → 0.0, M9.0 → 1.0).
+**What this unlocks:** Mountain gorilla near Virunga (DRC), Sumatran rhino/orangutan near Sumatra subduction zone, giant panda in Sichuan seismic belt, snow leopard in Hindu Kush/Karakoram.
+
+### 4B — Volcanic Eruptions (Smithsonian Global Volcanism Program)
+
+**Source:** GVP Weekly Volcanic Activity Report + USGS Volcano Hazards Program JSON feed.
+**Scout:** `GvpVolcanoScout.ts`, `source: 'gvp_volcano'`, `event_type: 'volcanic_eruption'`, every 6 hours.
+**Filter:** Alert level `Orange` or `Red` only (Yellow = unrest, not eruption).
+**Severity:** `normal=0.5, orange=0.7, red=1.0` from USGS aviation color code.
+**What this unlocks:** Galápagos finches/tortoises near active calderas, Hawaiian honeycreeper, mountain gorillas near Nyiragongo, Sumatran species near Sinabung/Merapi. Island endemic species are uniquely vulnerable — no escape corridor.
+
+### 4C — Desert Locust Swarms (FAO Desert Locust Watch)
+
+**Source:** `https://locust.fao.org/api/` — JSON REST API, free, no auth required.
+**Scout:** `FaoLocustScout.ts`, `source: 'fao_locust'`, `event_type: 'locust_swarm'`, every 6 hours.
+**Severity:** FAO hoppers/swarm/band classification mapped: `hoppers=0.4, band=0.6, swarm=0.85, mature_swarm=1.0`.
+**What this unlocks:** The most novel angle in the app — locust swarms destroy vegetation across Africa, Middle East, and South Asia, collapsing the food base for large herbivores and ground-nesting birds. Unlocks East African savanna species (African wild dog, cheetah, secretary bird), Indian subcontinent (one-horned rhino, Bengal florican, great Indian bustard). No other wildlife monitoring platform tracks this.
+
+### 4D — Deforestation Alerts (Global Forest Watch / GLAD)
+
+**Source:** Global Forest Watch GLAD alert API — near-real-time tropical forest loss, 30m resolution.
+**Scout:** `GladDeforestationScout.ts`, `source: 'glad_deforestation'`, `event_type: 'deforestation'`, every 24 hours (alerts aggregate daily).
+**Severity:** Alert confidence level: `nominal=0.5, high=0.75, highest=0.95`.
+**What this unlocks:** Highest conservation impact of any addition — Amazon (giant river otter, jaguar, tapir), Congo Basin (forest elephant, bonobo, okapi), Borneo/Sumatra (orangutan, pygmy elephant, clouded leopard), Mesoamerica (Baird's tapir, scarlet macaw). Deforestation is the #1 driver of species extinction globally.
+
+### 4E — Sea Ice Extent (NSIDC)
+
+**Source:** NSIDC Near-Real-Time Sea Ice Index — daily extent CSV + anomaly data.
+**Scout:** `NsidcSeaIceScout.ts`, `source: 'nsidc_sea_ice'`, `event_type: 'sea_ice_loss'`, every 24 hours.
+**Filter:** Only fire when current extent is more than 1 standard deviation below the 1981–2010 median for that calendar date, OR a new seasonal minimum is set.
+**Severity:** `deviation_sigma / 3.0` clamped 0–1.
+**What this unlocks:** An entire class of species with zero current coverage — polar bear, walrus, narwhal, ringed seal (Arctic); emperor penguin, Weddell seal, leopard seal (Antarctic). Sea ice minimum events are discrete, alarming, and well-covered by IUCN range data.
+
+---
+
+### Future — Expansion 5 (Architectural Complexity — Revisit After 4A–4E)
+
+These two are compelling but require more design thought before building:
+
+**5A — ENSO Anomaly Declarations (NOAA CPC)**
+NOAA's Climate Prediction Center issues El Niño/La Niña watches, advisories, and declarations. Unlike the scouts above, ENSO is a *macro-signal* — not a point-event at a coordinate, but a global condition that cascades across dozens of ecosystems simultaneously (coral bleaching, Galápagos prey collapse, African drought, Pacific salmon disruption). Requires a different pipeline pattern: a system-wide risk assessment trigger rather than a single `RawDisasterEvent`. High value, novel framing, worth solving the architecture.
+
+**5B — Illegal Fishing in MPAs (Global Fishing Watch)**
+GFW has a public API (free research tier) tracking fishing vessel AIS transponder data globally. The scout would flag vessels detected fishing inside IUCN Marine Protected Area polygons already stored in PostGIS. Unlocks a wholly different threat class — **anthropogenic, not natural disaster** — for marine species: whale shark, manta ray, sea turtle, vaquita. Requires spatial intersection of vessel tracks against MPA boundaries in PostGIS; may warrant a separate `anthropogenic:alerts` stream distinct from `disaster:raw`.
 
 ---
 

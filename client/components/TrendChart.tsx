@@ -20,6 +20,7 @@ const EVENT_COLORS: Record<string, string> = {
   flood:           '#06b6d4',
   drought:         '#f59e0b',
   coral_bleaching: '#14b8a6',
+  earthquake:      '#a855f7',
 };
 
 const EVENT_LABELS: Record<string, string> = {
@@ -28,6 +29,7 @@ const EVENT_LABELS: Record<string, string> = {
   flood:           'Flood',
   drought:         'Drought',
   coral_bleaching: 'Coral Bleaching',
+  earthquake:      'Earthquake',
 };
 
 export default function TrendChart() {

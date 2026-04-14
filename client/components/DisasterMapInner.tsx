@@ -21,6 +21,7 @@ const EVENT_TYPES: EventType[] = [
   'flood',
   'drought',
   'coral_bleaching',
+  'earthquake',
 ];
 
 const EVENT_COLORS: Record<EventType, string> = {
@@ -29,6 +30,7 @@ const EVENT_COLORS: Record<EventType, string> = {
   flood: '#06b6d4',
   drought: '#f59e0b',
   coral_bleaching: '#14b8a6',
+  earthquake: '#a855f7',
 };
 
 const TILE_LAYERS = {

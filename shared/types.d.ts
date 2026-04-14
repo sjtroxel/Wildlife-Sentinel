@@ -8,14 +8,16 @@ export type DisasterSource =
   | 'gdacs_drought'
   | 'usgs_nwis'
   | 'drought_monitor'
-  | 'coral_reef_watch';
+  | 'coral_reef_watch'
+  | 'usgs_earthquake';
 
 export type EventType =
   | 'wildfire'
   | 'tropical_storm'
   | 'flood'
   | 'drought'
-  | 'coral_bleaching';
+  | 'coral_bleaching'
+  | 'earthquake';
 
 export type ThreatLevel = 'low' | 'medium' | 'high' | 'critical';
 
