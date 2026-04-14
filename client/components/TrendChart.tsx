@@ -15,21 +15,23 @@ import { api } from '@/lib/api';
 import type { TrendPoint } from '@wildlife-sentinel/shared/types';
 
 const EVENT_COLORS: Record<string, string> = {
-  wildfire:        '#ef4444',
-  tropical_storm:  '#3b82f6',
-  flood:           '#06b6d4',
-  drought:         '#f59e0b',
-  coral_bleaching: '#14b8a6',
-  earthquake:      '#a855f7',
+  wildfire:          '#ef4444',
+  tropical_storm:    '#3b82f6',
+  flood:             '#06b6d4',
+  drought:           '#f59e0b',
+  coral_bleaching:   '#14b8a6',
+  earthquake:        '#a855f7',
+  volcanic_eruption: '#f97316',
 };
 
 const EVENT_LABELS: Record<string, string> = {
-  wildfire:        'Wildfire',
-  tropical_storm:  'Tropical Storm',
-  flood:           'Flood',
-  drought:         'Drought',
-  coral_bleaching: 'Coral Bleaching',
-  earthquake:      'Earthquake',
+  wildfire:          'Wildfire',
+  tropical_storm:    'Tropical Storm',
+  flood:             'Flood',
+  drought:           'Drought',
+  coral_bleaching:   'Coral Bleaching',
+  earthquake:        'Earthquake',
+  volcanic_eruption: 'Volcanic Eruption',
 };
 
 export default function TrendChart() {

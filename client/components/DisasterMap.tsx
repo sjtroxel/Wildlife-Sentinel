@@ -11,6 +11,7 @@ const EVENT_TYPES: EventType[] = [
   'drought',
   'coral_bleaching',
   'earthquake',
+  'volcanic_eruption',
 ];
 
 const EVENT_COLORS: Record<EventType, string> = {
@@ -19,7 +20,8 @@ const EVENT_COLORS: Record<EventType, string> = {
   flood: '#06b6d4',
   drought: '#f59e0b',
   coral_bleaching: '#14b8a6',
-  earthquake: '#a855f7',   // purple — distinct from all other types
+  earthquake: '#a855f7',       // purple
+  volcanic_eruption: '#f97316', // orange — lava
 };
 
 export default function DisasterMap() {

@@ -6,6 +6,7 @@ import { GdacsFloodScout } from './GdacsFloodScout.js';
 import { GdacsDroughtScout } from './GdacsDroughtScout.js';
 import { UsgsScout } from './UsgsScout.js';
 import { UsgsEarthquakeScout } from './UsgsEarthquakeScout.js';
+import { GdacsVolcanoScout } from './GdacsVolcanoScout.js';
 import { DroughtScout } from './DroughtScout.js';
 import { CoralScout } from './CoralScout.js';
 
@@ -17,6 +18,7 @@ const scouts = {
   gdacsDrought:  new GdacsDroughtScout(),
   usgs:          new UsgsScout(),
   earthquake:    new UsgsEarthquakeScout(),
+  volcano:       new GdacsVolcanoScout(),
   drought:       new DroughtScout(),
   coral:         new CoralScout(),
 };
@@ -57,6 +59,11 @@ export function startScouts(): void {
     scouts.earthquake.run().catch(err => console.error('[scouts] UsgsEarthquakeScout error:', err));
   });
 
+  // GDACS Volcano — every 6 hours (Orange/Red eruptions only — global)
+  cron.schedule('0 */6 * * *', () => {
+    scouts.volcano.run().catch(err => console.error('[scouts] GdacsVolcanoScout error:', err));
+  });
+
   // US Drought Monitor — Thursday 10:30 AM CT (data releases ~10 AM CT)
   cron.schedule('30 10 * * 4', () => {
     scouts.drought.run().catch(err => console.error('[scouts] DroughtScout error:', err));
@@ -67,7 +74,7 @@ export function startScouts(): void {
     scouts.coral.run().catch(err => console.error('[scouts] CoralScout error:', err));
   });
 
-  console.log('[scouts] All 9 scouts scheduled');
+  console.log('[scouts] All 10 scouts scheduled');
 
   // Run each immediately on startup so the pipeline has data without waiting.
   // Drought Scout is omitted — it only produces valid data on Thursdays after 10:30 AM CT.
@@ -78,5 +85,6 @@ export function startScouts(): void {
   scouts.gdacsDrought.run().catch(err => console.error('[scouts] GdacsDroughtScout startup error:', err));
   scouts.usgs.run().catch(err => console.error('[scouts] UsgsScout startup error:', err));
   scouts.earthquake.run().catch(err => console.error('[scouts] UsgsEarthquakeScout startup error:', err));
+  scouts.volcano.run().catch(err => console.error('[scouts] GdacsVolcanoScout startup error:', err));
   scouts.coral.run().catch(err => console.error('[scouts] CoralScout startup error:', err));
 }
