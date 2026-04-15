@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0"
+  xmlns:gdacs="http://www.gdacs.org"
+  xmlns:georss="http://www.georss.org/georss"
+  xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>GDACS RSS information</title>
+
+    <!-- TC: Red tropical cyclone — should publish as source:gdacs / tropical_storm -->
+    <item>
+      <title>Red notification for tropical cyclone SINLAKU-26</title>
+      <gdacs:eventtype>TC</gdacs:eventtype>
+      <gdacs:alertlevel>Red</gdacs:alertlevel>
+      <gdacs:alertscore>3</gdacs:alertscore>
+      <gdacs:eventid>1001270</gdacs:eventid>
+      <gdacs:episodeid>26</gdacs:episodeid>
+      <gdacs:eventname>SINLAKU-26</gdacs:eventname>
+      <gdacs:country>Northern Mariana Islands</gdacs:country>
+      <gdacs:severity unit="km/h" value="287.04">Severe tropical cyclone</gdacs:severity>
+      <georss:point>16.0 144.9</georss:point>
+      <gdacs:datemodified>Wed, 15 Apr 2026 10:00:00 GMT</gdacs:datemodified>
+      <gdacs:fromdate>Wed, 14 Apr 2026 08:00:00 GMT</gdacs:fromdate>
+    </item>
+
+    <!-- FL: Orange flood — should publish as source:gdacs_flood / flood -->
+    <item>
+      <title>Orange flood alert in Bangladesh</title>
+      <gdacs:eventtype>FL</gdacs:eventtype>
+      <gdacs:alertlevel>Orange</gdacs:alertlevel>
+      <gdacs:alertscore>1.8</gdacs:alertscore>
+      <gdacs:eventid>1103839</gdacs:eventid>
+      <gdacs:episodeid>3</gdacs:episodeid>
+      <gdacs:eventname></gdacs:eventname>
+      <gdacs:country>Bangladesh</gdacs:country>
+      <gdacs:severity unit="km2" value="4500">Flood extent 4500 km2</gdacs:severity>
+      <georss:point>23.685 90.356</georss:point>
+      <gdacs:datemodified>Wed, 15 Apr 2026 09:00:00 GMT</gdacs:datemodified>
+      <gdacs:fromdate>Wed, 13 Apr 2026 00:00:00 GMT</gdacs:fromdate>
+    </item>
+
+    <!-- DR: Green drought — should publish (all levels included for drought) -->
+    <item>
+      <title>Drought is ongoing in Libya</title>
+      <gdacs:eventtype>DR</gdacs:eventtype>
+      <gdacs:alertlevel>Green</gdacs:alertlevel>
+      <gdacs:alertscore>1</gdacs:alertscore>
+      <gdacs:eventid>1018406</gdacs:eventid>
+      <gdacs:episodeid>3</gdacs:episodeid>
+      <gdacs:eventname></gdacs:eventname>
+      <gdacs:country>Libya</gdacs:country>
+      <gdacs:severity unit="km2" value="30046">Drought area 30046 km2</gdacs:severity>
+      <georss:point>32.506 12.35</georss:point>
+      <gdacs:datemodified>Mon, 14 Apr 2026 00:00:00 GMT</gdacs:datemodified>
+      <gdacs:fromdate>Mon, 07 Apr 2026 00:00:00 GMT</gdacs:fromdate>
+    </item>
+
+    <!-- VO: Orange eruption — should publish as source:gdacs_volcano / volcanic_eruption -->
+    <item>
+      <title>Orange volcano alert for Merapi, Indonesia</title>
+      <gdacs:eventtype>VO</gdacs:eventtype>
+      <gdacs:alertlevel>Orange</gdacs:alertlevel>
+      <gdacs:alertscore>2.1</gdacs:alertscore>
+      <gdacs:eventid>1050001</gdacs:eventid>
+      <gdacs:episodeid>5</gdacs:episodeid>
+      <gdacs:eventname>Merapi, Indonesia</gdacs:eventname>
+      <gdacs:country>Indonesia</gdacs:country>
+      <gdacs:severity unit="" value="0">Strombolian eruption with lava flows</gdacs:severity>
+      <georss:point>-7.54 110.44</georss:point>
+      <gdacs:datemodified>Tue, 15 Apr 2026 06:00:00 GMT</gdacs:datemodified>
+      <gdacs:fromdate>Sat, 10 Apr 2026 00:00:00 GMT</gdacs:fromdate>
+    </item>
+
+    <!-- VO: Green — should be filtered (volcanic unrest/watch, not an eruption) -->
+    <item>
+      <title>Green volcano alert for Kilauea, USA</title>
+      <gdacs:eventtype>VO</gdacs:eventtype>
+      <gdacs:alertlevel>Green</gdacs:alertlevel>
+      <gdacs:alertscore>0</gdacs:alertscore>
+      <gdacs:eventid>1050002</gdacs:eventid>
+      <gdacs:episodeid>1</gdacs:episodeid>
+      <gdacs:eventname>Kilauea, USA</gdacs:eventname>
+      <gdacs:country>United States</gdacs:country>
+      <gdacs:severity unit="" value="0">Volcanic unrest</gdacs:severity>
+      <georss:point>19.42 -155.29</georss:point>
+      <gdacs:fromdate>Wed, 15 Apr 2026 08:00:00 GMT</gdacs:fromdate>
+    </item>
+
+    <!-- WF: Should be ignored — we cover wildfires via NASA FIRMS -->
+    <item>
+      <title>Green forest fire in Mongolia</title>
+      <gdacs:eventtype>WF</gdacs:eventtype>
+      <gdacs:alertlevel>Green</gdacs:alertlevel>
+      <gdacs:alertscore>1</gdacs:alertscore>
+      <gdacs:eventid>1028379</gdacs:eventid>
+      <gdacs:episodeid>1</gdacs:episodeid>
+      <gdacs:eventname></gdacs:eventname>
+      <gdacs:country>Mongolia</gdacs:country>
+      <gdacs:severity unit="ha" value="10113">Forest fire area 10113 ha</gdacs:severity>
+      <georss:point>45.6 115.71</georss:point>
+      <gdacs:fromdate>Wed, 15 Apr 2026 00:00:00 GMT</gdacs:fromdate>
+    </item>
+
+    <!-- EQ: Should be ignored — we cover earthquakes via UsgsEarthquakeScout -->
+    <item>
+      <title>Green earthquake in Costa Rica</title>
+      <gdacs:eventtype>EQ</gdacs:eventtype>
+      <gdacs:alertlevel>Green</gdacs:alertlevel>
+      <gdacs:alertscore>0</gdacs:alertscore>
+      <gdacs:eventid>1535489</gdacs:eventid>
+      <gdacs:episodeid>1700068</gdacs:episodeid>
+      <gdacs:eventname></gdacs:eventname>
+      <gdacs:country>Costa Rica</gdacs:country>
+      <gdacs:severity unit="M" value="5.7">Magnitude 5.7M, Depth:20km</gdacs:severity>
+      <georss:point>9.9151 -86.3803</georss:point>
+      <gdacs:fromdate>Wed, 15 Apr 2026 06:56:02 GMT</gdacs:fromdate>
+    </item>
+
+  </channel>
+</rss>

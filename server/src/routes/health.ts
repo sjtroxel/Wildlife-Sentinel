@@ -14,7 +14,7 @@ export function setDbConnected(): void { dbConnected = true; }
 export function setRedisConnected(): void { redisConnected = true; }
 export function resetHealthState(): void { dbConnected = false; redisConnected = false; }
 
-const SCOUT_NAMES = ['nasa_firms', 'noaa_nhc', 'gdacs', 'gdacs_flood', 'gdacs_drought', 'gdacs_volcano', 'usgs_nwis', 'usgs_earthquake', 'drought_monitor', 'coral_reef_watch'] as const;
+const SCOUT_NAMES = ['nasa_firms', 'noaa_nhc', 'gdacs', 'usgs_nwis', 'usgs_earthquake', 'drought_monitor', 'coral_reef_watch'] as const;
 type ScoutName = typeof SCOUT_NAMES[number];
 
 interface ScoutHealth {
