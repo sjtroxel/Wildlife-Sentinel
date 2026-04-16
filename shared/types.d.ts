@@ -12,7 +12,8 @@ export type DisasterSource =
   | 'usgs_earthquake'
   | 'gdacs_volcano'
   | 'glad_deforestation'
-  | 'nsidc_sea_ice';
+  | 'nsidc_sea_ice'
+  | 'noaa_cpc';
 
 export type EventType =
   | 'wildfire'
@@ -23,7 +24,8 @@ export type EventType =
   | 'earthquake'
   | 'volcanic_eruption'
   | 'deforestation'
-  | 'sea_ice_loss';
+  | 'sea_ice_loss'
+  | 'climate_anomaly';
 
 export type ThreatLevel = 'low' | 'medium' | 'high' | 'critical';
 
@@ -216,6 +218,7 @@ export interface TrendPoint {
   flood: number;
   drought: number;
   coral_bleaching: number;
+  climate_anomaly: number;
   total: number;
 }
 

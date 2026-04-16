@@ -366,6 +366,45 @@ describe('EnrichmentAgent.processEvent', () => {
     expect(redis.xadd).toHaveBeenCalledWith('disaster:enriched', '*', 'data', expect.any(String));
   });
 
+  // ── ENSO modifier tests ───────────────────────────────────────────────────
+
+  it('active El Niño — ENSO note appended to weather summary LLM call', async () => {
+    mockSql.mockResolvedValueOnce([{
+      id: 'h-1', species_name: 'Pongo abelii', iucn_status: 'CR', distance_km: 18.3,
+    }]);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => weatherFixture,
+    }));
+    // First get = correlation key (null) + subsequent gets = enso keys
+    vi.mocked(redis.get)
+      .mockResolvedValueOnce(null)           // corr key — no match
+      .mockResolvedValueOnce('el_nino')      // enso:current_phase
+      .mockResolvedValueOnce('1.40');        // enso:oni_anomaly
+
+    await processEvent(nearSumatraEvent);
+
+    const llmCall = vi.mocked(modelRouter.complete).mock.calls[0]![0];
+    expect(llmCall.userMessage).toContain('El Niño');
+    expect(llmCall.userMessage).toContain('1.40');
+  });
+
+  it('neutral ENSO — no ENSO note in weather summary LLM call', async () => {
+    mockSql.mockResolvedValueOnce([{
+      id: 'h-1', species_name: 'Pongo abelii', iucn_status: 'CR', distance_km: 18.3,
+    }]);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => weatherFixture,
+    }));
+    // All redis.get calls return null → neutral ENSO (default from beforeEach)
+    await processEvent(nearSumatraEvent);
+
+    const llmCall = vi.mocked(modelRouter.complete).mock.calls[0]![0];
+    expect(llmCall.userMessage).not.toContain('Niño');
+    expect(llmCall.userMessage).not.toContain('Niña');
+  });
+
   it('different event_type in same cell is not correlated — uses a separate key', async () => {
     const floodEvent: RawDisasterEvent = {
       id: 'flood-001',

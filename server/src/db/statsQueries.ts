@@ -10,6 +10,7 @@ export async function getAlertTrends(days: number): Promise<TrendPoint[]> {
       COUNT(*) FILTER (WHERE event_type = 'flood')           AS flood,
       COUNT(*) FILTER (WHERE event_type = 'drought')         AS drought,
       COUNT(*) FILTER (WHERE event_type = 'coral_bleaching') AS coral_bleaching,
+      COUNT(*) FILTER (WHERE event_type = 'climate_anomaly')  AS climate_anomaly,
       COUNT(*) AS total
     FROM alerts
     WHERE threat_level IS NOT NULL
@@ -25,6 +26,7 @@ export async function getAlertTrends(days: number): Promise<TrendPoint[]> {
     flood:           parseInt(String(r['flood']           ?? '0'), 10),
     drought:         parseInt(String(r['drought']         ?? '0'), 10),
     coral_bleaching: parseInt(String(r['coral_bleaching'] ?? '0'), 10),
+    climate_anomaly: parseInt(String(r['climate_anomaly'] ?? '0'), 10),
     total:           parseInt(String(r['total']           ?? '0'), 10),
   }));
 }

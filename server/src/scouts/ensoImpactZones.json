@@ -1,0 +1,76 @@
+{
+  "el_nino": [
+    {
+      "id": "galapagos",
+      "lat": -0.62,
+      "lng": -90.42,
+      "ecosystem": "Marine food web collapse — warm SST suppresses cold upwelling, collapsing sardine/anchovy prey base",
+      "key_species": ["Galápagos penguin", "Galápagos sea lion", "marine iguana", "flightless cormorant"]
+    },
+    {
+      "id": "borneo_sumatra",
+      "lat": 0.5,
+      "lng": 113.0,
+      "ecosystem": "Tropical peat forest — El Niño drought elevates fire risk and peat combustion across Borneo/Sumatra",
+      "key_species": ["Bornean orangutan", "Sumatran tiger", "Bornean pygmy elephant", "clouded leopard"]
+    },
+    {
+      "id": "peruvian_amazon",
+      "lat": -5.0,
+      "lng": -75.0,
+      "ecosystem": "Amazonian floodplain — severe drought drops river levels, stranding floodplain-dependent species",
+      "key_species": ["Amazon river dolphin", "giant river otter", "lowland tapir", "black caiman"]
+    },
+    {
+      "id": "east_africa",
+      "lat": -2.5,
+      "lng": 37.0,
+      "ecosystem": "East African savanna — reduced long rains dry watering holes and degrade forage quality",
+      "key_species": ["African elephant", "African lion", "African wild dog", "Grevy's zebra"]
+    },
+    {
+      "id": "great_barrier_reef",
+      "lat": -18.0,
+      "lng": 147.5,
+      "ecosystem": "Coral reef — elevated SST compounds bleaching risk across Great Barrier Reef system",
+      "key_species": ["dugong", "hawksbill sea turtle", "green sea turtle", "humpback whale"]
+    }
+  ],
+  "la_nina": [
+    {
+      "id": "southern_africa",
+      "lat": -18.0,
+      "lng": 30.0,
+      "ecosystem": "Southern African savanna — La Niña drought stresses Zimbabwe/Zambia/Mozambique water sources",
+      "key_species": ["African elephant", "black rhino", "cheetah", "African wild dog"]
+    },
+    {
+      "id": "philippine_archipelago",
+      "lat": 12.0,
+      "lng": 122.0,
+      "ecosystem": "Philippine forests — La Niña enhances typhoon intensity and flooding in critical forest corridors",
+      "key_species": ["Philippine eagle", "tamaraw", "Visayan warty pig", "Philippine cockatoo"]
+    },
+    {
+      "id": "eastern_australia",
+      "lat": -17.0,
+      "lng": 145.5,
+      "ecosystem": "Queensland tropical rainforest — La Niña extreme rainfall and flooding in cassowary/koala habitat",
+      "key_species": ["southern cassowary", "koala", "platypus", "mahogany glider"]
+    },
+    {
+      "id": "amazon_colombia",
+      "lat": 2.0,
+      "lng": -67.0,
+      "ecosystem": "Northern Amazon basin — La Niña intensifies wet season, causing extreme flooding of river systems",
+      "key_species": ["boto river dolphin", "giant river otter", "Orinoco crocodile", "giant anteater"]
+    },
+    {
+      "id": "mekong_basin",
+      "lat": 14.0,
+      "lng": 105.0,
+      "ecosystem": "Mekong floodplain — La Niña intensifies monsoon flooding affecting Laos/Cambodia/Vietnam/Thailand",
+      "key_species": ["Irrawaddy dolphin", "giant Mekong catfish", "Siamese crocodile", "Mekong giant softshell turtle"]
+    }
+  ]
+}

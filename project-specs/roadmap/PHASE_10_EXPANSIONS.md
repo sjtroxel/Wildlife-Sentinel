@@ -2,7 +2,7 @@
 
 **Goal:** Post-launch improvements. This phase is a living backlog — items are added as they're identified after Phase 9 ships. Not all items need to ship together; they can be batched into sub-releases.
 
-**Status:** In progress — Expansions 0A–4E complete as of 2026-04-16. Next: Expansion 5A/5B (architectural complexity — revisit when ready). See PHASE_10_IMPLEMENTATION_PLAN.md for full status.
+**Status:** In progress — Expansions 0A–5A complete as of 2026-04-16. Next: Expansion 5B (Global Fishing Watch / illegal fishing in MPAs — architectural complexity). See PHASE_10_IMPLEMENTATION_PLAN.md for full status.
 **Depends on:** Phase 9 complete (system deployed and stable)
 **Priority:** Bonus / expansion — system is fully functional at Phase 9 without any of this
 
@@ -179,15 +179,16 @@ New disaster or habitat data streams beyond the original scouts. All five are ge
 
 ---
 
-### Future — Expansion 5 (Architectural Complexity — Revisit After 4A–4E)
+### Expansion 5A — ENSO Anomaly Declarations (NOAA CPC) ✅ COMPLETE (2026-04-16)
 
-These two are compelling but require more design thought before building:
+**Fan-out + Redis modifier pattern.** `NoaaCpcEnsoScout.ts` polls NOAA CPC ONI data daily at 10:00 UTC. Classifies phase (El Niño/La Niña) and strength tier (watch/advisory/warning/extreme) from the Oceanic Niño Index. On active phase, generates one `RawDisasterEvent` per high-impact ecosystem zone (5 El Niño zones + 5 La Niña zones), each flowing through the normal pipeline. Also sets `enso:current_phase` + `enso:oni_anomaly` Redis keys so the EnrichmentAgent can append ENSO context to *all* other events processed during active ENSO at zero extra cost.
 
-**5A — ENSO Anomaly Declarations (NOAA CPC)**
-NOAA's Climate Prediction Center issues El Niño/La Niña watches, advisories, and declarations. Unlike the scouts above, ENSO is a *macro-signal* — not a point-event at a coordinate, but a global condition that cascades across dozens of ecosystems simultaneously (coral bleaching, Galápagos prey collapse, African drought, Pacific salmon disruption). Requires a different pipeline pattern: a system-wide risk assessment trigger rather than a single `RawDisasterEvent`. High value, novel framing, worth solving the architecture.
+`source: 'noaa_cpc'`, `event_type: 'climate_anomaly'`, indigo `#6366f1` map markers. 19 new tests (414 total).
+
+### Future — Expansion 5B (Revisit After 5A)
 
 **5B — Illegal Fishing in MPAs (Global Fishing Watch)**
-GFW has a public API (free research tier) tracking fishing vessel AIS transponder data globally. The scout would flag vessels detected fishing inside IUCN Marine Protected Area polygons already stored in PostGIS. Unlocks a wholly different threat class — **anthropogenic, not natural disaster** — for marine species: whale shark, manta ray, sea turtle, vaquita. Requires spatial intersection of vessel tracks against MPA boundaries in PostGIS; may warrant a separate `anthropogenic:alerts` stream distinct from `disaster:raw`.
+GFW has a public API (free research tier) tracking fishing vessel AIS transponder data globally. The scout would flag vessels detected fishing inside Marine Protected Area polygons in PostGIS. Unlocks a wholly different threat class — **anthropogenic, not natural disaster** — for marine species: whale shark, manta ray, sea turtle, vaquita. Requires: (1) new `marine_protected_areas` table + WDPA polygon ingest (filtered to IUCN categories I–IV, ≥1km²); (2) GFW Events API vessel query + `ST_Intersects` against MPA boundaries. Use existing `disaster:raw` stream for now — can add dedicated anthropogenic stream later if routing needs differ.
 
 ---
 

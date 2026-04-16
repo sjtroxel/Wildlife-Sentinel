@@ -25,6 +25,7 @@ const EVENT_TYPES: EventType[] = [
   'volcanic_eruption',
   'deforestation',
   'sea_ice_loss',
+  'climate_anomaly',
 ];
 
 const EVENT_COLORS: Record<EventType, string> = {
@@ -37,6 +38,7 @@ const EVENT_COLORS: Record<EventType, string> = {
   volcanic_eruption: '#f97316',
   deforestation: '#78350f',   // dark brown — cleared forest / exposed soil
   sea_ice_loss: '#bfdbfe',    // icy blue — polar ice
+  climate_anomaly: '#6366f1', // indigo — macro climate signal (ENSO)
 };
 
 const TILE_LAYERS = {

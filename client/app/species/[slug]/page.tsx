@@ -101,7 +101,7 @@ export default function SpeciesDetailPage() {
             Species
           </Link>
           <span className="text-zinc-300 dark:text-zinc-700">·</span>
-          <span className="text-xs text-zinc-500 truncate max-w-[200px]">
+          <span className="text-xs text-zinc-500 truncate max-w-50">
             {species.common_name ?? species.species_name}
           </span>
         </div>

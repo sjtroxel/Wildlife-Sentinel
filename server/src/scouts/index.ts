@@ -8,6 +8,7 @@ import { DroughtScout } from './DroughtScout.js';
 import { CoralScout } from './CoralScout.js';
 import { GladDeforestationScout } from './GladDeforestationScout.js';
 import { NsidcSeaIceScout } from './NsidcSeaIceScout.js';
+import { NoaaCpcEnsoScout } from './NoaaCpcEnsoScout.js';
 
 const scouts = {
   firms:         new FirmsScout(),
@@ -19,6 +20,7 @@ const scouts = {
   coral:         new CoralScout(),
   deforestation: new GladDeforestationScout(),
   seaIce:        new NsidcSeaIceScout(),
+  enso:          new NoaaCpcEnsoScout(),
 };
 
 export function startScouts(): void {
@@ -67,7 +69,12 @@ export function startScouts(): void {
     scouts.seaIce.run().catch(err => console.error('[scouts] NsidcSeaIceScout error:', err));
   });
 
-  console.log('[scouts] All 9 scouts scheduled');
+  // NOAA CPC ENSO (ONI) — every 24 hours at 10:00 UTC (ONI updated monthly; daily poll detects changes within 24h)
+  cron.schedule('0 10 * * *', () => {
+    scouts.enso.run().catch(err => console.error('[scouts] NoaaCpcEnsoScout error:', err));
+  });
+
+  console.log('[scouts] All 10 scouts scheduled');
 
   // Run each immediately on startup so the pipeline has data without waiting.
   // Drought Scout is omitted — it only produces valid data on Thursdays after 10:30 AM CT.
@@ -79,4 +86,5 @@ export function startScouts(): void {
   scouts.coral.run().catch(err => console.error('[scouts] CoralScout startup error:', err));
   scouts.deforestation.run().catch(err => console.error('[scouts] GladDeforestationScout startup error:', err));
   scouts.seaIce.run().catch(err => console.error('[scouts] NsidcSeaIceScout startup error:', err));
+  scouts.enso.run().catch(err => console.error('[scouts] NoaaCpcEnsoScout startup error:', err));
 }

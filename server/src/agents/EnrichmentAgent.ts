@@ -121,13 +121,17 @@ export async function processEvent(event: RawDisasterEvent): Promise<void> {
   }
   await redis.setex(corrKey, CORRELATION_TTL_SECONDS, event.id);
 
-  const weather = await fetchWeather(lat, lng);
+  const [weather, ensoPhase, ensoAnomaly] = await Promise.all([
+    fetchWeather(lat, lng),
+    redis.get('enso:current_phase'),
+    redis.get('enso:oni_anomaly'),
+  ]);
 
   const windDir = weather.wind_direction_10m[0] ?? null;
   const windSpeed = weather.wind_speed_10m[0] ?? null;
   const precipProb = weather.precipitation_probability[0] ?? null;
 
-  const weather_summary = await generateWeatherSummary(windSpeed, windDir, precipProb);
+  const weather_summary = await generateWeatherSummary(windSpeed, windDir, precipProb, ensoPhase, ensoAnomaly);
 
   const enriched: EnrichedDisasterEvent = {
     ...event,
@@ -170,7 +174,9 @@ export async function processEvent(event: RawDisasterEvent): Promise<void> {
 async function generateWeatherSummary(
   windSpeed: number | null,
   windDir: number | null,
-  precipProb: number | null
+  precipProb: number | null,
+  ensoPhase: string | null = null,
+  ensoAnomaly: string | null = null,
 ): Promise<string> {
   if (windSpeed === null && windDir === null) return 'Weather data unavailable.';
 
@@ -178,11 +184,15 @@ async function generateWeatherSummary(
     ? `Wind: ${windSpeed.toFixed(1)} km/h from ${bearingToCardinal(windDir)}. Precipitation: ${precipProb ?? 'unknown'}%.`
     : 'Weather data unavailable.';
 
+  const ensoNote = ensoPhase && ensoPhase !== 'neutral' && ensoAnomaly
+    ? ` Active ${ensoPhase === 'el_nino' ? 'El Niño' : 'La Niña'} (ONI: ${parseFloat(ensoAnomaly) > 0 ? '+' : ''}${ensoAnomaly}°C) — factor compounding climate stress into the summary.`
+    : '';
+
   try {
     const result = await modelRouter.complete({
       model: MODELS.GEMINI_FLASH_LITE,
       systemPrompt: 'Summarize weather conditions for a wildlife disaster assessment in one concise sentence. Focus on fire spread or flood risk implications.',
-      userMessage: `Wind speed: ${windSpeed?.toFixed(1) ?? 'unknown'} km/h from ${windDir !== null ? bearingToCardinal(windDir) : 'unknown'} direction. Precipitation probability: ${precipProb ?? 'unknown'}%.`,
+      userMessage: `Wind speed: ${windSpeed?.toFixed(1) ?? 'unknown'} km/h from ${windDir !== null ? bearingToCardinal(windDir) : 'unknown'} direction. Precipitation probability: ${precipProb ?? 'unknown'}%.${ensoNote}`,
       maxTokens: 100,
       temperature: 0.1,
     });

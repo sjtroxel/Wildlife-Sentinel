@@ -795,12 +795,116 @@ Oil spill (NOAA ER) and air quality (AirNow) were dropped — US-only coverage, 
 | 4D ✅ | Global Forest Watch GLAD alerts | `GladDeforestationScout.ts` daily (2026-04-16) | Orangutan, jaguar, bonobo, okapi — highest conservation impact addition |
 | 4E ✅ | NSIDC Sea Ice Index (daily anomaly trigger) | `NsidcSeaIceScout.ts` daily | Polar bear, walrus, emperor penguin — zero current coverage |
 
-### Future — Expansion 5 (revisit after 4A–4E)
+### Expansion 5A — ENSO Anomaly Declarations (NOAA CPC) ✅ COMPLETE (2026-04-16)
+
+See completed section below for implementation notes.
+
+### Future — Expansion 5B (revisit after 5A)
 
 | # | Source | Notes |
 |---|---|---|
-| 5A | NOAA CPC ENSO declarations | Macro-signal, not a point event — needs different pipeline pattern |
-| 5B | Global Fishing Watch (illegal fishing in MPAs) | Anthropogenic threat class; needs MPA spatial join against PostGIS |
+| 5B | Global Fishing Watch (illegal fishing in MPAs) | Anthropogenic threat class; needs MPA spatial join against PostGIS; needs WDPA MPA polygon ingest |
+
+---
+
+## Expansion 5A — ENSO Anomaly Declarations (NOAA CPC) ✅ COMPLETE (2026-04-16)
+
+### Architecture: Fan-Out + Redis Modifier Pattern
+
+ENSO is not a point event — it's a global climate phase that cascades across dozens of ecosystems simultaneously. The pattern used here:
+
+1. **Fan-out scout**: On active El Niño or La Niña, generate one `RawDisasterEvent` per high-impact ecosystem zone. Each flows through the normal pipeline independently.
+2. **Redis modifier**: Scout also sets `enso:current_phase` and `enso:oni_anomaly` keys. The EnrichmentAgent reads these to append ENSO context to the weather summary for ALL events processed during an active ENSO period — zero extra LLM cost.
+
+### Data Source
+
+- URL: `https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt`
+- Format: ASCII table — seasonal (3-month) Oceanic Niño Index values, updated monthly
+- No auth required
+
+### Phase Classification
+
+| Tier | El Niño (ONI °C) | La Niña (ONI °C) | Severity |
+|---|---|---|---|
+| Watch | +0.5 to +0.9 | −0.5 to −0.9 | 0.35 |
+| Advisory | +1.0 to +1.4 | −1.0 to −1.4 | 0.55 |
+| Warning | +1.5 to +1.9 | −1.5 to −1.9 | 0.75 |
+| Extreme | ≥ +2.0 | ≤ −2.0 | 0.95 |
+| Neutral | −0.5 to +0.5 | — | no events |
+
+### Fan-Out Impact Zones (`ensoImpactZones.json`)
+
+**El Niño zones** (fire when ONI ≥ +0.5):
+
+| Zone ID | Coordinates | Ecosystem | Key Species |
+|---|---|---|---|
+| `galapagos` | −0.62, −90.42 | Marine food web | Galápagos penguin, marine iguana, Galápagos sea lion |
+| `borneo_sumatra` | 0.5, 113.0 | Tropical peat forest | Bornean orangutan, Sumatran tiger, pygmy elephant |
+| `peruvian_amazon` | −5.0, −75.0 | Amazonian floodplain | Amazon river dolphin, giant river otter, tapir |
+| `east_africa` | −2.5, 37.0 | East African savanna | African elephant, lion, African wild dog |
+| `great_barrier_reef` | −18.0, 147.5 | Coral reef (bleaching amplifier) | Dugong, sea turtle, coral |
+
+**La Niña zones** (fire when ONI ≤ −0.5):
+
+| Zone ID | Coordinates | Ecosystem | Key Species |
+|---|---|---|---|
+| `southern_africa` | −18.0, 30.0 | Southern African savanna | African elephant, black rhino, cheetah |
+| `philippine_archipelago` | 12.0, 122.0 | Philippine forests | Philippine eagle, tamaraw, Visayan warty pig |
+| `eastern_australia` | −17.0, 145.5 | Queensland rainforest | Cassowary, koala, platypus |
+| `amazon_colombia` | 2.0, −67.0 | Northern Amazon | Giant river otter, boto dolphin, Orinoco crocodile |
+| `mekong_basin` | 14.0, 105.0 | Mekong floodplain | Irrawaddy dolphin, giant Mekong catfish, gharial |
+
+### Dedup Strategy
+
+Event ID pattern: `enso_{phase}_{tier}_{zone_id}_{YYYYMM}`
+Example: `enso_el_nino_advisory_galapagos_202604`
+
+TTL: 28 days — fires once per calendar month per zone per phase+tier. If the phase escalates mid-month (watch → advisory), the new tier ID fires a fresh event for each zone (escalation is conservation-meaningful).
+
+BaseScout's built-in `isDuplicate()`/`markSeen()` handles the dedup: key pattern is `dedup:noaa_cpc:{eventId}`.
+
+### Redis Modifier Keys
+
+Set by scout in `fetchEvents()` on every run regardless of dedup:
+- `enso:current_phase`: `'el_nino'` | `'la_nina'` | `'neutral'` — TTL 35 days
+- `enso:oni_anomaly`: raw ONI float as string, e.g. `"1.4"` — TTL 35 days
+- On neutral phase: both keys deleted (`redis.del`)
+
+### EnrichmentAgent Integration
+
+In `processEvent()`, after correlation check and before `fetchWeather()`, read ENSO keys in parallel:
+```typescript
+const [ensoPhase, ensoAnomaly] = await Promise.all([
+  redis.get('enso:current_phase'),
+  redis.get('enso:oni_anomaly'),
+]);
+```
+
+Pass to `generateWeatherSummary()` as optional extra params. If active ENSO, append to the Gemini user message:
+> `"Active El Niño (ONI: +1.4°C) currently in effect — factor compounding climate stress into the summary."`
+
+This costs zero extra LLM calls — it's appended to an existing call.
+
+### Color: Indigo `#6366f1`
+
+Distinct from all 9 existing event type colors. Suggests macro/climate (not a point disaster).
+
+### Files Changed
+
+| File | Change |
+|---|---|
+| `server/src/scouts/NoaaCpcEnsoScout.ts` | New scout — ONI parse, phase/tier, Redis modifier, fan-out |
+| `server/src/scouts/ensoImpactZones.json` | Static El Niño + La Niña zone definitions |
+| `shared/types.d.ts` | `'noaa_cpc'` → DisasterSource; `'climate_anomaly'` → EventType; `climate_anomaly: number` → TrendPoint |
+| `server/src/scouts/index.ts` | Register + daily 10:00 UTC schedule; startup run included |
+| `server/src/routes/health.ts` | Add `'noaa_cpc'` to SCOUT_NAMES (10 scouts total) |
+| `server/src/agents/EnrichmentAgent.ts` | Read enso keys; pass ENSO context to generateWeatherSummary() |
+| `server/src/db/statsQueries.ts` | Add `climate_anomaly` column to trend pivot query |
+| `client/components/DisasterMapInner.tsx` | Add `climate_anomaly` to EVENT_TYPES + `'#6366f1'` to EVENT_COLORS |
+| `client/components/DisasterMap.tsx` | Add `climate_anomaly` to EVENT_TYPES array |
+| `client/components/TrendChart.tsx` | Add `climate_anomaly` color + label entries |
+| `server/tests/scouts/NoaaCpcEnsoScout.test.ts` | New: ~12 tests covering phase/tier, fan-out count, dedup, Redis modifier, neutral, parse failure, circuit breaker |
+| `server/tests/agents/EnrichmentAgent.test.ts` | Add `enso:current_phase`/`enso:oni_anomaly` get mock calls; 2 new ENSO context tests |
 
 ---
 
@@ -829,7 +933,7 @@ Oil spill (NOAA ER) and air quality (AirNow) were dropped — US-only coverage, 
 | S | ~~Expansion 4C — desert locust scout (FAO)~~ DROPPED — API dead |
 | T ✅ | Expansion 4D — deforestation scout (Global Forest Watch GLAD, daily) (2026-04-16) |
 | U ✅ | Expansion 4E — sea ice scout (NSIDC NRT Sea Ice Index, daily anomaly trigger) (2026-04-16) |
-| V | Expansion 5A — ENSO declarations (macro-signal, pipeline design needed) |
+| V ✅ | Expansion 5A — ENSO declarations (fan-out + Redis modifier pattern) (2026-04-16) |
 | W | Expansion 5B — illegal fishing in MPAs (Global Fishing Watch API) |
 
-**Expansion 4E (sea ice, NSIDC NRT) complete (2026-04-16). All 4A–4E scouts shipped. Next: Expansion 5A/5B (architectural complexity — revisit when ready).**
+**Expansion 5A (ENSO, NOAA CPC) complete (2026-04-16). Next: Expansion 5B (Global Fishing Watch / illegal fishing in MPAs).**
