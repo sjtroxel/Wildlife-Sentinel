@@ -13,7 +13,8 @@ export type DisasterSource =
   | 'gdacs_volcano'
   | 'glad_deforestation'
   | 'nsidc_sea_ice'
-  | 'noaa_cpc';
+  | 'noaa_cpc'
+  | 'gfw_fishing';
 
 export type EventType =
   | 'wildfire'
@@ -25,7 +26,8 @@ export type EventType =
   | 'volcanic_eruption'
   | 'deforestation'
   | 'sea_ice_loss'
-  | 'climate_anomaly';
+  | 'climate_anomaly'
+  | 'illegal_fishing';
 
 export type ThreatLevel = 'low' | 'medium' | 'high' | 'critical';
 
@@ -219,6 +221,7 @@ export interface TrendPoint {
   drought: number;
   coral_bleaching: number;
   climate_anomaly: number;
+  illegal_fishing: number;
   total: number;
 }
 

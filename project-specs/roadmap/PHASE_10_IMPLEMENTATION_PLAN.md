@@ -934,6 +934,263 @@ Distinct from all 9 existing event type colors. Suggests macro/climate (not a po
 | T ✅ | Expansion 4D — deforestation scout (Global Forest Watch GLAD, daily) (2026-04-16) |
 | U ✅ | Expansion 4E — sea ice scout (NSIDC NRT Sea Ice Index, daily anomaly trigger) (2026-04-16) |
 | V ✅ | Expansion 5A — ENSO declarations (fan-out + Redis modifier pattern) (2026-04-16) |
-| W | Expansion 5B — illegal fishing in MPAs (Global Fishing Watch API) |
+| W ✅ | Expansion 5B — illegal fishing in MPAs (Global Fishing Watch API) (2026-04-16) |
 
-**Expansion 5A (ENSO, NOAA CPC) complete (2026-04-16). Next: Expansion 5B (Global Fishing Watch / illegal fishing in MPAs).**
+**Expansions 0A–5B complete (2026-04-16). 434 tests passing.**
+
+---
+
+## Expansion 5B — Illegal Fishing in MPAs (Global Fishing Watch)
+
+### Goal
+
+Add a scout that detects fishing vessels operating inside Marine Protected Areas globally and fires `illegal_fishing` events into the pipeline. This unlocks a wholly different threat class — **anthropogenic, not natural disaster** — covering marine species that have no prior coverage: whale shark, manta ray, sea turtle, vaquita, dugong.
+
+**API:** Global Fishing Watch (`gateway.api.globalfishingwatch.org/v3`) — free research tier, different org from Global Forest Watch.
+**New env var (user must set):** `FISHING_WATCH_API_KEY` — register at `globalfishingwatch.org/our-apis/tokens`
+
+---
+
+### Architecture Decision: Curated JSON vs. Full WDPA Ingest
+
+The original spec called for a PostGIS `marine_protected_areas` table loaded from the WDPA bulk dataset. This is impractical for two reasons:
+
+1. **WDPA categories I–IV alone is tens of thousands of polygons** — a full bulk ingest is disproportionate to the value.
+2. **Marine species are not in `species_ranges`** — the IUCN shapefile we loaded was "Terrestrial Mammals." Whale shark, manta ray, sea turtle, vaquita have no PostGIS ranges. `EnrichmentAgent`'s `ST_DWithin` would drop every GFW event as "no habitat overlap."
+
+**Adopted approach:** `mpaRegions.json` — curated ~25 critical MPAs (centroids + `radius_km` + `key_species[]`), exactly matching the `gladRegions.json` and `ensoImpactZones.json` patterns. No PostGIS migration needed.
+
+**EnrichmentAgent bypass:** When `event_type === 'illegal_fishing'` and the PostGIS query returns 0 habitats, use `raw_data.key_species` (set by the scout) as `species_at_risk` with `habitat_distance_km: 0`. This is the only `event_type` that needs this bypass — every other scout targets regions where terrestrial species already exist in PostGIS.
+
+The PostGIS `marine_protected_areas` table can be added as a future enhancement for boundary-precision checking.
+
+---
+
+### MPA Regions (`mpaRegions.json`)
+
+25 curated MPAs, selected to cover the four primary target species and their most critical protected ranges:
+
+| ID | Name | Country | Centroid | Radius | Key Species |
+|---|---|---|---|---|---|
+| `upper_gulf_california` | Upper Gulf of California Biosphere Reserve | MEX | 31.2°N, 114.3°W | 100 km | Vaquita, Gulf totoaba |
+| `ningaloo_marine_park` | Ningaloo Marine Park | AUS | 22.7°S, 113.7°E | 100 km | Whale shark, dugong, manta ray |
+| `galapagos_marine_reserve` | Galápagos Marine Reserve | ECU | 0.4°S, 90.5°W | 150 km | Whale shark, Galápagos sea lion, manta ray |
+| `mafia_island_marine_park` | Mafia Island Marine Park | TZA | 7.9°S, 39.8°E | 60 km | Whale shark, dugong, sea turtle |
+| `gladden_spit` | Gladden Spit and Silk Cayes Marine Reserve | BLZ | 16.5°N, 87.4°W | 40 km | Whale shark, sea turtle |
+| `komodo_national_park` | Komodo National Park | IDN | 8.6°S, 119.5°E | 80 km | Manta ray, dugong, sea turtle |
+| `tubbataha_reef` | Tubbataha Reef Natural Park | PHL | 8.9°N, 119.9°E | 60 km | Manta ray, whale shark, hawksbill sea turtle |
+| `chagos_mpa` | Chagos / BIOT Marine Protected Area | GBR | 6.4°S, 71.8°E | 200 km | Manta ray, whale shark, sea turtle |
+| `raja_ampat` | Raja Ampat Marine Protected Area Network | IDN | 0.5°S, 130.6°E | 100 km | Manta ray, dugong, whale shark |
+| `great_barrier_reef` | Great Barrier Reef Marine Park | AUS | 18.5°S, 148.0°E | 200 km | Dugong, sea turtle, manta ray |
+| `shark_bay` | Shark Bay Marine Park | AUS | 25.5°S, 113.5°E | 80 km | Dugong, sea turtle, whale shark |
+| `tortuguero` | Tortuguero National Park | CRI | 10.5°N, 83.5°W | 50 km | Green sea turtle, hawksbill sea turtle |
+| `archie_carr_nwr` | Archie Carr National Wildlife Refuge | USA | 27.8°N, 80.4°W | 30 km | Loggerhead sea turtle, leatherback sea turtle |
+| `turtle_islands` | Turtle Islands Heritage Protected Area | PHL | 6.3°N, 118.2°E | 60 km | Green sea turtle, hawksbill sea turtle |
+| `aldabra_atoll` | Aldabra Atoll Special Reserve | SYC | 9.4°S, 46.3°E | 50 km | Green sea turtle, dugong |
+| `papahanaumokuakea` | Papahānaumokuākea Marine National Monument | USA | 25.0°N, 170.0°W | 300 km | Hawksbill sea turtle, Hawaiian monk seal |
+| `malpelo_sanctuary` | Malpelo Fauna and Flora Sanctuary | COL | 3.9°N, 81.6°W | 60 km | Whale shark, hammerhead shark, manta ray |
+| `cocos_island` | Cocos Island National Park | CRI | 5.5°N, 87.1°W | 60 km | Whale shark, hammerhead shark, manta ray |
+| `coral_sea_parks` | Coral Sea Marine Park | AUS | 16.0°S, 155.0°E | 200 km | Sea turtle, manta ray, whale shark |
+| `phoenix_islands` | Phoenix Islands Protected Area | KIR | 3.5°S, 172.0°W | 150 km | Sea turtle, manta ray, whale shark |
+| `cabo_pulmo` | Cabo Pulmo National Park | MEX | 23.4°N, 109.4°W | 30 km | Manta ray, sea turtle, hammerhead shark |
+| `flower_garden_banks` | Flower Garden Banks National Marine Sanctuary | USA | 27.9°N, 93.6°W | 40 km | Whale shark, manta ray, sea turtle |
+| `mesoamerican_reef` | Mesoamerican Reef | BLZ | 17.0°N, 87.8°W | 150 km | Whale shark, sea turtle, manta ray |
+| `similan_islands` | Similan Islands Marine National Park | THA | 8.7°N, 97.6°E | 40 km | Whale shark, manta ray, dugong |
+| `bazaruto_archipelago` | Bazaruto Archipelago National Park | MOZ | 21.6°S, 35.5°E | 60 km | Dugong, whale shark, sea turtle |
+
+---
+
+### GFW Events API
+
+**Endpoint:** `GET https://gateway.api.globalfishingwatch.org/v3/events`
+
+**Params per MPA:**
+```
+datasets[0]=public-global-fishing-events:latest
+start-date=YYYY-MM-DD    (yesterday)
+end-date=YYYY-MM-DD      (today)
+latitude=<centroid.lat>
+longitude=<centroid.lng>
+radius=<radius_km>
+limit=200
+offset=0
+```
+
+**Auth:** `Authorization: Bearer <FISHING_WATCH_API_KEY>`
+
+**Response:**
+```typescript
+interface GfwEventsResponse {
+  entries: GfwVesselEvent[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+interface GfwVesselEvent {
+  id: string;
+  type: string;             // 'fishing'
+  position: { lat: number; lon: number };
+  start: string;            // ISO 8601
+  end: string;
+  vessel: {
+    id: string;
+    ssvid: string;          // MMSI
+    flag: string;           // ISO 3-letter country code
+  };
+}
+```
+
+**Severity:** `Math.min(vesselCount / 10.0, 1.0)` — 10+ unique vessels = maximum severity.
+
+**Threshold:** Only fire an event when `vesselCount >= 1`. Any fishing vessel in an MPA is by definition illegal if the MPA prohibits fishing (most IUCN category I–IV MPAs do).
+
+---
+
+### Dedup Strategy
+
+Weekly per MPA — prevents daily spam when the same vessels persistently fish in an area:
+
+```typescript
+function weekStartKey(date: Date): string {
+  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const dayOfWeek = d.getUTCDay();
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  d.setUTCDate(d.getUTCDate() + mondayOffset);
+  return d.toISOString().slice(0, 10).replace(/-/g, '');
+}
+
+const eventId = `gfw_fishing_${mpa.id}_${weekStartKey(new Date())}`;
+// 7-day TTL (BaseScout dedupTtlSeconds = 7 * 24 * 3600)
+```
+
+---
+
+### EnrichmentAgent Bypass
+
+Marine species (whale shark, vaquita, etc.) are absent from `species_ranges` (IUCN terrestrial mammals shapefile only). Without a bypass, every `illegal_fishing` event would be dropped at the habitat check.
+
+**Change in `processEvent()`** — after the `habitats.length === 0` check, before the `return`:
+
+```typescript
+if (habitats.length === 0) {
+  // Bypass for illegal_fishing: scout pre-populates key_species in raw_data
+  // since marine species ranges are not in the PostGIS terrestrial mammal shapefile.
+  if (
+    event.event_type === 'illegal_fishing' &&
+    Array.isArray(event.raw_data['key_species']) &&
+    (event.raw_data['key_species'] as unknown[]).length > 0
+  ) {
+    // Use scout-provided species list; treat as on-site (distance = 0)
+    speciesFromRawData = event.raw_data['key_species'] as string[];
+    habitatDistanceKmOverride = 0;
+    // Fall through to enrichment — do NOT return
+  } else {
+    await logPipelineEvent({ event_id: event.id, source: event.source,
+      stage: 'enrichment', status: 'filtered', reason: 'no_habitat_overlap' });
+    return;
+  }
+}
+```
+
+Then when building the `EnrichedDisasterEvent`:
+```typescript
+nearby_habitat_ids: habitats.length > 0 ? habitats.map(h => h.id) : [],
+species_at_risk:    habitats.length > 0
+  ? [...new Set(habitats.map(h => h.species_name))]
+  : (speciesFromRawData ?? []),
+habitat_distance_km: habitats.length > 0 ? habitats[0]!.distance_km : (habitatDistanceKmOverride ?? 0),
+```
+
+---
+
+### Color
+
+`#be185d` — rose-700 / dark crimson-pink. Distinct from all 10 existing event type colors. Suggests anthropogenic violation rather than natural disaster.
+
+| Event Type | Color |
+|---|---|
+| wildfire | `#ef4444` red |
+| tropical_storm | `#3b82f6` blue |
+| flood | `#06b6d4` cyan |
+| drought | `#f59e0b` amber |
+| coral_bleaching | `#14b8a6` teal |
+| earthquake | `#8b5cf6` purple |
+| volcanic_eruption | `#f97316` orange |
+| deforestation | `#78350f` brown |
+| sea_ice_loss | `#bfdbfe` icy blue |
+| climate_anomaly | `#6366f1` indigo |
+| **illegal_fishing** | **`#be185d` rose** |
+
+---
+
+### Files to Create
+
+| File | Description |
+|---|---|
+| `server/src/scouts/GfwFishingScout.ts` | Scout — queries GFW Events API per MPA, fires `illegal_fishing` events |
+| `server/src/scouts/mpaRegions.json` | 25 curated MPAs with id, name, country, centroid, radius_km, key_species[] |
+| `server/tests/scouts/GfwFishingScout.test.ts` | ~10 tests: events published per MPA with vessels; empty response skipped; dedup; circuit breaker; source/event_type; severity clamped; 0-vessel skip |
+| `server/tests/fixtures/gfw-fishing-events-response.json` | Fixture: 2 MPAs, one with 3 vessels, one with 0 (for skip test) |
+
+### Files to Modify
+
+| File | Change |
+|---|---|
+| `shared/types.d.ts` | Add `'gfw_fishing'` to DisasterSource; `'illegal_fishing'` to EventType; `illegal_fishing: number` to TrendPoint |
+| `server/src/config.ts` | Add `fishingWatchApiKey: optionalEnv('FISHING_WATCH_API_KEY', '')` — optional so missing key doesn't crash server; scout logs warning + skips |
+| `server/src/scouts/index.ts` | Import + instantiate `GfwFishingScout`; schedule daily 11:00 UTC; add to startup run list |
+| `server/src/routes/health.ts` | Add `'gfw_fishing'` to SCOUT_NAMES (11 scouts total) |
+| `server/src/db/statsQueries.ts` | Add `COUNT(*) FILTER (WHERE event_type = 'illegal_fishing') AS illegal_fishing` to pivot; add `illegal_fishing` to result map |
+| `server/src/agents/EnrichmentAgent.ts` | Add `illegal_fishing` bypass (see above) |
+| `server/src/discord/bot.ts` | Add `illegal_fishing: '🐟 Illegal Fishing'` to EVENT_LABELS; add `climate_anomaly` and `illegal_fishing` accumulator vars + embed fields to `handleTrendsCommand` |
+| `client/components/DisasterMapInner.tsx` | Add `'illegal_fishing'` to EVENT_TYPES array; add `illegal_fishing: '#be185d'` to EVENT_COLORS |
+| `client/components/DisasterMap.tsx` | Add `'illegal_fishing'` to EVENT_TYPES array |
+| `client/components/TrendChart.tsx` | Add `illegal_fishing: '#be185d'` to EVENT_COLORS; add `'Illegal Fishing'` to EVENT_LABELS |
+| `project-specs/roadmap/PHASE_10_EXPANSIONS.md` | Mark 5B complete with date |
+| `project-specs/roadmap/ROADMAP.md` | Update Phase 10 notes to reflect 5A complete, 5B in progress |
+
+---
+
+### Test Plan (~10 new tests)
+
+| Test | Assertion |
+|---|---|
+| Publishes one event per MPA with ≥1 vessel detected | `redis.xadd` called once per matching MPA |
+| Sets `source: 'gfw_fishing'` and `event_type: 'illegal_fishing'` | Field values on published event |
+| Skips MPA with 0 vessels in response | `redis.xadd` NOT called for that MPA |
+| Severity = vesselCount / 10, clamped to 1.0 | 3 vessels → 0.3; 15 vessels → 1.0 |
+| Deduplicates same MPA within same week | `redis.get` returns existing ID → `redis.xadd` not called |
+| `raw_data.key_species` matches mpaRegions entry | Spot-check vaquita MPA key_species |
+| `raw_data.vessel_count` matches unique MMSI count | `vessel_count: 3` for fixture with 3 vessels |
+| Empty API response (no entries) → no events | `redis.xadd` not called at all |
+| Circuit breaker trips on 3 consecutive fetch failures | `redis.incr` called; `xadd` not called after circuit opens |
+| Skips gracefully when `FISHING_WATCH_API_KEY` is empty | Logs warning; `fetch` not called |
+
+---
+
+### Railway Action (User)
+
+After deploy, add to Railway → server service → Variables:
+```
+FISHING_WATCH_API_KEY=<token from globalfishingwatch.org/our-apis/tokens>
+```
+
+The server will start without the key (it is `optionalEnv`). The scout will log a warning on each scheduled run and skip. Once the key is set and Railway redeploys, the scout activates automatically.
+
+---
+
+### Verification
+
+```bash
+npm test -- --reporter=verbose
+npm run typecheck
+cd client && npm run typecheck
+npm run lint
+```
+
+- All existing 414 tests pass; ~10 new GfwFishingScout tests green
+- TypeScript: zero errors in both server + client
+- Frontend: `illegal_fishing` toggle visible in map layer controls, rose-colored markers
+- TrendChart: rose bar segment appears in chart when illegal_fishing alerts exist
+- Discord `/trends`: `🐟 Illegal Fishing` field present in embed

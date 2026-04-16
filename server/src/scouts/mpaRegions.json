@@ -1,0 +1,254 @@
+{
+  "mpas": [
+    {
+      "id": "upper_gulf_california",
+      "wdpa_id": "555662082",
+      "name": "Upper Gulf of California Biosphere Reserve",
+      "country": "MEX",
+      "iucn_category": "VI",
+      "centroid": { "lat": 31.2, "lng": -114.3 },
+      "radius_km": 100,
+      "key_species": ["Vaquita", "Gulf totoaba"]
+    },
+    {
+      "id": "ningaloo_marine_park",
+      "wdpa_id": "16268",
+      "name": "Ningaloo Marine Park",
+      "country": "AUS",
+      "iucn_category": "II",
+      "centroid": { "lat": -22.7, "lng": 113.7 },
+      "radius_km": 100,
+      "key_species": ["Whale shark", "Dugong", "Manta ray", "Loggerhead sea turtle"]
+    },
+    {
+      "id": "galapagos_marine_reserve",
+      "wdpa_id": "3826",
+      "name": "Galápagos Marine Reserve",
+      "country": "ECU",
+      "iucn_category": "VI",
+      "centroid": { "lat": -0.4, "lng": -90.5 },
+      "radius_km": 150,
+      "key_species": ["Whale shark", "Galápagos sea lion", "Manta ray", "Green sea turtle"]
+    },
+    {
+      "id": "mafia_island_marine_park",
+      "wdpa_id": "2617",
+      "name": "Mafia Island Marine Park",
+      "country": "TZA",
+      "iucn_category": "II",
+      "centroid": { "lat": -7.9, "lng": 39.8 },
+      "radius_km": 60,
+      "key_species": ["Whale shark", "Dugong", "Green sea turtle", "Hawksbill sea turtle"]
+    },
+    {
+      "id": "gladden_spit",
+      "wdpa_id": "14718",
+      "name": "Gladden Spit and Silk Cayes Marine Reserve",
+      "country": "BLZ",
+      "iucn_category": "IV",
+      "centroid": { "lat": 16.5, "lng": -87.4 },
+      "radius_km": 40,
+      "key_species": ["Whale shark", "Green sea turtle", "Loggerhead sea turtle"]
+    },
+    {
+      "id": "komodo_national_park",
+      "wdpa_id": "700",
+      "name": "Komodo National Park",
+      "country": "IDN",
+      "iucn_category": "II",
+      "centroid": { "lat": -8.6, "lng": 119.5 },
+      "radius_km": 80,
+      "key_species": ["Manta ray", "Dugong", "Green sea turtle", "Whale shark"]
+    },
+    {
+      "id": "tubbataha_reef",
+      "wdpa_id": "2272",
+      "name": "Tubbataha Reef Natural Park",
+      "country": "PHL",
+      "iucn_category": "Ia",
+      "centroid": { "lat": 8.9, "lng": 119.9 },
+      "radius_km": 60,
+      "key_species": ["Manta ray", "Whale shark", "Hawksbill sea turtle", "Green sea turtle"]
+    },
+    {
+      "id": "chagos_mpa",
+      "wdpa_id": "309894",
+      "name": "Chagos Marine Protected Area",
+      "country": "GBR",
+      "iucn_category": "Ia",
+      "centroid": { "lat": -6.4, "lng": 71.8 },
+      "radius_km": 200,
+      "key_species": ["Manta ray", "Whale shark", "Green sea turtle", "Hawksbill sea turtle"]
+    },
+    {
+      "id": "raja_ampat",
+      "wdpa_id": "220052",
+      "name": "Raja Ampat Marine Protected Area Network",
+      "country": "IDN",
+      "iucn_category": "IV",
+      "centroid": { "lat": -0.5, "lng": 130.6 },
+      "radius_km": 100,
+      "key_species": ["Manta ray", "Dugong", "Whale shark", "Hawksbill sea turtle"]
+    },
+    {
+      "id": "great_barrier_reef",
+      "wdpa_id": "8371",
+      "name": "Great Barrier Reef Marine Park",
+      "country": "AUS",
+      "iucn_category": "VI",
+      "centroid": { "lat": -18.5, "lng": 148.0 },
+      "radius_km": 200,
+      "key_species": ["Dugong", "Green sea turtle", "Hawksbill sea turtle", "Manta ray"]
+    },
+    {
+      "id": "shark_bay",
+      "wdpa_id": "887",
+      "name": "Shark Bay Marine Park",
+      "country": "AUS",
+      "iucn_category": "II",
+      "centroid": { "lat": -25.5, "lng": 113.5 },
+      "radius_km": 80,
+      "key_species": ["Dugong", "Green sea turtle", "Loggerhead sea turtle"]
+    },
+    {
+      "id": "tortuguero",
+      "wdpa_id": "903",
+      "name": "Tortuguero National Park",
+      "country": "CRI",
+      "iucn_category": "II",
+      "centroid": { "lat": 10.5, "lng": -83.5 },
+      "radius_km": 50,
+      "key_species": ["Green sea turtle", "Hawksbill sea turtle", "Leatherback sea turtle"]
+    },
+    {
+      "id": "archie_carr_nwr",
+      "wdpa_id": "33573",
+      "name": "Archie Carr National Wildlife Refuge",
+      "country": "USA",
+      "iucn_category": "IV",
+      "centroid": { "lat": 27.8, "lng": -80.4 },
+      "radius_km": 30,
+      "key_species": ["Loggerhead sea turtle", "Leatherback sea turtle", "Green sea turtle"]
+    },
+    {
+      "id": "turtle_islands",
+      "wdpa_id": "2296",
+      "name": "Turtle Islands Heritage Protected Area",
+      "country": "PHL",
+      "iucn_category": "VI",
+      "centroid": { "lat": 6.3, "lng": 118.2 },
+      "radius_km": 60,
+      "key_species": ["Green sea turtle", "Hawksbill sea turtle"]
+    },
+    {
+      "id": "aldabra_atoll",
+      "wdpa_id": "1116",
+      "name": "Aldabra Atoll Special Reserve",
+      "country": "SYC",
+      "iucn_category": "Ia",
+      "centroid": { "lat": -9.4, "lng": 46.3 },
+      "radius_km": 50,
+      "key_species": ["Green sea turtle", "Dugong"]
+    },
+    {
+      "id": "papahanaumokuakea",
+      "wdpa_id": "142577",
+      "name": "Papahānaumokuākea Marine National Monument",
+      "country": "USA",
+      "iucn_category": "Ia",
+      "centroid": { "lat": 25.0, "lng": -170.0 },
+      "radius_km": 300,
+      "key_species": ["Hawksbill sea turtle", "Hawaiian monk seal", "Green sea turtle"]
+    },
+    {
+      "id": "malpelo_sanctuary",
+      "wdpa_id": "11685",
+      "name": "Malpelo Fauna and Flora Sanctuary",
+      "country": "COL",
+      "iucn_category": "Ia",
+      "centroid": { "lat": 3.9, "lng": -81.6 },
+      "radius_km": 60,
+      "key_species": ["Whale shark", "Great hammerhead shark", "Manta ray"]
+    },
+    {
+      "id": "cocos_island",
+      "wdpa_id": "862",
+      "name": "Cocos Island National Park",
+      "country": "CRI",
+      "iucn_category": "II",
+      "centroid": { "lat": 5.5, "lng": -87.1 },
+      "radius_km": 60,
+      "key_species": ["Whale shark", "Great hammerhead shark", "Manta ray", "Green sea turtle"]
+    },
+    {
+      "id": "coral_sea_parks",
+      "wdpa_id": "555629910",
+      "name": "Coral Sea Marine Park",
+      "country": "AUS",
+      "iucn_category": "IV",
+      "centroid": { "lat": -16.0, "lng": 155.0 },
+      "radius_km": 200,
+      "key_species": ["Green sea turtle", "Hawksbill sea turtle", "Manta ray", "Whale shark"]
+    },
+    {
+      "id": "phoenix_islands",
+      "wdpa_id": "555631346",
+      "name": "Phoenix Islands Protected Area",
+      "country": "KIR",
+      "iucn_category": "II",
+      "centroid": { "lat": -3.5, "lng": -172.0 },
+      "radius_km": 150,
+      "key_species": ["Green sea turtle", "Hawksbill sea turtle", "Manta ray", "Whale shark"]
+    },
+    {
+      "id": "cabo_pulmo",
+      "wdpa_id": "3218",
+      "name": "Cabo Pulmo National Park",
+      "country": "MEX",
+      "iucn_category": "II",
+      "centroid": { "lat": 23.4, "lng": -109.4 },
+      "radius_km": 30,
+      "key_species": ["Manta ray", "Green sea turtle", "Great hammerhead shark"]
+    },
+    {
+      "id": "flower_garden_banks",
+      "wdpa_id": "4622",
+      "name": "Flower Garden Banks National Marine Sanctuary",
+      "country": "USA",
+      "iucn_category": "IV",
+      "centroid": { "lat": 27.9, "lng": -93.6 },
+      "radius_km": 40,
+      "key_species": ["Whale shark", "Manta ray", "Green sea turtle"]
+    },
+    {
+      "id": "mesoamerican_reef",
+      "wdpa_id": "555624145",
+      "name": "Mesoamerican Barrier Reef",
+      "country": "BLZ",
+      "iucn_category": "VI",
+      "centroid": { "lat": 17.0, "lng": -87.8 },
+      "radius_km": 150,
+      "key_species": ["Whale shark", "Green sea turtle", "Hawksbill sea turtle", "Manta ray"]
+    },
+    {
+      "id": "similan_islands",
+      "wdpa_id": "9428",
+      "name": "Similan Islands Marine National Park",
+      "country": "THA",
+      "iucn_category": "II",
+      "centroid": { "lat": 8.7, "lng": 97.6 },
+      "radius_km": 40,
+      "key_species": ["Whale shark", "Manta ray", "Dugong", "Green sea turtle"]
+    },
+    {
+      "id": "bazaruto_archipelago",
+      "wdpa_id": "1715",
+      "name": "Bazaruto Archipelago National Park",
+      "country": "MOZ",
+      "iucn_category": "II",
+      "centroid": { "lat": -21.6, "lng": 35.5 },
+      "radius_km": 60,
+      "key_species": ["Dugong", "Whale shark", "Green sea turtle", "Hawksbill sea turtle"]
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 
 **Goal:** Post-launch improvements. This phase is a living backlog — items are added as they're identified after Phase 9 ships. Not all items need to ship together; they can be batched into sub-releases.
 
-**Status:** In progress — Expansions 0A–5A complete as of 2026-04-16. Next: Expansion 5B (Global Fishing Watch / illegal fishing in MPAs — architectural complexity). See PHASE_10_IMPLEMENTATION_PLAN.md for full status.
+**Status:** In progress — Expansions 0A–5B complete as of 2026-04-16. See PHASE_10_IMPLEMENTATION_PLAN.md for full status.
 **Depends on:** Phase 9 complete (system deployed and stable)
 **Priority:** Bonus / expansion — system is fully functional at Phase 9 without any of this
 
@@ -185,10 +185,11 @@ New disaster or habitat data streams beyond the original scouts. All five are ge
 
 `source: 'noaa_cpc'`, `event_type: 'climate_anomaly'`, indigo `#6366f1` map markers. 19 new tests (414 total).
 
-### Future — Expansion 5B (Revisit After 5A)
+### Expansion 5B — Illegal Fishing in MPAs (Global Fishing Watch) ✅ COMPLETE (2026-04-16)
 
-**5B — Illegal Fishing in MPAs (Global Fishing Watch)**
-GFW has a public API (free research tier) tracking fishing vessel AIS transponder data globally. The scout would flag vessels detected fishing inside Marine Protected Area polygons in PostGIS. Unlocks a wholly different threat class — **anthropogenic, not natural disaster** — for marine species: whale shark, manta ray, sea turtle, vaquita. Requires: (1) new `marine_protected_areas` table + WDPA polygon ingest (filtered to IUCN categories I–IV, ≥1km²); (2) GFW Events API vessel query + `ST_Intersects` against MPA boundaries. Use existing `disaster:raw` stream for now — can add dedicated anthropogenic stream later if routing needs differ.
+**Curated `mpaRegions.json` + EnrichmentAgent bypass pattern.** `GfwFishingScout.ts` queries the GFW Events API v3 daily at 11:00 UTC for 25 critical MPAs (whale shark, manta ray, sea turtle, vaquita, dugong). Fires one `RawDisasterEvent` per MPA per week when fishing vessels are detected. EnrichmentAgent bypass passes `raw_data.key_species` through the pipeline when PostGIS returns no terrestrial-mammal habitat overlap — marine species are not in the IUCN shapefile.
+
+`source: 'gfw_fishing'`, `event_type: 'illegal_fishing'`, rose `#be185d` map markers. New env var: `FISHING_WATCH_API_KEY`. 10 new tests (434 total).
 
 ---
 

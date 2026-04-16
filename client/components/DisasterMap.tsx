@@ -15,6 +15,7 @@ const EVENT_TYPES: EventType[] = [
   'deforestation',
   'sea_ice_loss',
   'climate_anomaly',
+  'illegal_fishing',
 ];
 
 const EVENT_COLORS: Record<EventType, string> = {
@@ -28,6 +29,7 @@ const EVENT_COLORS: Record<EventType, string> = {
   deforestation: '#78350f',     // dark brown — cleared forest
   sea_ice_loss: '#bfdbfe',      // icy blue — polar ice
   climate_anomaly: '#6366f1',   // indigo — macro climate signal (ENSO)
+  illegal_fishing: '#be185d',   // rose — anthropogenic MPA violation
 };
 
 export default function DisasterMap() {

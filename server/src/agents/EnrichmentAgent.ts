@@ -91,15 +91,30 @@ export async function processEvent(event: RawDisasterEvent): Promise<void> {
     ORDER BY distance_km ASC
   `;
 
+  // Species/distance override for illegal_fishing events: marine species (whale shark,
+  // manta ray, etc.) are absent from species_ranges (IUCN terrestrial mammals only).
+  // The scout pre-populates raw_data.key_species so the pipeline can proceed.
+  let speciesOverride: string[] | null = null;
+  let habitatDistanceOverride: number | null = null;
+
   if (habitats.length === 0) {
-    await logPipelineEvent({
-      event_id: event.id,
-      source: event.source,
-      stage: 'enrichment',
-      status: 'filtered',
-      reason: 'no_habitat_overlap',
-    });
-    return;
+    if (
+      event.event_type === 'illegal_fishing' &&
+      Array.isArray(event.raw_data['key_species']) &&
+      (event.raw_data['key_species'] as unknown[]).length > 0
+    ) {
+      speciesOverride = event.raw_data['key_species'] as string[];
+      habitatDistanceOverride = 0;
+    } else {
+      await logPipelineEvent({
+        event_id: event.id,
+        source: event.source,
+        stage: 'enrichment',
+        status: 'filtered',
+        reason: 'no_habitat_overlap',
+      });
+      return;
+    }
   }
 
   // Correlation check — drop events that are part of the same physical disaster.
@@ -144,8 +159,12 @@ export async function processEvent(event: RawDisasterEvent): Promise<void> {
     precipitation_probability: precipProb,
     weather_summary,
     nearby_habitat_ids: habitats.map(h => h.id),
-    species_at_risk: [...new Set(habitats.map(h => h.species_name))],
-    habitat_distance_km: habitats[0]!.distance_km,
+    species_at_risk: habitats.length > 0
+      ? [...new Set(habitats.map(h => h.species_name))]
+      : (speciesOverride ?? []),
+    habitat_distance_km: habitats.length > 0
+      ? habitats[0]!.distance_km
+      : (habitatDistanceOverride ?? 0),
   };
 
   // Store the assembly hash BEFORE publishing to the stream.
@@ -161,13 +180,15 @@ export async function processEvent(event: RawDisasterEvent): Promise<void> {
     source: event.source,
     stage: 'enriched',
     status: 'published',
-    reason: `${habitats.length} habitats within ${HABITAT_RADIUS_METERS / 1000}km`,
+    reason: habitats.length > 0
+      ? `${habitats.length} habitats within ${HABITAT_RADIUS_METERS / 1000}km`
+      : `scout-provided species: ${speciesOverride?.join(', ')}`,
   });
 
   console.log(
     `[enrichment] ${event.source} enriched | ` +
     `habitats: ${habitats.length} | ` +
-    `nearest: ${enriched.species_at_risk[0]} @ ${enriched.habitat_distance_km.toFixed(1)}km`
+    `nearest: ${enriched.species_at_risk[0] ?? 'scout-provided'} @ ${enriched.habitat_distance_km.toFixed(1)}km`
   );
 }
 

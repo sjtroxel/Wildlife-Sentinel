@@ -9,6 +9,7 @@ import { CoralScout } from './CoralScout.js';
 import { GladDeforestationScout } from './GladDeforestationScout.js';
 import { NsidcSeaIceScout } from './NsidcSeaIceScout.js';
 import { NoaaCpcEnsoScout } from './NoaaCpcEnsoScout.js';
+import { GfwFishingScout } from './GfwFishingScout.js';
 
 const scouts = {
   firms:         new FirmsScout(),
@@ -21,6 +22,7 @@ const scouts = {
   deforestation: new GladDeforestationScout(),
   seaIce:        new NsidcSeaIceScout(),
   enso:          new NoaaCpcEnsoScout(),
+  fishing:       new GfwFishingScout(),
 };
 
 export function startScouts(): void {
@@ -74,7 +76,12 @@ export function startScouts(): void {
     scouts.enso.run().catch(err => console.error('[scouts] NoaaCpcEnsoScout error:', err));
   });
 
-  console.log('[scouts] All 10 scouts scheduled');
+  // Global Fishing Watch — every 24 hours at 11:00 UTC (checks previous day's vessel activity in MPAs)
+  cron.schedule('0 11 * * *', () => {
+    scouts.fishing.run().catch(err => console.error('[scouts] GfwFishingScout error:', err));
+  });
+
+  console.log('[scouts] All 11 scouts scheduled');
 
   // Run each immediately on startup so the pipeline has data without waiting.
   // Drought Scout is omitted — it only produces valid data on Thursdays after 10:30 AM CT.
@@ -87,4 +94,5 @@ export function startScouts(): void {
   scouts.deforestation.run().catch(err => console.error('[scouts] GladDeforestationScout startup error:', err));
   scouts.seaIce.run().catch(err => console.error('[scouts] NsidcSeaIceScout startup error:', err));
   scouts.enso.run().catch(err => console.error('[scouts] NoaaCpcEnsoScout startup error:', err));
+  scouts.fishing.run().catch(err => console.error('[scouts] GfwFishingScout startup error:', err));
 }

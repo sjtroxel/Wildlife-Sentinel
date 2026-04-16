@@ -18,7 +18,7 @@
 | 7 | Refiner / Evaluator Loop | ✅ Complete | 5 event-type scorers, hourly scheduler, correction notes, 121 tests pass |
 | 8 | Frontend | ✅ Complete | Next.js 16.2.1, Leaflet map, alerts feed, SSE, refiner chart, logos/favicon. 139 tests pass. |
 | 9 | Hardening + Deploy | ✅ Complete | 295 tests, 91.4% coverage, Railway + Vercel live, pipeline end-to-end verified 2026-04-05 |
-| 10 | Expansions & Enhancements | 🔄 In Progress | Expansions 0A–4E complete. Next: 5A/5B (architectural complexity). See PHASE_10_IMPLEMENTATION_PLAN.md |
+| 10 | Expansions & Enhancements | 🔄 In Progress | Expansions 0A–5B complete. See PHASE_10_IMPLEMENTATION_PLAN.md |
 
 ---
 

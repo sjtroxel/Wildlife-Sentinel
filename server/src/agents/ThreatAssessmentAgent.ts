@@ -42,6 +42,7 @@ const SOURCE_QUALITY: Record<DisasterSource, number> = {
   glad_deforestation: 0.88, // GFW Integrated Alerts — Landsat/Sentinel-2/RADD fusion, high confidence filter
   nsidc_sea_ice:      0.92, // NSIDC NRT Sea Ice Index — satellite passive microwave, highly reliable
   noaa_cpc:           0.95, // NOAA CPC ONI — authoritative ENSO index, monthly scientific consensus
+  gfw_fishing:        0.85, // Global Fishing Watch — AIS vessel tracking, high confidence in vessel detection
 };
 
 /**

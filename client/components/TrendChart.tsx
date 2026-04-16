@@ -25,6 +25,7 @@ const EVENT_COLORS: Record<string, string> = {
   deforestation:     '#78350f',
   sea_ice_loss:      '#bfdbfe',
   climate_anomaly:   '#6366f1',
+  illegal_fishing:   '#be185d',
 };
 
 const EVENT_LABELS: Record<string, string> = {
@@ -38,6 +39,7 @@ const EVENT_LABELS: Record<string, string> = {
   deforestation:     'Deforestation',
   sea_ice_loss:      'Sea Ice Loss',
   climate_anomaly:   'Climate Anomaly',
+  illegal_fishing:   'Illegal Fishing',
 };
 
 export default function TrendChart() {

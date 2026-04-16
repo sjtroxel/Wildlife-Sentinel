@@ -236,11 +236,13 @@ async function handleSpeciesCommand(
 }
 
 const EVENT_LABELS: Record<string, string> = {
-  wildfire:        '🔥 Wildfire',
-  tropical_storm:  '🌀 Tropical Storm',
-  flood:           '🌊 Flood',
-  drought:         '🌵 Drought',
-  coral_bleaching: '🪸 Coral Bleaching',
+  wildfire:         '🔥 Wildfire',
+  tropical_storm:   '🌀 Tropical Storm',
+  flood:            '🌊 Flood',
+  drought:          '🌵 Drought',
+  coral_bleaching:  '🪸 Coral Bleaching',
+  climate_anomaly:  '🌡️ Climate Anomaly',
+  illegal_fishing:  '🐟 Illegal Fishing',
 };
 
 async function handleTrendsCommand(
@@ -250,14 +252,17 @@ async function handleTrendsCommand(
   const trends = await getAlertTrends(days);
 
   // Sum totals across all days
-  let wildfire = 0, tropical_storm = 0, flood = 0, drought = 0, coral_bleaching = 0, total = 0;
+  let wildfire = 0, tropical_storm = 0, flood = 0, drought = 0, coral_bleaching = 0,
+      climate_anomaly = 0, illegal_fishing = 0, total = 0;
   for (const p of trends) {
-    wildfire        += p.wildfire;
-    tropical_storm  += p.tropical_storm;
-    flood           += p.flood;
-    drought         += p.drought;
-    coral_bleaching += p.coral_bleaching;
-    total           += p.total;
+    wildfire         += p.wildfire;
+    tropical_storm   += p.tropical_storm;
+    flood            += p.flood;
+    drought          += p.drought;
+    coral_bleaching  += p.coral_bleaching;
+    climate_anomaly  += p.climate_anomaly;
+    illegal_fishing  += p.illegal_fishing;
+    total            += p.total;
   }
 
   if (total === 0) {
@@ -272,11 +277,13 @@ async function handleTrendsCommand(
     .setColor(0x3b82f6)
     .setTitle(`📊 Alert Trends — Last ${days} Days`)
     .addFields(
-      { name: EVENT_LABELS['wildfire']!,        value: `${wildfire} (${pct(wildfire)})`,               inline: true },
-      { name: EVENT_LABELS['tropical_storm']!,  value: `${tropical_storm} (${pct(tropical_storm)})`,   inline: true },
-      { name: EVENT_LABELS['flood']!,           value: `${flood} (${pct(flood)})`,                     inline: true },
-      { name: EVENT_LABELS['drought']!,         value: `${drought} (${pct(drought)})`,                 inline: true },
-      { name: EVENT_LABELS['coral_bleaching']!, value: `${coral_bleaching} (${pct(coral_bleaching)})`, inline: true },
+      { name: EVENT_LABELS['wildfire']!,         value: `${wildfire} (${pct(wildfire)})`,                 inline: true },
+      { name: EVENT_LABELS['tropical_storm']!,  value: `${tropical_storm} (${pct(tropical_storm)})`,     inline: true },
+      { name: EVENT_LABELS['flood']!,           value: `${flood} (${pct(flood)})`,                       inline: true },
+      { name: EVENT_LABELS['drought']!,         value: `${drought} (${pct(drought)})`,                   inline: true },
+      { name: EVENT_LABELS['coral_bleaching']!, value: `${coral_bleaching} (${pct(coral_bleaching)})`,   inline: true },
+      { name: EVENT_LABELS['climate_anomaly']!, value: `${climate_anomaly} (${pct(climate_anomaly)})`,   inline: true },
+      { name: EVENT_LABELS['illegal_fishing']!, value: `${illegal_fishing} (${pct(illegal_fishing)})`,   inline: true },
     )
     .setFooter({
       text: `Total: ${total} alert${total !== 1 ? 's' : ''} · ${activeDays} active day${activeDays !== 1 ? 's' : ''} of ${days} · Wildlife Sentinel`,
