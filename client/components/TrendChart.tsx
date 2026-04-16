@@ -23,6 +23,7 @@ const EVENT_COLORS: Record<string, string> = {
   earthquake:        '#a855f7',
   volcanic_eruption: '#f97316',
   deforestation:     '#78350f',
+  sea_ice_loss:      '#bfdbfe',
 };
 
 const EVENT_LABELS: Record<string, string> = {
@@ -34,6 +35,7 @@ const EVENT_LABELS: Record<string, string> = {
   earthquake:        'Earthquake',
   volcanic_eruption: 'Volcanic Eruption',
   deforestation:     'Deforestation',
+  sea_ice_loss:      'Sea Ice Loss',
 };
 
 export default function TrendChart() {

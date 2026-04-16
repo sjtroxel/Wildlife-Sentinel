@@ -13,6 +13,7 @@ const EVENT_TYPES: EventType[] = [
   'earthquake',
   'volcanic_eruption',
   'deforestation',
+  'sea_ice_loss',
 ];
 
 const EVENT_COLORS: Record<EventType, string> = {
@@ -24,6 +25,7 @@ const EVENT_COLORS: Record<EventType, string> = {
   earthquake: '#a855f7',        // purple
   volcanic_eruption: '#f97316', // orange — lava
   deforestation: '#78350f',     // dark brown — cleared forest
+  sea_ice_loss: '#bfdbfe',      // icy blue — polar ice
 };
 
 export default function DisasterMap() {

@@ -11,7 +11,8 @@ export type DisasterSource =
   | 'coral_reef_watch'
   | 'usgs_earthquake'
   | 'gdacs_volcano'
-  | 'glad_deforestation';
+  | 'glad_deforestation'
+  | 'nsidc_sea_ice';
 
 export type EventType =
   | 'wildfire'
@@ -21,7 +22,8 @@ export type EventType =
   | 'coral_bleaching'
   | 'earthquake'
   | 'volcanic_eruption'
-  | 'deforestation';
+  | 'deforestation'
+  | 'sea_ice_loss';
 
 export type ThreatLevel = 'low' | 'medium' | 'high' | 'critical';
 

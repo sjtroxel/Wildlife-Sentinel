@@ -78,7 +78,7 @@ export default function SpeciesIndex() {
         </div>
 
         <p className="text-xs text-zinc-500 dark:text-zinc-500 mb-6">
-          All species in Wildlife Sentinel's monitoring range, ordered by IUCN threat status.
+          All species in Wildlife Sentinel&apos;s monitoring range, ordered by IUCN threat status.
           Click any species to see its habitat range and recent alerts.
         </p>
 

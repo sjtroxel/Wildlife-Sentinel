@@ -24,6 +24,7 @@ const EVENT_TYPES: EventType[] = [
   'earthquake',
   'volcanic_eruption',
   'deforestation',
+  'sea_ice_loss',
 ];
 
 const EVENT_COLORS: Record<EventType, string> = {
@@ -34,7 +35,8 @@ const EVENT_COLORS: Record<EventType, string> = {
   coral_bleaching: '#14b8a6',
   earthquake: '#a855f7',
   volcanic_eruption: '#f97316',
-  deforestation: '#78350f',  // dark brown — cleared forest / exposed soil
+  deforestation: '#78350f',   // dark brown — cleared forest / exposed soil
+  sea_ice_loss: '#bfdbfe',    // icy blue — polar ice
 };
 
 const TILE_LAYERS = {

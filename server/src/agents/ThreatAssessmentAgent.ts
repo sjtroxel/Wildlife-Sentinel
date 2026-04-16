@@ -40,6 +40,7 @@ const SOURCE_QUALITY: Record<DisasterSource, number> = {
   coral_reef_watch:  0.85,
   drought_monitor:   0.75,
   glad_deforestation: 0.88, // GFW Integrated Alerts — Landsat/Sentinel-2/RADD fusion, high confidence filter
+  nsidc_sea_ice:      0.92, // NSIDC NRT Sea Ice Index — satellite passive microwave, highly reliable
 };
 
 /**

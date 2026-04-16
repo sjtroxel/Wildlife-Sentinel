@@ -7,6 +7,7 @@ import { UsgsEarthquakeScout } from './UsgsEarthquakeScout.js';
 import { DroughtScout } from './DroughtScout.js';
 import { CoralScout } from './CoralScout.js';
 import { GladDeforestationScout } from './GladDeforestationScout.js';
+import { NsidcSeaIceScout } from './NsidcSeaIceScout.js';
 
 const scouts = {
   firms:         new FirmsScout(),
@@ -17,6 +18,7 @@ const scouts = {
   drought:       new DroughtScout(),
   coral:         new CoralScout(),
   deforestation: new GladDeforestationScout(),
+  seaIce:        new NsidcSeaIceScout(),
 };
 
 export function startScouts(): void {
@@ -60,7 +62,12 @@ export function startScouts(): void {
     scouts.deforestation.run().catch(err => console.error('[scouts] GladDeforestationScout error:', err));
   });
 
-  console.log('[scouts] All 8 scouts scheduled');
+  // NSIDC Sea Ice Index — every 24 hours at 09:00 UTC (NRT data updates ~08:00 UTC)
+  cron.schedule('0 9 * * *', () => {
+    scouts.seaIce.run().catch(err => console.error('[scouts] NsidcSeaIceScout error:', err));
+  });
+
+  console.log('[scouts] All 9 scouts scheduled');
 
   // Run each immediately on startup so the pipeline has data without waiting.
   // Drought Scout is omitted — it only produces valid data on Thursdays after 10:30 AM CT.
@@ -71,4 +78,5 @@ export function startScouts(): void {
   scouts.earthquake.run().catch(err => console.error('[scouts] UsgsEarthquakeScout startup error:', err));
   scouts.coral.run().catch(err => console.error('[scouts] CoralScout startup error:', err));
   scouts.deforestation.run().catch(err => console.error('[scouts] GladDeforestationScout startup error:', err));
+  scouts.seaIce.run().catch(err => console.error('[scouts] NsidcSeaIceScout startup error:', err));
 }

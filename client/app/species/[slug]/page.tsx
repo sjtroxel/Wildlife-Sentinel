@@ -158,7 +158,7 @@ export default function SpeciesDetailPage() {
             <div className="bg-zinc-50 dark:bg-zinc-900 rounded-lg p-6 text-center">
               <p className="text-sm text-zinc-500">No alerts recorded for this species yet.</p>
               <p className="text-xs text-zinc-600 mt-1">
-                Alerts appear here when a disaster event threatens this species' habitat range.
+                Alerts appear here when a disaster event threatens this species&apos; habitat range.
               </p>
             </div>
           ) : (

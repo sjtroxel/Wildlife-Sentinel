@@ -2,7 +2,7 @@
 
 **Goal:** Post-launch improvements. This phase is a living backlog — items are added as they're identified after Phase 9 ships. Not all items need to ship together; they can be batched into sub-releases.
 
-**Status:** In progress — Tracks 1–4, Expansions 0A/0B/0C complete as of 2026-04-08. Next: Expansion 1 (global data sources). See PHASE_10_IMPLEMENTATION_PLAN.md for full status.
+**Status:** In progress — Expansions 0A–4E complete as of 2026-04-16. Next: Expansion 5A/5B (architectural complexity — revisit when ready). See PHASE_10_IMPLEMENTATION_PLAN.md for full status.
 **Depends on:** Phase 9 complete (system deployed and stable)
 **Priority:** Bonus / expansion — system is fully functional at Phase 9 without any of this
 
@@ -155,27 +155,27 @@ New disaster or habitat data streams beyond the original scouts. All five are ge
 **Severity:** `normal=0.5, orange=0.7, red=1.0` from USGS aviation color code.
 **What this unlocks:** Galápagos finches/tortoises near active calderas, Hawaiian honeycreeper, mountain gorillas near Nyiragongo, Sumatran species near Sinabung/Merapi. Island endemic species are uniquely vulnerable — no escape corridor.
 
-### 4C — Desert Locust Swarms (FAO Desert Locust Watch)
+### 4C — Desert Locust Swarms (FAO Desert Locust Watch) ~~DROPPED~~
 
-**Source:** `https://locust.fao.org/api/` — JSON REST API, free, no auth required.
-**Scout:** `FaoLocustScout.ts`, `source: 'fao_locust'`, `event_type: 'locust_swarm'`, every 6 hours.
-**Severity:** FAO hoppers/swarm/band classification mapped: `hoppers=0.4, band=0.6, swarm=0.85, mature_swarm=1.0`.
-**What this unlocks:** The most novel angle in the app — locust swarms destroy vegetation across Africa, Middle East, and South Asia, collapsing the food base for large herbivores and ground-nesting birds. Unlocks East African savanna species (African wild dog, cheetah, secretary bird), Indian subcontinent (one-horned rhino, Bengal florican, great Indian bustard). No other wildlife monitoring platform tracks this.
+**Status:** DROPPED (2026-04-15) — `locust.fao.org` DNS dead, no viable replacement found.
 
-### 4D — Deforestation Alerts (Global Forest Watch / GLAD)
+### 4D — Deforestation Alerts (Global Forest Watch / GLAD) ✅ COMPLETE (2026-04-16)
 
-**Source:** Global Forest Watch GLAD alert API — near-real-time tropical forest loss, 30m resolution.
-**Scout:** `GladDeforestationScout.ts`, `source: 'glad_deforestation'`, `event_type: 'deforestation'`, every 24 hours (alerts aggregate daily).
-**Severity:** Alert confidence level: `nominal=0.5, high=0.75, highest=0.95`.
+**Source:** GFW Integrated Alerts API (`resourcewatch.org` — GLAD-L + GLAD-S2 + RADD fusion). Auth via `GFW_API_KEY` (Resource Watch account, key expires 2027-04-13).
+**Scout:** `GladDeforestationScout.ts`, `source: 'glad_deforestation'`, `event_type: 'deforestation'`, 24h cron at 08:00 UTC.
+**Implementation:** Queries `gadm__integrated_alerts__adm1_daily_alerts` — confidence IN ('high','highest'), primary forest only, ≥50 alerts/region/day. `gladRegions.json` bundled lookup: (iso, adm1_int) → centroid (lat, lng, name) for 16 tropical forest countries. Dedup key: `glad_{ISO}_{adm1}_{YYYYMMDD}` — 7-day TTL.
+**Severity:** `high=0.75, highest=0.95`. SOURCE_QUALITY=0.88. Brown `#78350f` map markers.
 **What this unlocks:** Highest conservation impact of any addition — Amazon (giant river otter, jaguar, tapir), Congo Basin (forest elephant, bonobo, okapi), Borneo/Sumatra (orangutan, pygmy elephant, clouded leopard), Mesoamerica (Baird's tapir, scarlet macaw). Deforestation is the #1 driver of species extinction globally.
 
-### 4E — Sea Ice Extent (NSIDC)
+### 4E — Sea Ice Extent (NSIDC) ✅ COMPLETE (2026-04-16)
 
-**Source:** NSIDC Near-Real-Time Sea Ice Index — daily extent CSV + anomaly data.
-**Scout:** `NsidcSeaIceScout.ts`, `source: 'nsidc_sea_ice'`, `event_type: 'sea_ice_loss'`, every 24 hours.
-**Filter:** Only fire when current extent is more than 1 standard deviation below the 1981–2010 median for that calendar date, OR a new seasonal minimum is set.
-**Severity:** `deviation_sigma / 3.0` clamped 0–1.
-**What this unlocks:** An entire class of species with zero current coverage — polar bear, walrus, narwhal, ringed seal (Arctic); emperor penguin, Weddell seal, leopard seal (Antarctic). Sea ice minimum events are discrete, alarming, and well-covered by IUCN range data.
+**Source:** NSIDC Near-Real-Time Sea Ice Index v3 — daily extent CSV, publicly accessible, no auth.
+**Scout:** `NsidcSeaIceScout.ts`, `source: 'nsidc_sea_ice'`, `event_type: 'sea_ice_loss'`, 24h cron at 09:00 UTC.
+**Implementation:** Fetches `N_seaice_extent_daily_v3.0.csv` and `S_seaice_extent_daily_v3.0.csv` for both hemispheres. Compares most recent reading against bundled `seaIceClimatology.json` (1981–2010 monthly median + std_dev). Fires when sigma ≤ -1.0 (extent more than 1σ below median). Weekly dedup key prevents daily spam during persistent anomaly periods.
+**Severity:** `|sigma| / 3.0` clamped to 1.0. SOURCE_QUALITY=0.92 (satellite passive microwave — highly reliable).
+**Coordinates:** Arctic (80°N, 0°E) — Svalbard area; Antarctic (-73°S, 0°E) — Weddell Sea area.
+**Color:** Icy blue `#bfdbfe` — map markers + trend chart.
+**What this unlocks:** An entire class of species with zero prior coverage — polar bear, walrus, narwhal, ringed seal (Arctic); emperor penguin, Weddell seal, leopard seal (Antarctic).
 
 ---
 

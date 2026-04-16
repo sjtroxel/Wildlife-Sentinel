@@ -790,10 +790,10 @@ Oil spill (NOAA ER) and air quality (AirNow) were dropped — US-only coverage, 
 | # | Source | Scout | Species Unlocked |
 |---|---|---|---|
 | 4A ✅ | USGS Earthquake Hazards (`earthquake.usgs.gov/fdsnws`) | `UsgsEarthquakeScout.ts` M5.5+, 15-min | Mountain gorilla near Virunga, giant panda (Sichuan), Sumatran rhino |
-| 4B ✅ | GDACS Volcanic Eruptions | `GdacsVolcanoScout.ts` Orange/Red only, 6h | Galápagos finches/tortoises, Hawaiian honeycreeper, gorillas near Nyiragongo |
-| 4C | FAO Desert Locust Watch (`locust.fao.org/api`) | `FaoLocustScout.ts` 6h | East African savanna species, one-horned rhino, Bengal florican — novel threat class |
-| 4D | Global Forest Watch GLAD alerts | `GladDeforestationScout.ts` daily | Orangutan, jaguar, bonobo, okapi — highest conservation impact addition |
-| 4E | NSIDC Sea Ice Index (daily anomaly trigger) | `NsidcSeaIceScout.ts` daily | Polar bear, walrus, emperor penguin — zero current coverage |
+| 4B ✅ | GDACS Volcanic Eruptions (via `GdacsRssScout.ts` RSS migration) | Orange/Red only, handled in `GdacsRssScout.ts` 6h | Galápagos finches/tortoises, Hawaiian honeycreeper, gorillas near Nyiragongo |
+| 4C ~~DROPPED~~ | FAO Desert Locust Watch — `locust.fao.org` DNS dead, no viable replacement | — | — |
+| 4D ✅ | Global Forest Watch GLAD alerts | `GladDeforestationScout.ts` daily (2026-04-16) | Orangutan, jaguar, bonobo, okapi — highest conservation impact addition |
+| 4E ✅ | NSIDC Sea Ice Index (daily anomaly trigger) | `NsidcSeaIceScout.ts` daily | Polar bear, walrus, emperor penguin — zero current coverage |
 
 ### Future — Expansion 5 (revisit after 4A–4E)
 
@@ -826,10 +826,10 @@ Oil spill (NOAA ER) and air quality (AirNow) were dropped — US-only coverage, 
 | P ✅ | Expansion 3B — historical trend analysis widget + `/trends` Discord command (2026-04-13) |
 | Q ✅ | Expansion 4A — seismic scout (USGS EHP, global M5.5+, purple map markers) (2026-04-14) |
 | R ✅ | Expansion 4B — volcanic eruption scout (GDACS VO, Orange/Red only) (2026-04-15) |
-| S | Expansion 4C — desert locust scout (FAO, Africa/Middle East/South Asia) |
-| T | Expansion 4D — deforestation scout (Global Forest Watch GLAD, daily) |
-| U | Expansion 4E — sea ice extent scout (NSIDC, daily anomaly trigger) |
+| S | ~~Expansion 4C — desert locust scout (FAO)~~ DROPPED — API dead |
+| T ✅ | Expansion 4D — deforestation scout (Global Forest Watch GLAD, daily) (2026-04-16) |
+| U ✅ | Expansion 4E — sea ice scout (NSIDC NRT Sea Ice Index, daily anomaly trigger) (2026-04-16) |
 | V | Expansion 5A — ENSO declarations (macro-signal, pipeline design needed) |
 | W | Expansion 5B — illegal fishing in MPAs (Global Fishing Watch API) |
 
-**GDACS RSS migration complete (2026-04-15). Expansion 4C (locust) dropped — FAO API is dead, no viable replacement. Next: Expansion 4D (Global Forest Watch GLAD deforestation).**
+**Expansion 4E (sea ice, NSIDC NRT) complete (2026-04-16). All 4A–4E scouts shipped. Next: Expansion 5A/5B (architectural complexity — revisit when ready).**
