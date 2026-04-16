@@ -6,15 +6,17 @@ import { UsgsScout } from './UsgsScout.js';
 import { UsgsEarthquakeScout } from './UsgsEarthquakeScout.js';
 import { DroughtScout } from './DroughtScout.js';
 import { CoralScout } from './CoralScout.js';
+import { GladDeforestationScout } from './GladDeforestationScout.js';
 
 const scouts = {
-  firms:      new FirmsScout(),
-  nhc:        new NhcScout(),
-  gdacs:      new GdacsRssScout(),
-  usgs:       new UsgsScout(),
-  earthquake: new UsgsEarthquakeScout(),
-  drought:    new DroughtScout(),
-  coral:      new CoralScout(),
+  firms:         new FirmsScout(),
+  nhc:           new NhcScout(),
+  gdacs:         new GdacsRssScout(),
+  usgs:          new UsgsScout(),
+  earthquake:    new UsgsEarthquakeScout(),
+  drought:       new DroughtScout(),
+  coral:         new CoralScout(),
+  deforestation: new GladDeforestationScout(),
 };
 
 export function startScouts(): void {
@@ -53,7 +55,12 @@ export function startScouts(): void {
     scouts.coral.run().catch(err => console.error('[scouts] CoralScout error:', err));
   });
 
-  console.log('[scouts] All 7 scouts scheduled');
+  // GFW Integrated Alerts (GLAD) — every 24 hours at 08:00 UTC (data publishes ~06:00 UTC)
+  cron.schedule('0 8 * * *', () => {
+    scouts.deforestation.run().catch(err => console.error('[scouts] GladDeforestationScout error:', err));
+  });
+
+  console.log('[scouts] All 8 scouts scheduled');
 
   // Run each immediately on startup so the pipeline has data without waiting.
   // Drought Scout is omitted — it only produces valid data on Thursdays after 10:30 AM CT.
@@ -63,4 +70,5 @@ export function startScouts(): void {
   scouts.usgs.run().catch(err => console.error('[scouts] UsgsScout startup error:', err));
   scouts.earthquake.run().catch(err => console.error('[scouts] UsgsEarthquakeScout startup error:', err));
   scouts.coral.run().catch(err => console.error('[scouts] CoralScout startup error:', err));
+  scouts.deforestation.run().catch(err => console.error('[scouts] GladDeforestationScout startup error:', err));
 }

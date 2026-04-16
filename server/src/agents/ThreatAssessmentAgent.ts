@@ -35,10 +35,11 @@ const SOURCE_QUALITY: Record<DisasterSource, number> = {
   gdacs_flood: 0.88,
   gdacs_drought: 0.88,
   usgs_nwis: 0.85,
-  usgs_earthquake: 0.95,  // USGS EHP — seismograph network, very high quality
-  gdacs_volcano: 0.88,    // GDACS VO — volcano observatory network, Orange/Red only
-  coral_reef_watch: 0.85,
-  drought_monitor: 0.75,
+  usgs_earthquake:   0.95,  // USGS EHP — seismograph network, very high quality
+  gdacs_volcano:     0.88,  // GDACS VO — volcano observatory network, Orange/Red only
+  coral_reef_watch:  0.85,
+  drought_monitor:   0.75,
+  glad_deforestation: 0.88, // GFW Integrated Alerts — Landsat/Sentinel-2/RADD fusion, high confidence filter
 };
 
 /**

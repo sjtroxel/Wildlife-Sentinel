@@ -22,6 +22,7 @@ const EVENT_COLORS: Record<string, string> = {
   coral_bleaching:   '#14b8a6',
   earthquake:        '#a855f7',
   volcanic_eruption: '#f97316',
+  deforestation:     '#78350f',
 };
 
 const EVENT_LABELS: Record<string, string> = {
@@ -32,6 +33,7 @@ const EVENT_LABELS: Record<string, string> = {
   coral_bleaching:   'Coral Bleaching',
   earthquake:        'Earthquake',
   volcanic_eruption: 'Volcanic Eruption',
+  deforestation:     'Deforestation',
 };
 
 export default function TrendChart() {

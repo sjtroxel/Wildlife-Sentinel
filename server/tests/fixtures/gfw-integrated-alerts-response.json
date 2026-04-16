@@ -1,0 +1,37 @@
+{
+  "data": [
+    {
+      "iso": "BRA",
+      "adm1": 22,
+      "gfw_integrated_alerts__date": "2026-04-12",
+      "gfw_integrated_alerts__confidence": "highest",
+      "alert__count": 2772,
+      "alert_area__ha": 34.0832
+    },
+    {
+      "iso": "BRA",
+      "adm1": 22,
+      "gfw_integrated_alerts__date": "2026-04-12",
+      "gfw_integrated_alerts__confidence": "high",
+      "alert__count": 289,
+      "alert_area__ha": 3.5079
+    },
+    {
+      "iso": "COD",
+      "adm1": 2,
+      "gfw_integrated_alerts__date": "2026-04-12",
+      "gfw_integrated_alerts__confidence": "high",
+      "alert__count": 142,
+      "alert_area__ha": 8.4
+    },
+    {
+      "iso": "IDN",
+      "adm1": 13,
+      "gfw_integrated_alerts__date": "2026-04-11",
+      "gfw_integrated_alerts__confidence": "high",
+      "alert__count": 315,
+      "alert_area__ha": 19.2
+    }
+  ],
+  "status": "success"
+}

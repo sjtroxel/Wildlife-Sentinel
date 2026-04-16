@@ -10,7 +10,8 @@ export type DisasterSource =
   | 'drought_monitor'
   | 'coral_reef_watch'
   | 'usgs_earthquake'
-  | 'gdacs_volcano';
+  | 'gdacs_volcano'
+  | 'glad_deforestation';
 
 export type EventType =
   | 'wildfire'
@@ -19,7 +20,8 @@ export type EventType =
   | 'drought'
   | 'coral_bleaching'
   | 'earthquake'
-  | 'volcanic_eruption';
+  | 'volcanic_eruption'
+  | 'deforestation';
 
 export type ThreatLevel = 'low' | 'medium' | 'high' | 'critical';
 

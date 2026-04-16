@@ -16,6 +16,7 @@ export default defineConfig({
       GOOGLE_AI_API_KEY: 'fake_key',
       ANTHROPIC_API_KEY: 'fake_key',
       IUCN_API_TOKEN: 'fake_token',
+      GFW_API_KEY: 'fake_gfw_key',
       NODE_ENV: 'test',
     },
     include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],

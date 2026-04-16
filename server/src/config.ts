@@ -23,6 +23,7 @@ export const config = {
   googleAiKey: requireEnv('GOOGLE_AI_API_KEY'),
   anthropicKey: requireEnv('ANTHROPIC_API_KEY'),
   iucnApiToken: requireEnv('IUCN_API_TOKEN'),
+  gfwApiKey: requireEnv('GFW_API_KEY'),
   port: parseInt(optionalEnv('PORT', '3000'), 10),
   nodeEnv: optionalEnv('NODE_ENV', 'development'),
   allowedOrigins: optionalEnv('ALLOWED_ORIGINS', 'http://localhost:3001').split(','),
