@@ -18,7 +18,7 @@
 | 7 | Refiner / Evaluator Loop | ✅ Complete | 5 event-type scorers, hourly scheduler, correction notes, 121 tests pass |
 | 8 | Frontend | ✅ Complete | Next.js 16.2.1, Leaflet map, alerts feed, SSE, refiner chart, logos/favicon. 139 tests pass. |
 | 9 | Hardening + Deploy | ✅ Complete | 295 tests, 91.4% coverage, Railway + Vercel live, pipeline end-to-end verified 2026-04-05 |
-| 10 | Expansions & Enhancements | 🔄 In Progress | Expansions 0–3B + 4A complete. Next: Expansion 4B (volcanic eruptions). See PHASE_10_IMPLEMENTATION_PLAN.md |
+| 10 | Expansions & Enhancements | 🔄 In Progress | Expansions 0A–4E complete. Next: 5A/5B (architectural complexity). See PHASE_10_IMPLEMENTATION_PLAN.md |
 
 ---
 
@@ -236,11 +236,11 @@
 - [x] **Expansion 3A** — Multi-species event correlation (50km/1h dedup in EnrichmentAgent) (2026-04-12)
 - [x] **Expansion 3B** — Historical trend analysis widget + Discord `/trends` slash command (2026-04-13)
 - [x] **Expansion 4A** — Seismic scout (USGS EHP, global, M5.5+) — mountain gorilla, giant panda, Sumatran rhino (2026-04-14)
-- [ ] **Expansion 4B** — Volcanic eruption scout (Smithsonian GVP, global, Orange/Red only) — Galápagos, Virunga, Hawaiian endemics
-- [ ] **Expansion 4C** — Desert locust scout (FAO, global, Africa/Middle East/South Asia) — novel threat class, no competitor covers this
-- [ ] **Expansion 4D** — Deforestation alert scout (Global Forest Watch GLAD, daily, tropical zones) — highest conservation impact addition
-- [ ] **Expansion 4E** — Sea ice extent scout (NSIDC, daily anomaly trigger) — polar bear, walrus, emperor penguin — zero current coverage
-- [ ] **Expansion 5A** — ENSO anomaly declarations (NOAA CPC) — macro-signal pipeline, revisit after 4E
+- [x] **Expansion 4B** — Volcanic eruption scout — handled via GdacsRssScout RSS migration (2026-04-15)
+- [x] **Expansion 4C** — Desert locust scout (FAO) — DROPPED: `locust.fao.org` DNS dead, no viable replacement
+- [x] **Expansion 4D** — Deforestation alert scout (GFW GLAD, daily, tropical zones) — orangutan, jaguar, bonobo (2026-04-16)
+- [x] **Expansion 4E** — Sea ice scout (NSIDC NRT, daily anomaly trigger) — polar bear, walrus, emperor penguin (2026-04-16)
+- [ ] **Expansion 5A** — ENSO anomaly declarations (NOAA CPC) — macro-signal pipeline, revisit when ready
 - [ ] **Expansion 5B** — Illegal fishing in MPAs (Global Fishing Watch API) — anthropogenic threat class, requires MPA spatial join
 
 → See [PHASE_10_EXPANSIONS.md](roadmap/PHASE_10_EXPANSIONS.md)

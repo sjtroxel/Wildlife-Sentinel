@@ -37,7 +37,18 @@ export default function RefinerChart() {
     }).catch(() => {});
   }, []);
 
-  if (data.length === 0) return null;
+  if (data.length === 0) {
+    return (
+      <div className="p-3">
+        <h2 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-2">
+          Prediction Accuracy
+        </h2>
+        <p className="text-[10px] text-zinc-400 dark:text-zinc-600 text-center py-3">
+          Scores appear after the Refiner evaluates its first alert (24–48h post-event).
+        </p>
+      </div>
+    );
+  }
 
   const isDark = typeof document !== 'undefined'
     ? document.documentElement.classList.contains('dark')

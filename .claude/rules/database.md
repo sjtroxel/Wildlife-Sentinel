@@ -64,8 +64,8 @@ pgvector extension: `CREATE EXTENSION IF NOT EXISTS vector;`
 
 ### Embedding columns
 ```sql
--- For Google text-embedding-004: 768 dimensions
-embedding vector(768)
+-- For gemini-embedding-001: 1536 dimensions (outputDimensionality truncation — see migration 0007)
+embedding vector(1536)
 ```
 
 ### Similarity search

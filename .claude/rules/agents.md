@@ -51,13 +51,13 @@ For the Refiner: `compositeScore = 0.6 * directionAccuracy + 0.4 * magnitudeAccu
 
 | Agent | Model | Reason |
 |---|---|---|
-| Scout Agents (5) | None | Pure Node.js data fetch + normalize |
+| Scout Agents (9) | None | Pure Node.js data fetch + normalize |
 | Enrichment Agent | gemini-2.5-flash-lite | High volume, cheap, PostGIS + weather |
 | Habitat Agent | gemini-2.5-flash-lite | High volume, GBIF lookups |
-| Species Context Agent | gemini-2.5-flash-lite | High volume, RAG retrieval |
-| Threat Assessment Agent | claude-sonnet-4-6 | Nuanced multi-factor reasoning required |
-| Synthesis Agent | claude-sonnet-4-6 | Natural language quality, Discord tone |
-| Refiner/Evaluator | claude-sonnet-4-6 | System prompt generation quality |
+| Species Context Agent | gemini-2.5-flash-lite | High volume, RAG retrieval (same tier as Enrichment/Habitat — cost-optimized) |
+| Threat Assessment Agent | claude-haiku-4-5-20251001 | CLAUDE_HAIKU — ~3.75x cheaper than Sonnet; deliberate cost reduction (do not revert to Sonnet) |
+| Synthesis Agent | claude-haiku-4-5-20251001 | CLAUDE_HAIKU — same cost reduction decision (do not revert) |
+| Refiner/Evaluator | claude-haiku-4-5-20251001 | CLAUDE_HAIKU — same cost reduction decision (do not revert) |
 
 ## System Prompt Updates (Refiner Pattern)
 

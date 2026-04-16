@@ -24,8 +24,8 @@ This is a **push-model, event-driven system**. No user triggers it. The world tr
 ## Architecture Overview
 
 ```
-[5 Scout Agents — cron pollers, no LLM]
-  NASA FIRMS / NOAA NHC / USGS NWIS / Drought Monitor / Coral Reef Watch
+[9 Scout Agents — cron pollers, no LLM]
+  NASA FIRMS / NOAA NHC / GDACS RSS / USGS NWIS / USGS Earthquake / Drought Monitor / Coral Reef Watch / GFW GLAD / NSIDC Sea Ice
         │
         ▼
   Redis Stream: disaster:raw
@@ -181,9 +181,13 @@ wildlife-sentinel/
 |---|---|---|---|
 | NASA FIRMS | `firms.modaps.eosdis.nasa.gov/api/` | Free API key | Every 10 min |
 | NOAA NHC | `nhc.noaa.gov/CurrentStorms.json` | None | Every 30 min |
+| GDACS RSS | `gdacs.org/xml/rss.xml` | None | Every 30 min (TC + FL + DR + VO) |
 | USGS NWIS | `waterservices.usgs.gov/nwis/iv/` | None | Every 15 min |
+| USGS Earthquake | `earthquake.usgs.gov/fdsnws/event/1/query` | None | Every 15 min (M5.5+) |
 | US Drought Monitor | `droughtmonitor.unl.edu/DmData/GISData.aspx` | None | Every Thursday |
-| NOAA Coral Reef Watch | `coralreefwatch.noaa.gov/product/5km/` | None | Every 6 hours |
+| NOAA Coral Reef Watch | `coralreefwatch.noaa.gov/product/vs/vs_polygons.json` | None | Every 6 hours |
+| GFW GLAD Alerts | `data-api.globalforestwatch.org` | GFW API key | Daily 08:00 UTC |
+| NSIDC Sea Ice Index | `noaadata.apps.nsidc.org/NOAA/G02135/` | None | Daily 09:00 UTC |
 
 ### Species/Habitat
 | Source | Role | Storage |
@@ -208,13 +212,13 @@ See `.claude/rules/redis.md` for full schema and consumer patterns.
 
 | Agent | Model | Why |
 |---|---|---|
-| Scout Agents (5) | No LLM | Pure data fetch + normalize |
-| Enrichment Agent | Gemini 2.5 Flash-Lite | High volume, simple weather summary. Free: 1,000 RPD |
-| Habitat Agent | Gemini 2.5 Flash-Lite | GBIF sighting classification. Free: 1,000 RPD |
-| Species Context Agent | Gemini 2.5 Flash | Moderate RAG synthesis. Free: 250 RPD |
-| Threat Assessment Agent | Claude Sonnet 4.6 | Nuanced multi-factor reasoning — quality critical |
-| Synthesis Agent | Claude Sonnet 4.6 | Discord tone and quality — audience-facing |
-| Refiner/Evaluator | Claude Sonnet 4.6 | System prompt generation quality matters |
+| Scout Agents (9) | No LLM | Pure data fetch + normalize |
+| Enrichment Agent | Gemini 2.5 Flash-Lite | High volume, simple weather summary |
+| Habitat Agent | Gemini 2.5 Flash-Lite | GBIF sighting classification |
+| Species Context Agent | Gemini 2.5 Flash-Lite | RAG synthesis (cost-optimized; same tier as Enrichment/Habitat) |
+| Threat Assessment Agent | Claude Haiku 4.5 | Nuanced reasoning — CLAUDE_HAIKU (~3.75x cheaper than Sonnet; do not revert) |
+| Synthesis Agent | Claude Haiku 4.5 | Discord tone and quality — CLAUDE_HAIKU (do not revert) |
+| Refiner/Evaluator | Claude Haiku 4.5 | Correction note generation — CLAUDE_HAIKU (do not revert) |
 
 ---
 

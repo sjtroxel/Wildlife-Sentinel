@@ -11,9 +11,9 @@ These two indices must never be merged into one. The Species Context Agent needs
 
 ## Embedding Model
 
-**Google `text-embedding-004`** via `@google/generative-ai` SDK.
-- Dimensions: 768
-- Cost: Free tier (confirm rate limits)
+**`gemini-embedding-001`** via `@google/generative-ai` SDK (constant: `MODELS.GOOGLE_EMBEDDINGS`).
+- Dimensions: **1536** (using `outputDimensionality=1536` truncation — stays within pgvector ivfflat limit of 2000)
+- DB column: `vector(1536)` — see migration 0007_vector_3072.sql
 - Used at ingest time (document chunking) and query time (retrieval)
 
 The same model MUST be used at both ingest and query time. The embedding space must be consistent.
@@ -21,7 +21,7 @@ The same model MUST be used at both ingest and query time. The embedding space m
 ```typescript
 const embeddingModel = genai.getGenerativeModel({ model: MODELS.GOOGLE_EMBEDDINGS });
 const result = await embeddingModel.embedContent(text);
-const embedding: number[] = result.embedding.values; // 768 dimensions
+const embedding: number[] = result.embedding.values; // 1536 dimensions (outputDimensionality truncation)
 ```
 
 ## Chunking Strategy
