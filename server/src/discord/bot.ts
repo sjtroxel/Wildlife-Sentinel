@@ -175,7 +175,13 @@ export async function startBot(): Promise<void> {
   });
 
   await new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      console.warn('[discord] Gateway connection timed out after 20s — continuing startup without bot');
+      resolve();
+    }, 20_000);
+
     client.once('clientReady', async () => {
+      clearTimeout(timeout);
       console.log(`[discord] Online as ${client.user?.tag}`);
       try {
         const ops = getSentinelOpsChannel();
@@ -186,10 +192,14 @@ export async function startBot(): Promise<void> {
       resolve();
     });
     client.on('error', (err) => {
+      clearTimeout(timeout);
       console.error('[discord] Client error:', err);
       reject(err);
     });
-    client.login(config.discordToken).catch(reject);
+    client.login(config.discordToken).catch((err) => {
+      clearTimeout(timeout);
+      reject(err);
+    });
   });
 }
 
