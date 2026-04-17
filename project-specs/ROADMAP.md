@@ -18,7 +18,7 @@
 | 7 | Refiner / Evaluator Loop | ✅ Complete | 5 event-type scorers, hourly scheduler, correction notes, 121 tests pass |
 | 8 | Frontend | ✅ Complete | Next.js 16.2.1, Leaflet map, alerts feed, SSE, refiner chart, logos/favicon. 139 tests pass. |
 | 9 | Hardening + Deploy | ✅ Complete | 295 tests, 91.4% coverage, Railway + Vercel live, pipeline end-to-end verified 2026-04-05 |
-| 10 | Expansions & Enhancements | 🔄 In Progress | Expansions 0A–5B complete. See PHASE_10_IMPLEMENTATION_PLAN.md |
+| 10 | Expansions & Enhancements | ✅ Complete | All expansions 0A–5B shipped 2026-04-16. 424 Vitest + 43 Playwright E2E tests. |
 
 ---
 
@@ -240,7 +240,8 @@
 - [x] **Expansion 4C** — Desert locust scout (FAO) — DROPPED: `locust.fao.org` DNS dead, no viable replacement
 - [x] **Expansion 4D** — Deforestation alert scout (GFW GLAD, daily, tropical zones) — orangutan, jaguar, bonobo (2026-04-16)
 - [x] **Expansion 4E** — Sea ice scout (NSIDC NRT, daily anomaly trigger) — polar bear, walrus, emperor penguin (2026-04-16)
-- [ ] **Expansion 5A** — ENSO anomaly declarations (NOAA CPC) — macro-signal pipeline, revisit when ready
-- [ ] **Expansion 5B** — Illegal fishing in MPAs (Global Fishing Watch API) — anthropogenic threat class, requires MPA spatial join
+- [x] **Expansion 5A** — ENSO anomaly declarations (NOAA CPC) — fan-out + Redis modifier pattern (2026-04-16)
+- [x] **Expansion 5B** — Illegal fishing in MPAs (Global Fishing Watch API) — 25 curated MPAs, EnrichmentAgent marine bypass (2026-04-16)
+- [x] **E2E test expansion** — 11 Playwright specs covering all Phase 10 frontend additions; 43 tests passing (2026-04-16)
 
 → See [PHASE_10_EXPANSIONS.md](roadmap/PHASE_10_EXPANSIONS.md)

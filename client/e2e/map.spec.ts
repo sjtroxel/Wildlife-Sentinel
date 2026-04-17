@@ -6,7 +6,8 @@ test.describe('Map panel', () => {
   });
 
   test('map panel has non-zero dimensions', async ({ page }) => {
-    const mapPanel = page.locator('main > div').first();
+    // Phase 10: react-resizable-panels — Panel divs have data-panel attribute
+    const mapPanel = page.locator('[data-panel]').first();
     const box = await mapPanel.boundingBox();
     expect(box).not.toBeNull();
     expect(box!.width).toBeGreaterThan(0);
@@ -14,8 +15,7 @@ test.describe('Map panel', () => {
   });
 
   test('map container renders (loading state or live map)', async ({ page }) => {
-    // Either "Loading map..." text or the Leaflet container is rendered
-    const mapPanel = page.locator('main > div').first();
+    const mapPanel = page.locator('[data-panel]').first();
     await expect(mapPanel).not.toBeEmpty();
   });
 });

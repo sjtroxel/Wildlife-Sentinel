@@ -2,7 +2,7 @@
 
 **Goal:** Post-launch improvements. This phase is a living backlog — items are added as they're identified after Phase 9 ships. Not all items need to ship together; they can be batched into sub-releases.
 
-**Status:** In progress — Expansions 0A–5B complete as of 2026-04-16. See PHASE_10_IMPLEMENTATION_PLAN.md for full status.
+**Status:** ✅ COMPLETE — All expansions 0A–5B shipped 2026-04-16. See PHASE_10_IMPLEMENTATION_PLAN.md for full implementation notes.
 **Depends on:** Phase 9 complete (system deployed and stable)
 **Priority:** Bonus / expansion — system is fully functional at Phase 9 without any of this
 
@@ -189,7 +189,7 @@ New disaster or habitat data streams beyond the original scouts. All five are ge
 
 **Curated `mpaRegions.json` + EnrichmentAgent bypass pattern.** `GfwFishingScout.ts` queries the GFW Events API v3 daily at 11:00 UTC for 25 critical MPAs (whale shark, manta ray, sea turtle, vaquita, dugong). Fires one `RawDisasterEvent` per MPA per week when fishing vessels are detected. EnrichmentAgent bypass passes `raw_data.key_species` through the pipeline when PostGIS returns no terrestrial-mammal habitat overlap — marine species are not in the IUCN shapefile.
 
-`source: 'gfw_fishing'`, `event_type: 'illegal_fishing'`, rose `#be185d` map markers. New env var: `FISHING_WATCH_API_KEY`. 10 new tests (434 total).
+`source: 'gfw_fishing'`, `event_type: 'illegal_fishing'`, rose `#be185d` map markers. New env var: `FISHING_WATCH_API_KEY`. 10 new tests (424 total).
 
 ---
 

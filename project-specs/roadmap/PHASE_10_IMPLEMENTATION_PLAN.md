@@ -127,7 +127,7 @@ See Completed section above.
 
 See Completed section above.
 
-**Future:** Surface scout health in the frontend Agent Activity panel (`client/components/AgentActivity.tsx`) — deferred to Expansion 2.
+**Not shipped:** Surfacing scout health in the frontend Agent Activity panel was deferred from Expansion 2 and remains unbuilt. The `/health/scouts` endpoint exists; it's just not wired into the UI.
 
 ---
 
@@ -799,11 +799,9 @@ Oil spill (NOAA ER) and air quality (AirNow) were dropped — US-only coverage, 
 
 See completed section below for implementation notes.
 
-### Future — Expansion 5B (revisit after 5A)
+### Expansion 5B — Illegal Fishing in MPAs ✅ COMPLETE (2026-04-16)
 
-| # | Source | Notes |
-|---|---|---|
-| 5B | Global Fishing Watch (illegal fishing in MPAs) | Anthropogenic threat class; needs MPA spatial join against PostGIS; needs WDPA MPA polygon ingest |
+`GfwFishingScout.ts` — 25 curated MPAs (`mpaRegions.json`), GFW Events API v3, daily 11:00 UTC. EnrichmentAgent marine bypass routes `illegal_fishing` events through pipeline without PostGIS habitat check (marine species not in terrestrial IUCN shapefile). Rose `#be185d` markers. 10 new tests (424 Vitest total).
 
 ---
 
@@ -936,11 +934,11 @@ Distinct from all 9 existing event type colors. Suggests macro/climate (not a po
 | V ✅ | Expansion 5A — ENSO declarations (fan-out + Redis modifier pattern) (2026-04-16) |
 | W ✅ | Expansion 5B — illegal fishing in MPAs (Global Fishing Watch API) (2026-04-16) |
 
-**Expansions 0A–5B complete (2026-04-16). 434 tests passing.**
+**Expansions 0A–5B complete (2026-04-16). Phase 10 COMPLETE. 424 Vitest + 43 Playwright E2E tests passing.**
 
 ---
 
-## Expansion 5B — Illegal Fishing in MPAs (Global Fishing Watch)
+## Expansion 5B — Illegal Fishing in MPAs (Global Fishing Watch) ✅ COMPLETE (2026-04-16)
 
 ### Goal
 

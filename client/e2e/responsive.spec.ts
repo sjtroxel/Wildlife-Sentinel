@@ -5,35 +5,36 @@ test.describe('Responsive layout', () => {
     await page.setViewportSize({ width: 768, height: 1024 });
     await page.goto('/');
 
-    const mapPanel = page.locator('main > div').first();
-    const rightPanel = page.locator('main > div').last();
+    // Phase 10: react-resizable-panels — panels have data-panel-id attribute
+    const panels = page.locator('[data-panel]');
+    const firstPanel = panels.first();
+    const lastPanel = panels.last();
 
-    await expect(mapPanel).toBeVisible();
-    await expect(rightPanel).toBeVisible();
+    await expect(firstPanel).toBeVisible();
+    await expect(lastPanel).toBeVisible();
 
-    // Both panels should be present in the viewport
-    const mapBox = await mapPanel.boundingBox();
-    const rightBox = await rightPanel.boundingBox();
-    expect(mapBox).not.toBeNull();
-    expect(rightBox).not.toBeNull();
+    const firstBox = await firstPanel.boundingBox();
+    const lastBox = await lastPanel.boundingBox();
+    expect(firstBox).not.toBeNull();
+    expect(lastBox).not.toBeNull();
   });
 
   test('1280px — two-column grid layout (map and right panel side by side)', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto('/');
 
-    const mapPanel = page.locator('main > div').first();
-    const rightPanel = page.locator('main > div').last();
+    const panels = page.locator('[data-panel]');
+    const firstPanel = panels.first();
+    const lastPanel = panels.last();
 
-    const mapBox = await mapPanel.boundingBox();
-    const rightBox = await rightPanel.boundingBox();
+    const firstBox = await firstPanel.boundingBox();
+    const lastBox = await lastPanel.boundingBox();
 
-    expect(mapBox).not.toBeNull();
-    expect(rightBox).not.toBeNull();
+    expect(firstBox).not.toBeNull();
+    expect(lastBox).not.toBeNull();
 
-    // At 1280px the grid kicks in — panels should be horizontally adjacent
-    // (right panel's left edge is to the right of the map panel's left edge)
-    expect(rightBox!.x).toBeGreaterThan(mapBox!.x);
+    // At 1280px the horizontal layout kicks in — panels are side by side
+    expect(lastBox!.x).toBeGreaterThan(firstBox!.x);
   });
 
   test('1280px — no horizontal scroll', async ({ page }) => {
