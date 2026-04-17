@@ -106,6 +106,7 @@ export async function processEvent(event: RawDisasterEvent): Promise<void> {
       speciesOverride = event.raw_data['key_species'] as string[];
       habitatDistanceOverride = 0;
     } else {
+      console.log(`[enrichment] ${event.source}:${event.id} filtered — no habitat overlap`);
       await logPipelineEvent({
         event_id: event.id,
         source: event.source,

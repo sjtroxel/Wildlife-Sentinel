@@ -168,7 +168,9 @@ export async function processEvent(event: FullyEnrichedEvent): Promise<void> {
     jsonMode: true,
   });
 
-  const parsed = JSON.parse(response.content) as ClaudeThreatResponse;
+  const jsonMatch = response.content.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error(`No JSON object found in response: ${response.content.slice(0, 200)}`);
+  const parsed = JSON.parse(jsonMatch[0]) as ClaudeThreatResponse;
 
   // Validate threat_level — don't trust LLM output unconditionally
   const threatLevel: ThreatLevel = VALID_THREAT_LEVELS.has(parsed.threat_level)
