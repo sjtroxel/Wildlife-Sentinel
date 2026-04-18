@@ -40,13 +40,13 @@ vi.mock('../../src/scouts/ensoImpactZones.json', () => ({
 import { NoaaCpcEnsoScout } from '../../src/scouts/NoaaCpcEnsoScout.js';
 import { redis } from '../../src/redis/client.js';
 
-// Helper to build a minimal ONI ASCII fixture
+// Helper to build a minimal ONI ASCII fixture (4-column format matching real NOAA CPC file)
 function oniCsv(anom: number): string {
   return [
-    'SEAS YR   TOTAL  CLIM  ANOM',
-    `DJF  2025 24.83  26.14 -1.31`,
-    `JFM  2025 25.11  26.10 -0.99`,
-    `FMA  2026 27.50  26.10 ${anom.toFixed(2)}`,
+    'SEAS  YR   TOTAL   ANOM',
+    `DJF  2025  24.83  -1.31`,
+    `JFM  2025  25.11  -0.99`,
+    `FMA  2026  27.50  ${anom.toFixed(2)}`,
   ].join('\n');
 }
 
@@ -196,9 +196,9 @@ describe('NoaaCpcEnsoScout', () => {
   it('uses the last row when multiple data rows are present', async () => {
     // Last row is neutral — should produce no events
     const csv = [
-      'SEAS YR   TOTAL  CLIM  ANOM',
-      'DJF  2025 24.83  26.14 1.20',   // El Niño advisory
-      'JFM  2026 25.11  26.10 0.10',   // neutral (most recent)
+      'SEAS  YR   TOTAL   ANOM',
+      'DJF  2025  24.83  1.20',   // El Niño advisory
+      'JFM  2026  25.11  0.10',   // neutral (most recent)
     ].join('\n');
     mockFetch(csv);
     await scout.run();
