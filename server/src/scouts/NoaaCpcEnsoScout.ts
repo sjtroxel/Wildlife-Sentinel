@@ -121,7 +121,7 @@ export class NoaaCpcEnsoScout extends BaseScout {
 
     const oni = parseMostRecentOni(text);
     if (oni === null) {
-      console.warn('[noaa_cpc] Could not parse ONI value from CPC data');
+      console.warn('[noaa_cpc] Could not parse ONI value from CPC data. First 300 chars:', text.slice(0, 300));
       return [];
     }
 

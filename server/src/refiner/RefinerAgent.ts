@@ -104,8 +104,9 @@ async function scoreFirePrediction(
   try {
     const res = await fetchWithRetry(firmsUrl);
     csvText = await res.text();
-  } catch {
-    return null; // API unavailable
+  } catch (err) {
+    console.error(`[refiner] FIRMS fetch failed (${alert.id}):`, err);
+    return null;
   }
 
   const rows = parseCSV(csvText);
@@ -159,8 +160,9 @@ async function scoreStormPrediction(alert: AlertRecord): Promise<RefinerScore | 
   try {
     const res = await fetchWithRetry('https://www.nhc.noaa.gov/CurrentStorms.json');
     data = await res.json() as NHCResponse;
-  } catch {
-    return null; // API unavailable
+  } catch (err) {
+    console.error(`[refiner] NHC fetch failed (${alert.id}):`, err);
+    return null;
   }
 
   const storms: NHCStorm[] = data.activeStorms ?? [];
@@ -215,7 +217,8 @@ async function scoreFloodPrediction(alert: AlertRecord): Promise<RefinerScore | 
   try {
     const res = await fetchWithRetry(url);
     data = await res.json() as USGSResponse;
-  } catch {
+  } catch (err) {
+    console.error(`[refiner] USGS NWIS fetch failed (${alert.id}):`, err);
     return null;
   }
 
@@ -263,7 +266,8 @@ async function scoreDroughtPrediction(alert: AlertRecord): Promise<RefinerScore 
   try {
     const res = await fetchWithRetry(url);
     csvText = await res.text();
-  } catch {
+  } catch (err) {
+    console.error(`[refiner] Drought Monitor fetch failed (${alert.id}):`, err);
     return null;
   }
 
@@ -299,7 +303,8 @@ async function scoreCoralPrediction(alert: AlertRecord): Promise<RefinerScore | 
       'https://coralreefwatch.noaa.gov/vs/gauges/crw_vs_alert_areas.json'
     );
     data = await res.json() as CRWResponse;
-  } catch {
+  } catch (err) {
+    console.error(`[refiner] CRW fetch failed (${alert.id}):`, err);
     return null;
   }
 

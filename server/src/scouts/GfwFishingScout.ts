@@ -84,21 +84,28 @@ export class GfwFishingScout extends BaseScout {
     const events: RawDisasterEvent[] = [];
 
     for (const mpa of MPA_REGIONS.mpas) {
-      // GFW Events API v3 spatial filter: region-id + region-source=MPA.
-      // lat/lng/radius returns 422; regions[mpa][] is not a valid v3 param.
-      const url =
-        `${GFW_EVENTS_BASE}` +
-        `?datasets[]=public-global-fishing-events:latest` +
-        `&start-date=${yesterday}` +
-        `&end-date=${today}` +
-        `&region-id=${mpa.wdpa_id}` +
-        `&region-source=MPA` +
-        `&limit=200`;
+      // GFW Events API v3 requires POST for region-based spatial filtering.
+      // GET params (lat/lng/radius, regions[mpa][], region-id) all return 422.
+      const postBody = JSON.stringify({
+        datasets: ['public-global-fishing-events:latest'],
+        startDate: yesterday,
+        endDate: today,
+        region: {
+          dataset: 'public-mpa-all:latest',
+          id: parseInt(mpa.wdpa_id, 10),
+        },
+        limit: 200,
+      });
 
       let body: GfwEventsResponse;
       try {
-        const res = await fetchWithRetry(url, {
-          headers: { Authorization: `Bearer ${config.fishingWatchApiKey}` },
+        const res = await fetchWithRetry(GFW_EVENTS_BASE, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${config.fishingWatchApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: postBody,
         });
         body = await res.json() as GfwEventsResponse;
       } catch (err) {
