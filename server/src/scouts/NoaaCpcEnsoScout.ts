@@ -51,11 +51,12 @@ interface PhaseResult {
  * Parse NOAA CPC ONI ASCII file. Returns the most recent seasonal anomaly value.
  *
  * File format (space-delimited, variable whitespace):
- *   SEAS YR   TOTAL  CLIM  ANOM
- *   DJF  1950 24.83  26.14 -1.31
- *   JFM  1950 25.11  26.10 -0.99
+ *   SEAS  YR   TOTAL   ANOM
+ *   DJF  1950  24.72  -1.53
+ *   JFM  1950  25.17  -1.34
  *   ...
  *
+ * 4 columns only — no CLIM column. ANOM is at index 3.
  * ANOM is the Niño 3.4 SST anomaly in °C — the ONI value.
  */
 function parseMostRecentOni(text: string): number | null {
@@ -68,14 +69,14 @@ function parseMostRecentOni(text: string): number | null {
 
     // Split on whitespace
     const parts = trimmed.split(/\s+/);
-    if (parts.length < 5) continue;
+    if (parts.length < 4) continue;
 
     // First token is a seasonal code (3 letters, e.g. DJF, JFM), second is year (4 digits)
     const seasonCode = parts[0]!;
     const year = parseInt(parts[1]!, 10);
     if (!/^[A-Z]{3}$/.test(seasonCode) || isNaN(year) || year < 1950) continue;
 
-    const anom = parseFloat(parts[4]!);
+    const anom = parseFloat(parts[3]!);
     if (isNaN(anom)) continue;
     if (Math.abs(anom) > 5.0) continue;  // sanity bound
 

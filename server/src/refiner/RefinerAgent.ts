@@ -89,7 +89,12 @@ async function scoreFirePrediction(
   alert: AlertRecord,
   evaluationHours: number
 ): Promise<RefinerScore | null> {
-  const { lat, lng } = alert.coordinates;
+  const { lat, lng } = alert.coordinates ?? {};
+  if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+    console.error(`[refiner] Alert ${alert.id} has invalid coordinates (${lat}, ${lng}) — skipping FIRMS fetch`);
+    return null;
+  }
+
   const lookbackDate = new Date(Date.now() - evaluationHours * 3_600_000)
     .toISOString()
     .slice(0, 10);

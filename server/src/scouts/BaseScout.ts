@@ -110,7 +110,7 @@ export async function fetchWithRetry(
 
     if (res.ok) return res;
 
-    if ([400, 401, 403, 404].includes(res.status)) {
+    if ([400, 401, 403, 404, 422].includes(res.status)) {
       throw new Error(`HTTP ${res.status} from ${url} — permanent failure`);
     }
 

@@ -92,7 +92,7 @@ export class GfwFishingScout extends BaseScout {
         endDate: today,
         region: {
           dataset: 'public-mpa-all:latest',
-          id: parseInt(mpa.wdpa_id, 10),
+          id: mpa.wdpa_id,  // must be string — GFW rejects integer WDPA IDs
         },
         limit: 200,
       });

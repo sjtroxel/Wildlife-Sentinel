@@ -10,7 +10,13 @@ import { getSentinelOpsChannel, getWildlifeAlertsChannel } from './bot.js';
 import { logToWarRoom } from './warRoom.js';
 import { sql } from '../db/client.js';
 
-export async function postCriticalForReview(embed: EmbedBuilder, alertId: string, threatLevel = 'critical'): Promise<void> {
+export async function postCriticalForReview(
+  embed: EmbedBuilder,
+  displayAlertId: string,  // human-readable event ID shown in Discord
+  threatLevel = 'critical',
+  dbAlertId?: string,      // UUID for DB update (falls back to displayAlertId if not provided)
+): Promise<void> {
+  const alertId = dbAlertId ?? displayAlertId;
   const opsChannel = getSentinelOpsChannel();
   const levelLabel = threatLevel.toUpperCase();
   const icon = threatLevel === 'critical' ? '🔴' : '🟠';
@@ -18,7 +24,7 @@ export async function postCriticalForReview(embed: EmbedBuilder, alertId: string
   const reviewMsg = await opsChannel.send({
     content: [
       `${icon} **${levelLabel} ALERT — Human review required**`,
-      `Alert ID: \`${alertId}\``,
+      `Alert ID: \`${displayAlertId}\``,
       `React ✅ to approve for public posting | React ❌ to suppress`,
     ].join('\n'),
     embeds: [embed],
