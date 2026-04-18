@@ -73,7 +73,7 @@ export class FirmsScout extends BaseScout {
         const lng = parseFloat(row.longitude);
 
         // Pre-filter: weak burns and low-confidence detections
-        if (frp < 25) continue;
+        if (frp < 50) continue;
         if (row.confidence === 'l') continue; // l=low, n=nominal, h=high
 
         if (isNaN(lat) || isNaN(lng) || isNaN(frp)) continue;

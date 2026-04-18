@@ -86,6 +86,15 @@ export class CoralScout extends BaseScout {
           bleaching_warning: alertLevel === 2,
           bleaching_alert_1: alertLevel === 3,
           bleaching_alert_2: alertLevel === 4,
+          // Marine species absent from species_ranges (terrestrial mammals only).
+          // Pre-populated so EnrichmentAgent can bypass the habitat filter.
+          key_species: [
+            'Hawksbill Sea Turtle',
+            'Green Sea Turtle',
+            'Humphead Wrasse',
+            'Bumphead Parrotfish',
+            'Whale Shark',
+          ],
         },
       });
     }

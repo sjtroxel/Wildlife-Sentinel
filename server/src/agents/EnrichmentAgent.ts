@@ -99,7 +99,7 @@ export async function processEvent(event: RawDisasterEvent): Promise<void> {
 
   if (habitats.length === 0) {
     if (
-      event.event_type === 'illegal_fishing' &&
+      (event.event_type === 'illegal_fishing' || event.event_type === 'coral_bleaching') &&
       Array.isArray(event.raw_data['key_species']) &&
       (event.raw_data['key_species'] as unknown[]).length > 0
     ) {
