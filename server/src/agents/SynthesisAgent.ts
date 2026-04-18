@@ -4,7 +4,7 @@
  * Consumes AssessedAlerts from alerts:assessed.
  * Drops 'low' threat level events (no Discord post).
  * Routes 'critical' alerts to #sentinel-ops for HITL review.
- * Auto-posts 'medium' and 'high' directly to #wildlife-alerts.
+ * All non-low alerts go to #sentinel-ops for HITL review before public posting.
  */
 import { EmbedBuilder } from 'discord.js';
 import { MODELS } from '@wildlife-sentinel/shared/models';
@@ -171,10 +171,7 @@ export async function processAlert(assessed: AssessedAlert): Promise<void> {
     embed.setURL(`${config.frontendUrl}/alerts/${assessed.db_alert_id}`);
   }
 
-  const channel: DiscordQueueItem['channel'] =
-    assessed.threat_level === 'critical' || assessed.threat_level === 'high'
-      ? 'sentinel-ops-review'
-      : 'wildlife-alerts';
+  const channel: DiscordQueueItem['channel'] = 'sentinel-ops-review';
 
   const queueItem: DiscordQueueItem = {
     alert_id: assessed.id,

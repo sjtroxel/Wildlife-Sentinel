@@ -153,13 +153,13 @@ describe('SynthesisAgent.processAlert', () => {
     expect(payload.channel).toBe('sentinel-ops-review');
   });
 
-  it('routes medium threat to wildlife-alerts channel', async () => {
+  it('routes medium threat to sentinel-ops-review channel', async () => {
     await processAlert(makeAlert({ threat_level: 'medium' }));
 
     const payload = JSON.parse(
       vi.mocked(redis.xadd).mock.calls[0]?.[3] as string
     ) as { channel: string };
-    expect(payload.channel).toBe('wildlife-alerts');
+    expect(payload.channel).toBe('sentinel-ops-review');
   });
 
   it('routes critical threat to sentinel-ops-review channel', async () => {

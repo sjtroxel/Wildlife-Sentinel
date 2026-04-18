@@ -91,7 +91,7 @@ async function scoreFirePrediction(
 ): Promise<RefinerScore | null> {
   const { lat, lng } = alert.coordinates ?? {};
   if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
-    console.error(`[refiner] Alert ${alert.id} has invalid coordinates (${lat}, ${lng}) — skipping FIRMS fetch`);
+    console.warn(`[refiner] Alert ${alert.id} has invalid coordinates (${lat}, ${lng}) — skipping FIRMS fetch`);
     return null;
   }
 

@@ -17,15 +17,37 @@ interface QueueItem {
 
 export function startRefinerScheduler(): void {
   cron.schedule('0 * * * *', async () => {
+    // Silently retire any queue items for alerts with null/invalid coordinates.
+    // These are stale records from before the pipeline stored coordinates correctly.
+    // They can never be scored — retiring them prevents them from consuming queue slots.
+    await sql`
+      UPDATE refiner_queue rq
+      SET completed_at = NOW()
+      FROM alerts a
+      WHERE a.id::text = rq.alert_id
+        AND rq.completed_at IS NULL
+        AND (
+          a.coordinates IS NULL
+          OR (a.coordinates->>'lat') IS NULL
+          OR (a.coordinates->>'lng') IS NULL
+        )
+    `.catch((err: unknown) => {
+      console.warn('[refiner] Stale-item cleanup failed (non-fatal):', err);
+    });
+
     let due: QueueItem[];
 
     try {
       due = await sql<QueueItem[]>`
-        SELECT id, alert_id, evaluation_time
-        FROM refiner_queue
-        WHERE run_at <= NOW()
-          AND completed_at IS NULL
-        ORDER BY run_at ASC
+        SELECT rq.id, rq.alert_id, rq.evaluation_time
+        FROM refiner_queue rq
+        JOIN alerts a ON a.id::text = rq.alert_id
+        WHERE rq.run_at <= NOW()
+          AND rq.completed_at IS NULL
+          AND a.coordinates IS NOT NULL
+          AND (a.coordinates->>'lat') IS NOT NULL
+          AND (a.coordinates->>'lng') IS NOT NULL
+        ORDER BY rq.run_at ASC
         LIMIT 10
       `;
     } catch (err) {

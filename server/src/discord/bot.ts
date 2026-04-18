@@ -18,6 +18,7 @@ import {
 } from '../db/speciesQueries.js';
 import { getAlertTrends } from '../db/statsQueries.js';
 import { SLASH_COMMANDS } from './helpContent.js';
+import { runDailyScoutsNow } from '../scouts/index.js';
 import type { IUCNStatus } from '../../../shared/types.js';
 
 const PAUSE_KEY = 'pipeline:paused';
@@ -149,7 +150,8 @@ export async function startBot(): Promise<void> {
 
       } else if (interaction.commandName === 'resume') {
         await redis.del(PAUSE_KEY);
-        await interaction.editReply('▶️ **Pipeline resumed.** Scouts will pick up on their next cycle.');
+        runDailyScoutsNow();
+        await interaction.editReply('▶️ **Pipeline resumed.** Daily scouts running immediately — others will pick up on their next cycle.');
 
       } else if (interaction.commandName === 'status') {
         const pausedSince = await redis.get(PAUSE_KEY);
@@ -325,8 +327,8 @@ async function handleHelpCommand(
       {
         name: '📢 Channels',
         value:
-          '**#wildlife-alerts** — Public alerts for medium/high threat events.\n' +
-          '**#sentinel-ops** — Pipeline activity + critical alerts awaiting review (react ✅ to approve).',
+          '**#wildlife-alerts** — Curated alerts approved via HITL review in #sentinel-ops.\n' +
+          '**#sentinel-ops** — Pipeline activity + all alerts awaiting your review (react ✅ to approve, ❌ to suppress).',
       },
       {
         name: '⚠️ Reading an Alert',

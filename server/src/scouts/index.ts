@@ -96,3 +96,17 @@ export function startScouts(): void {
   scouts.enso.run().catch(err => console.error('[scouts] NoaaCpcEnsoScout startup error:', err));
   scouts.fishing.run().catch(err => console.error('[scouts] GfwFishingScout startup error:', err));
 }
+
+/**
+ * Immediately runs all daily scouts (GLAD, NSIDC, NOAA CPC, GFW, Coral).
+ * Called on pipeline resume so data isn't lost when the app restarts outside
+ * the daily cron window. Safe to call multiple times — scouts self-deduplicate.
+ */
+export function runDailyScoutsNow(): void {
+  console.log('[scouts] Running daily scouts on resume');
+  scouts.coral.run().catch(err => console.error('[scouts] CoralScout resume error:', err));
+  scouts.deforestation.run().catch(err => console.error('[scouts] GladDeforestationScout resume error:', err));
+  scouts.seaIce.run().catch(err => console.error('[scouts] NsidcSeaIceScout resume error:', err));
+  scouts.enso.run().catch(err => console.error('[scouts] NoaaCpcEnsoScout resume error:', err));
+  scouts.fishing.run().catch(err => console.error('[scouts] GfwFishingScout resume error:', err));
+}

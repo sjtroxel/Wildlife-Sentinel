@@ -1,8 +1,8 @@
 /**
  * Discord Publisher — consumes DiscordQueueItems and routes to the correct channel.
  *
- * medium/high → auto-post to #wildlife-alerts
- * critical    → HITL review in #sentinel-ops (postCriticalForReview)
+ * All non-low alerts → HITL review in #sentinel-ops (postCriticalForReview)
+ * Human reacts ✅ to approve → bot reposts to #wildlife-alerts
  *
  * The publisher is the only place that calls discord.js send() for alerts.
  * It also updates discord_message_id in the alerts table after posting.
@@ -65,7 +65,7 @@ async function publishItem(item: DiscordQueueItem): Promise<void> {
       level: 'alert',
     });
   } else {
-    // medium or high — auto-post to #wildlife-alerts
+    // non-critical/non-review path — post directly to #wildlife-alerts after approval
     const posted = await getWildlifeAlertsChannel().send({ embeds: [embed] });
 
     await sql`

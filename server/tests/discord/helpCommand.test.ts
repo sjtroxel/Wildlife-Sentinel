@@ -28,8 +28,8 @@ async function runHelpHandler(frontendUrl: string): Promise<{ embeds: EmbedBuild
       {
         name: '📢 Channels',
         value:
-          '**#wildlife-alerts** — Public alerts for medium/high threat events.\n' +
-          '**#sentinel-ops** — Pipeline activity + critical alerts awaiting review (react ✅ to approve).',
+          '**#wildlife-alerts** — Curated alerts approved via HITL review in #sentinel-ops.\n' +
+          '**#sentinel-ops** — Pipeline activity + all alerts awaiting your review (react ✅ to approve, ❌ to suppress).',
       },
       {
         name: '⚠️ Reading an Alert',
