@@ -12,7 +12,27 @@ const EVENT_TYPES: EventType[] = [
   'flood',
   'drought',
   'coral_bleaching',
+  'earthquake',
+  'volcanic_eruption',
+  'deforestation',
+  'sea_ice_loss',
+  'climate_anomaly',
+  'illegal_fishing',
 ];
+
+const EVENT_LABELS: Record<EventType, string> = {
+  wildfire: 'Wildfire',
+  tropical_storm: 'Tropical Storm',
+  flood: 'Flood',
+  drought: 'Drought',
+  coral_bleaching: 'Coral Bleaching',
+  earthquake: 'Earthquake',
+  volcanic_eruption: 'Volcanic Eruption',
+  deforestation: 'Deforestation',
+  sea_ice_loss: 'Sea Ice Loss',
+  climate_anomaly: 'Climate Anomaly',
+  illegal_fishing: 'Illegal Fishing',
+};
 
 const THREAT_LEVELS: ThreatLevel[] = ['critical', 'high', 'medium', 'low'];
 
@@ -118,7 +138,7 @@ export default function AlertsArchive() {
               <option value="">All types</option>
               {EVENT_TYPES.map((t) => (
                 <option key={t} value={t}>
-                  {t.replace(/_/g, ' ')}
+                  {EVENT_LABELS[t]}
                 </option>
               ))}
             </select>

@@ -197,7 +197,7 @@ export async function processAlert(assessed: AssessedAlert): Promise<void> {
   await logToWarRoom({
     agent: 'synthesis',
     action: 'Generating embed',
-    detail: `routing to #${channel} | threat: ${assessed.threat_level}`,
+    detail: `routing to #${channel === 'sentinel-ops-review' ? 'sentinel-ops' : channel} | threat: ${assessed.threat_level}`,
     level: assessed.threat_level === 'critical' ? 'alert' : 'info',
   });
 

@@ -68,10 +68,11 @@ export default function DisasterMapInner({ activeLayers }: DisasterMapInnerProps
   // Effect 1: initialize map
   useEffect(() => {
     if (!containerRef.current) return;
-    const m = L.map(containerRef.current, {
+    const container = containerRef.current;
+    const m = L.map(container, {
       zoomControl: true,
       worldCopyJump: true,
-      maxBounds: L.latLngBounds(L.latLng(-85, -100000), L.latLng(85, 100000)),
+      maxBounds: L.latLngBounds(L.latLng(-85, -180), L.latLng(85, 180)),
       maxBoundsViscosity: 1.0,
       minZoom: 2,
     });
@@ -83,7 +84,13 @@ export default function DisasterMapInner({ activeLayers }: DisasterMapInnerProps
     }).addTo(m);
     m.setView([20, 0], 2);
     setMap(m);
+
+    // Recompute tile coverage whenever the container is resized (e.g. SPA navigation)
+    const ro = new ResizeObserver(() => { m.invalidateSize(); });
+    ro.observe(container);
+
     return () => {
+      ro.disconnect();
       m.remove();
     };
   }, []);

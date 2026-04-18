@@ -224,7 +224,7 @@ describe('SynthesisAgent.processAlert', () => {
     expect(logToWarRoom).toHaveBeenCalledWith(
       expect.objectContaining({
         agent: 'synthesis',
-        detail: expect.stringContaining('sentinel-ops-review'),
+        detail: expect.stringContaining('sentinel-ops'),
       })
     );
   });

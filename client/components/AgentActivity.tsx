@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { formatRelativeTime } from '@/lib/utils';
+import { useEffect, useRef, useState } from 'react';
+import { formatTime } from '@/lib/utils';
 
 interface ActivityEntry {
   agent: string;
@@ -12,6 +12,7 @@ interface ActivityEntry {
 
 export default function AgentActivity() {
   const [entries, setEntries] = useState<ActivityEntry[]>([]);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const base = process.env.NEXT_PUBLIC_API_URL ?? '';
@@ -20,7 +21,7 @@ export default function AgentActivity() {
     source.onmessage = (e: MessageEvent<string>) => {
       try {
         const entry = JSON.parse(e.data) as ActivityEntry;
-        setEntries((prev) => [entry, ...prev].slice(0, 50));
+        setEntries((prev) => [...prev, entry].slice(-50));
       } catch {
         // ignore malformed messages
       }
@@ -35,6 +36,11 @@ export default function AgentActivity() {
     };
   }, []);
 
+  // Scroll to bottom whenever a new entry arrives
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [entries]);
+
   return (
     <div className="p-3 h-40 flex flex-col">
       <h2 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-2 shrink-0">
@@ -46,15 +52,16 @@ export default function AgentActivity() {
         ) : (
           entries.map((entry, i) => (
             <div key={i} className="text-[11px] font-mono leading-relaxed text-zinc-600 dark:text-zinc-400">
+              <span className="text-zinc-400 dark:text-zinc-600 mr-1.5">{formatTime(entry.timestamp)}</span>
               <span className="text-zinc-400 dark:text-zinc-600">[{entry.agent}]</span>{' '}
               <span className="text-zinc-800 dark:text-zinc-300">{entry.action}</span>
               {entry.detail && (
                 <span className="text-zinc-500"> — {entry.detail}</span>
               )}
-              <span className="text-zinc-400 dark:text-zinc-700 ml-1">{formatRelativeTime(entry.timestamp)}</span>
             </div>
           ))
         )}
+        <div ref={bottomRef} />
       </div>
     </div>
   );

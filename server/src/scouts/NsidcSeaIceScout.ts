@@ -10,6 +10,9 @@ const CLIMATOLOGY = require('./seaIceClimatology.json') as SeaIceClimatology;
 const NSIDC_BASE =
   'https://noaadata.apps.nsidc.org/NOAA/G02135';
 
+// v4.0 filenames — NSIDC updated from v3.0 in early 2026. v3.0 URLs return 404.
+const NSIDC_FILE_VERSION = 'v4.0';
+
 // Only alert when extent is this many standard deviations below the 1981–2010 median.
 const SIGMA_THRESHOLD = -1.0;
 
@@ -100,7 +103,7 @@ export class NsidcSeaIceScout extends BaseScout {
 
     for (const hemisphere of hemispheres) {
       const prefix = hemisphere === 'north' ? 'N' : 'S';
-      const url = `${NSIDC_BASE}/${hemisphere}/daily/data/${prefix}_seaice_extent_daily_v3.0.csv`;
+      const url = `${NSIDC_BASE}/${hemisphere}/daily/data/${prefix}_seaice_extent_daily_${NSIDC_FILE_VERSION}.csv`;
 
       const res = await fetchWithRetry(url, undefined, 3, 15_000);
       const csvText = await res.text();

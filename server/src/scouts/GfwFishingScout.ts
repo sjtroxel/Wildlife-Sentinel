@@ -84,14 +84,14 @@ export class GfwFishingScout extends BaseScout {
     const events: RawDisasterEvent[] = [];
 
     for (const mpa of MPA_REGIONS.mpas) {
+      // GFW Events API v3 does not accept latitude/longitude/radius params (returns 422).
+      // Geographic filtering uses regions[mpa][]=WDPA_ID — GFW natively knows MPA boundaries.
       const url =
         `${GFW_EVENTS_BASE}` +
-        `?datasets[0]=public-global-fishing-events:latest` +
+        `?datasets[]=public-global-fishing-events:latest` +
         `&start-date=${yesterday}` +
         `&end-date=${today}` +
-        `&latitude=${mpa.centroid.lat}` +
-        `&longitude=${mpa.centroid.lng}` +
-        `&radius=${mpa.radius_km}` +
+        `&regions[mpa][]=${mpa.wdpa_id}` +
         `&limit=200`;
 
       let body: GfwEventsResponse;
