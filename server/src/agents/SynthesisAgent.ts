@@ -145,7 +145,7 @@ export async function processAlert(assessed: AssessedAlert): Promise<void> {
     model: MODELS.CLAUDE_HAIKU,
     systemPrompt,
     userMessage,
-    maxTokens: 300,
+    maxTokens: 600,
     temperature: 0.4,
     jsonMode: true,
   });
