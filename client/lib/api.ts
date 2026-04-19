@@ -14,6 +14,9 @@ export const api = {
   getRecentAlerts: (limit = 20): Promise<AlertRow[]> =>
     fetch(`${BASE}/alerts/recent?limit=${limit}`).then((r) => r.json()),
 
+  getMapAlerts: (perType = 15): Promise<AlertRow[]> =>
+    fetch(`${BASE}/alerts/map?per_type=${perType}`).then((r) => r.json()),
+
   getAlerts: (filters: AlertFilters = {}): Promise<AlertRow[]> => {
     const params = new URLSearchParams();
     if (filters.event_type) params.set('event_type', filters.event_type);

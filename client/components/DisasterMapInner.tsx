@@ -118,7 +118,7 @@ export default function DisasterMapInner({ activeLayers }: DisasterMapInnerProps
     });
     layerGroupsRef.current = groups;
 
-    api.getRecentAlerts(50).then((alerts) => {
+    api.getMapAlerts(15).then((alerts) => {
       alerts.forEach((alert) => {
         if (!alert.coordinates) return;
         const color = EVENT_COLORS[alert.event_type as EventType] ?? '#6b7280';

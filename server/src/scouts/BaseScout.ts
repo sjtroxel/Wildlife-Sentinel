@@ -111,7 +111,8 @@ export async function fetchWithRetry(
     if (res.ok) return res;
 
     if ([400, 401, 403, 404, 422].includes(res.status)) {
-      throw new Error(`HTTP ${res.status} from ${url} — permanent failure`);
+      const errorBody = await res.text().catch(() => '(unreadable)');
+      throw new Error(`HTTP ${res.status} from ${url} — permanent failure: ${errorBody.slice(0, 500)}`);
     }
 
     if (attempt < maxAttempts) {

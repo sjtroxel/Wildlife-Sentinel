@@ -89,19 +89,19 @@ export default function Home() {
           <HResizeHandle />
           <Panel defaultSize={35} minSize={18} className="flex flex-col border-l border-zinc-200 dark:border-zinc-800">
             <Group orientation="vertical" className="h-full">
-              <Panel defaultSize={45} minSize={15} className="min-h-0 overflow-y-auto">
+              <Panel defaultSize={45} minSize={15} className="min-h-0 overflow-y-auto touch-pan-y overscroll-contain">
                 <AlertsFeed />
               </Panel>
               <VResizeHandle />
-              <Panel defaultSize={18} minSize={8} className="min-h-0 overflow-y-auto border-t border-zinc-200 dark:border-zinc-800">
+              <Panel defaultSize={18} minSize={8} className="min-h-0 overflow-y-auto touch-pan-y overscroll-contain border-t border-zinc-200 dark:border-zinc-800">
                 <AgentActivity />
               </Panel>
               <VResizeHandle />
-              <Panel defaultSize={17} minSize={8} className="min-h-0 overflow-y-auto border-t border-zinc-200 dark:border-zinc-800">
+              <Panel defaultSize={17} minSize={8} className="min-h-0 overflow-y-auto touch-pan-y overscroll-contain border-t border-zinc-200 dark:border-zinc-800">
                 <RefinerChart />
               </Panel>
               <VResizeHandle />
-              <Panel defaultSize={20} minSize={8} className="min-h-0 overflow-y-auto border-t border-zinc-200 dark:border-zinc-800">
+              <Panel defaultSize={20} minSize={8} className="min-h-0 overflow-y-auto touch-pan-y overscroll-contain border-t border-zinc-200 dark:border-zinc-800">
                 <TrendChart />
               </Panel>
             </Group>
@@ -114,19 +114,19 @@ export default function Home() {
             <DisasterMap />
           </Panel>
           <VResizeHandle />
-          <Panel defaultSize={28} minSize={10} className="min-h-0 overflow-y-auto border-t border-zinc-200 dark:border-zinc-800">
+          <Panel defaultSize={28} minSize={10} className="min-h-0 overflow-y-auto touch-pan-y overscroll-contain border-t border-zinc-200 dark:border-zinc-800">
             <AlertsFeed />
           </Panel>
           <VResizeHandle />
-          <Panel defaultSize={13} minSize={5} className="min-h-0 overflow-y-auto border-t border-zinc-200 dark:border-zinc-800">
+          <Panel defaultSize={13} minSize={5} className="min-h-0 overflow-y-auto touch-pan-y overscroll-contain border-t border-zinc-200 dark:border-zinc-800">
             <AgentActivity />
           </Panel>
           <VResizeHandle />
-          <Panel defaultSize={12} minSize={5} className="min-h-0 overflow-y-auto border-t border-zinc-200 dark:border-zinc-800">
+          <Panel defaultSize={12} minSize={5} className="min-h-0 overflow-y-auto touch-pan-y overscroll-contain border-t border-zinc-200 dark:border-zinc-800">
             <RefinerChart />
           </Panel>
           <VResizeHandle />
-          <Panel defaultSize={12} minSize={5} className="min-h-0 overflow-y-auto border-t border-zinc-200 dark:border-zinc-800">
+          <Panel defaultSize={12} minSize={5} className="min-h-0 overflow-y-auto touch-pan-y overscroll-contain border-t border-zinc-200 dark:border-zinc-800">
             <TrendChart />
           </Panel>
         </Group>

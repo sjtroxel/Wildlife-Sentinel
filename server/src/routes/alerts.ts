@@ -90,6 +90,61 @@ alertsRouter.get('/recent', async (req: Request, res: Response) => {
   res.json(rows.map(normalizeAlertRow));
 });
 
+// GET /alerts/map?per_type=15&per_continent=5
+// Returns up to per_type most recent per event type UNION up to per_continent most recent
+// per continent — ensuring both categorical and geographic diversity on the map.
+alertsRouter.get('/map', async (req: Request, res: Response) => {
+  const perType = Math.min(parseInt(String(req.query['per_type'] ?? '15')), 30);
+  const perContinent = Math.min(parseInt(String(req.query['per_continent'] ?? '5')), 20);
+
+  // Continent assignment uses approximate bounding boxes — good enough for map diversity.
+  // Overlapping regions (e.g. Russia spans Europe/Asia) are acceptable: the CASE takes
+  // the first match, so an event lands in exactly one continent bucket.
+  const rows = await sql`
+    WITH tagged AS (
+      SELECT id, source, event_type, coordinates, severity, threat_level,
+             confidence_score, enrichment_data, created_at, discord_message_id,
+             CASE
+               WHEN (coordinates->>'lat')::float BETWEEN -35 AND 37
+                AND (coordinates->>'lng')::float BETWEEN -18 AND 52  THEN 'africa'
+               WHEN (coordinates->>'lat')::float BETWEEN -56 AND 13
+                AND (coordinates->>'lng')::float BETWEEN -82 AND -34 THEN 'south_america'
+               WHEN (coordinates->>'lat')::float BETWEEN  7  AND 84
+                AND (coordinates->>'lng')::float BETWEEN -168 AND -52 THEN 'north_america'
+               WHEN (coordinates->>'lat')::float BETWEEN 36  AND 72
+                AND (coordinates->>'lng')::float BETWEEN -25 AND 40  THEN 'europe'
+               WHEN (coordinates->>'lat')::float BETWEEN  5  AND 75
+                AND (coordinates->>'lng')::float BETWEEN  25 AND 180 THEN 'asia'
+               WHEN (coordinates->>'lat')::float BETWEEN -47 AND 22
+                AND (coordinates->>'lng')::float BETWEEN 110 AND 180 THEN 'oceania'
+               ELSE 'other'
+             END AS continent
+      FROM alerts
+      WHERE threat_level IS NOT NULL
+    ),
+    by_type AS (
+      SELECT id,
+             ROW_NUMBER() OVER (PARTITION BY event_type ORDER BY created_at DESC) AS rn
+      FROM tagged
+    ),
+    by_continent AS (
+      SELECT id,
+             ROW_NUMBER() OVER (PARTITION BY continent ORDER BY created_at DESC) AS rn
+      FROM tagged
+      WHERE continent != 'other'
+    )
+    SELECT DISTINCT t.id, t.source, t.event_type, t.coordinates, t.severity,
+                    t.threat_level, t.confidence_score, t.enrichment_data,
+                    t.created_at, t.discord_message_id
+    FROM tagged t
+    WHERE t.id IN (SELECT id FROM by_type      WHERE rn <= ${perType})
+       OR t.id IN (SELECT id FROM by_continent WHERE rn <= ${perContinent})
+    ORDER BY t.created_at DESC
+  `;
+
+  res.json(rows.map(normalizeAlertRow));
+});
+
 // GET /alerts/:id  — full alert detail + refiner score history
 alertsRouter.get('/:id', async (req: Request, res: Response) => {
   const id = req.params['id'];

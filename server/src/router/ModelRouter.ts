@@ -175,7 +175,12 @@ class ModelRouter {
         });
 
         const result = await model.generateContent(request.userMessage);
-        const text = result.response.text();
+        const raw = result.response.text();
+        // Strip markdown code fences — Gemini occasionally wraps JSON in ```json ... ```
+        // even when responseMimeType is set. Apply only when jsonMode is requested.
+        const text = request.jsonMode === true
+          ? raw.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '').trim()
+          : raw;
         const usage = result.response.usageMetadata;
         const inputTokens = usage?.promptTokenCount ?? 0;
         const outputTokens = usage?.candidatesTokenCount ?? 0;

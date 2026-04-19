@@ -155,7 +155,7 @@ async function analyzeGBIFSightings(
         '"most_recent_sighting": "ISO date string or null if none", ' +
         '"summary": "1-2 sentence summary of sighting data" }',
       userMessage,
-      maxTokens: 256,
+      maxTokens: 512,
       jsonMode: true,
     });
 

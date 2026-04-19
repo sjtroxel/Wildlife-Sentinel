@@ -220,6 +220,10 @@ export interface TrendPoint {
   flood: number;
   drought: number;
   coral_bleaching: number;
+  earthquake: number;
+  volcanic_eruption: number;
+  deforestation: number;
+  sea_ice_loss: number;
   climate_anomaly: number;
   illegal_fishing: number;
   total: number;
