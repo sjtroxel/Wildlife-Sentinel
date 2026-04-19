@@ -197,7 +197,7 @@ describe('EnrichmentAgent.processEvent', () => {
     );
   });
 
-  it('throws when Open-Meteo returns non-OK status', async () => {
+  it('continues without weather data when Open-Meteo returns non-OK status', async () => {
     mockSql.mockResolvedValueOnce([{
       id: 'habitat-uuid-1',
       species_name: 'Pongo abelii',
@@ -211,8 +211,10 @@ describe('EnrichmentAgent.processEvent', () => {
       text: async () => 'Service Unavailable',
     }));
 
-    // The outer loop in production catches this and logs it — here we verify the throw
-    await expect(processEvent(nearSumatraEvent)).rejects.toThrow('Open-Meteo 503');
+    await expect(processEvent(nearSumatraEvent)).resolves.toBeUndefined();
+    expect(logPipelineEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'published', stage: 'enriched' })
+    );
   });
 
   it('calls storeEventForAssembly after publishing to disaster:enriched', async () => {
@@ -493,16 +495,15 @@ describe('startEnrichmentAgent loop', () => {
     expect(redis.xack).toHaveBeenCalledWith('disaster:raw', 'enrichment-group', 'raw-err-001');
   });
 
-  it('logs error status to pipeline_events when processEvent throws', async () => {
+  it('logs published status to pipeline_events even when Open-Meteo fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: false, status: 503, text: async () => 'Service Unavailable',
     }));
     await runEnrichmentIteration();
     expect(logPipelineEvent).toHaveBeenCalledWith(
       expect.objectContaining({
-        stage: 'enrichment',
-        status: 'error',
-        reason: expect.stringContaining('503'),
+        stage: 'enriched',
+        status: 'published',
       })
     );
   });

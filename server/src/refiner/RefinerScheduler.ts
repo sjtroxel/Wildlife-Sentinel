@@ -24,7 +24,7 @@ export function startRefinerScheduler(): void {
       UPDATE refiner_queue rq
       SET completed_at = NOW()
       FROM alerts a
-      WHERE a.id::text = rq.alert_id
+      WHERE a.id = rq.alert_id
         AND rq.completed_at IS NULL
         AND (
           a.coordinates IS NULL
@@ -41,7 +41,7 @@ export function startRefinerScheduler(): void {
       due = await sql<QueueItem[]>`
         SELECT rq.id, rq.alert_id, rq.evaluation_time
         FROM refiner_queue rq
-        JOIN alerts a ON a.id::text = rq.alert_id
+        JOIN alerts a ON a.id = rq.alert_id
         WHERE rq.run_at <= NOW()
           AND rq.completed_at IS NULL
           AND a.coordinates IS NOT NULL

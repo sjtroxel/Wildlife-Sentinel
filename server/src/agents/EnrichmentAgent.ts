@@ -137,15 +137,18 @@ export async function processEvent(event: RawDisasterEvent): Promise<void> {
   }
   await redis.setex(corrKey, CORRELATION_TTL_SECONDS, event.id);
 
-  const [weather, ensoPhase, ensoAnomaly] = await Promise.all([
-    fetchWeather(lat, lng),
+  const [weatherResult, ensoPhase, ensoAnomaly] = await Promise.all([
+    fetchWeather(lat, lng).catch((err: unknown) => {
+      console.warn('[enrichment] Weather fetch failed — continuing without weather data:', err);
+      return null;
+    }),
     redis.get('enso:current_phase'),
     redis.get('enso:oni_anomaly'),
   ]);
 
-  const windDir = weather.wind_direction_10m[0] ?? null;
-  const windSpeed = weather.wind_speed_10m[0] ?? null;
-  const precipProb = weather.precipitation_probability[0] ?? null;
+  const windDir = weatherResult?.wind_direction_10m[0] ?? null;
+  const windSpeed = weatherResult?.wind_speed_10m[0] ?? null;
+  const precipProb = weatherResult?.precipitation_probability[0] ?? null;
 
   const weather_summary = await generateWeatherSummary(windSpeed, windDir, precipProb, ensoPhase, ensoAnomaly);
 

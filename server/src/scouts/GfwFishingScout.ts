@@ -95,6 +95,7 @@ export class GfwFishingScout extends BaseScout {
           id: mpa.wdpa_id,  // must be string — GFW rejects integer WDPA IDs
         },
         limit: 200,
+        offset: 0,
       });
 
       let body: GfwEventsResponse;
