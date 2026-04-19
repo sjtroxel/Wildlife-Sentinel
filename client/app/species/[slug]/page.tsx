@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { api } from '@/lib/api';
 import { formatRelativeTime } from '@/lib/utils';
 import SpeciesRangeMap from '@/components/SpeciesRangeMap';
+import Copyright from '@/components/Copyright';
 import type { SpeciesDetail, ThreatLevel, IUCNStatus } from '@wildlife-sentinel/shared/types';
 
 const IUCN_BADGE: Record<IUCNStatus, string> = {
@@ -199,13 +200,16 @@ export default function SpeciesDetailPage() {
         </div>
 
         {/* Footer */}
-        <div className="mt-8 pt-4 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+        <div className="mt-8 pt-4 border-t border-zinc-200 dark:border-zinc-800 space-y-1">
           <span className="text-[10px] text-zinc-400 dark:text-zinc-700">
             Wildlife Sentinel · Data: IUCN Red List / GBIF / NASA FIRMS / NOAA
           </span>
-          <Link href="/species" className="text-[10px] text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-400 transition-colors">
-            ← All species
-          </Link>
+          <div className="flex items-center justify-between">
+            <Copyright />
+            <Link href="/species" className="text-[10px] text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-400 transition-colors">
+              ← All species
+            </Link>
+          </div>
         </div>
 
       </div>

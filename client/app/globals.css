@@ -14,3 +14,26 @@
   --color-event-drought:   #f59e0b;
   --color-event-coral:     #14b8a6;
 }
+
+/* Leaflet popup tints — very light (~8% opacity) per event type */
+.ws-popup-wildfire         .leaflet-popup-content-wrapper { background: #ef444414; }
+.ws-popup-tropical_storm   .leaflet-popup-content-wrapper { background: #3b82f614; }
+.ws-popup-flood            .leaflet-popup-content-wrapper { background: #06b6d414; }
+.ws-popup-drought          .leaflet-popup-content-wrapper { background: #f59e0b14; }
+.ws-popup-coral_bleaching  .leaflet-popup-content-wrapper { background: #14b8a614; }
+.ws-popup-earthquake       .leaflet-popup-content-wrapper { background: #a855f714; }
+.ws-popup-volcanic_eruption .leaflet-popup-content-wrapper { background: #f9731614; }
+.ws-popup-deforestation    .leaflet-popup-content-wrapper { background: #78350f14; }
+.ws-popup-sea_ice_loss     .leaflet-popup-content-wrapper { background: #bfdbfe14; }
+.ws-popup-climate_anomaly  .leaflet-popup-content-wrapper { background: #6366f114; }
+.ws-popup-illegal_fishing  .leaflet-popup-content-wrapper { background: #be185d14; }
+
+/* Popup link styling */
+.ws-popup-link {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  color: #6b7280;
+  text-decoration: none;
+}
+.ws-popup-link:hover { text-decoration: underline; }

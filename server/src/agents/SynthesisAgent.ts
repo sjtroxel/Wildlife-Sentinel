@@ -155,7 +155,10 @@ export async function processAlert(assessed: AssessedAlert): Promise<void> {
   const embed = new EmbedBuilder()
     .setColor(THREAT_COLORS[assessed.threat_level])
     .setTitle(synthesis.title)
-    .setDescription(synthesis.narrative)
+    .setDescription(
+      synthesis.narrative +
+      '\n\n© 2026 · [GitHub](https://github.com/sjtroxel/Wildlife-Sentinel) · All rights reserved.'
+    )
     .addFields(
       { name: 'Disaster Type', value: EVENT_TYPE_LABELS[assessed.event_type] ?? assessed.event_type, inline: true },
       { name: 'Distance to Habitat', value: `${assessed.habitat_distance_km.toFixed(1)} km`, inline: true },

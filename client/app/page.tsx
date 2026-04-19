@@ -10,6 +10,7 @@ import AgentActivity from '@/components/AgentActivity';
 import RefinerChart from '@/components/RefinerChart';
 import TrendChart from '@/components/TrendChart';
 import ThemeToggle from '@/components/ThemeToggle';
+import Copyright from '@/components/Copyright';
 
 const DisasterMap = dynamic(() => import('@/components/DisasterMap'), {
   ssr: false,
@@ -66,9 +67,10 @@ export default function Home() {
           className="h-8 w-auto hidden dark:block"
           priority
         />
-        <span className="flex-1 text-xs text-zinc-500 hidden sm:inline">
-          Real-time disaster monitoring for endangered species
-        </span>
+        <div className="flex-1 hidden sm:flex flex-col gap-0.5">
+          <span className="text-xs text-zinc-500">Real-time disaster monitoring for endangered species</span>
+          <Copyright />
+        </div>
         <nav className="flex items-center gap-3 text-xs">
           <Link href="/alerts" className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">
             Alerts

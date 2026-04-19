@@ -123,14 +123,19 @@ export default function DisasterMapInner({ activeLayers }: DisasterMapInnerProps
         if (!alert.coordinates) return;
         const color = EVENT_COLORS[alert.event_type as EventType] ?? '#6b7280';
         const radius = 6 + (alert.severity ?? 0) * 8;
+        const threatColor = alert.threat_level === 'critical' ? '#dc2626'
+          : alert.threat_level === 'high'     ? '#ea580c'
+          : alert.threat_level === 'medium'   ? '#d97706'
+          : '#6b7280';
+        const popupContent =
+          `<strong style="text-transform:capitalize">${alert.event_type.replace(/_/g, ' ')}</strong><br>` +
+          `<span style="color:${threatColor};font-weight:600;font-size:11px">${(alert.threat_level ?? 'unknown').toUpperCase()}</span>` +
+          `<span style="color:#9ca3af;font-size:11px"> · ${new Date(alert.created_at).toLocaleDateString()}</span><br>` +
+          `<a href="/alerts/${alert.id}" class="ws-popup-link">View details →</a>`;
         const marker = L.circleMarker(
           [alert.coordinates.lat, alert.coordinates.lng],
           { color, fillColor: color, fillOpacity: 0.7, radius, weight: 1 }
-        ).bindPopup(
-          `<strong>${alert.event_type.replace(/_/g, ' ')}</strong><br>` +
-          `Threat: ${alert.threat_level ?? 'unknown'}<br>` +
-          `${new Date(alert.created_at).toLocaleDateString()}`
-        );
+        ).bindPopup(popupContent, { className: `ws-popup-${alert.event_type}` });
 
         const group = groups[alert.event_type as EventType];
         if (group) {

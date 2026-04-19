@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { formatRelativeTime } from '@/lib/utils';
+import Copyright from '@/components/Copyright';
 import type { AlertDetail, ThreatLevel } from '@wildlife-sentinel/shared/types';
 
 const THREAT_COLORS: Record<ThreatLevel, string> = {
@@ -291,11 +292,14 @@ export default function AlertDetailPage() {
         )}
 
         {/* Footer */}
-        <div className="mt-6 pt-4 border-t border-zinc-800 flex items-center justify-between">
+        <div className="mt-6 pt-4 border-t border-zinc-800 space-y-1">
           <span className="text-[10px] text-zinc-700">Wildlife Sentinel · Data: NASA FIRMS / NOAA / USGS / IUCN</span>
-          <Link href="/" className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors">
-            ← Back to dashboard
-          </Link>
+          <div className="flex items-center justify-between">
+            <Copyright />
+            <Link href="/" className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors">
+              ← Back to dashboard
+            </Link>
+          </div>
         </div>
 
       </div>
