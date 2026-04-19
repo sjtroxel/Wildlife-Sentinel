@@ -80,6 +80,12 @@ async function tryAssemble(eventId: string): Promise<void> {
     return;
   }
 
+  // All three fields present. Atomically claim the publish right via SETNX so
+  // concurrent calls (habitat + species arriving simultaneously) don't both fire.
+  const claimKey = `assembly:publishing:${eventId}`;
+  const claimed = await redis.set(claimKey, '1', 'EX', 60, 'NX');
+  if (!claimed) return; // another concurrent tryAssemble already claimed it
+
   const event = JSON.parse(stored['event']) as EnrichedDisasterEvent;
   const habitat = JSON.parse(stored['habitat']) as HabitatAssemblyResult;
   const species = JSON.parse(stored['species']) as SpeciesAssemblyResult;

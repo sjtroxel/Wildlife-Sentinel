@@ -69,9 +69,13 @@ export async function runWeeklyDigest(): Promise<void> {
   const accuracyDisplay = avgScore != null ? `${(parseFloat(avgScore) * 100).toFixed(0)}%` : 'n/a';
 
   // 4. Top 3 species most frequently at risk
+  // species_at_risk is stored inside enrichment_data JSONB, not a top-level column
   const speciesCounts = await sql<SpeciesCount[]>`
     SELECT species_name, COUNT(*)::text AS count
-    FROM alerts, UNNEST(species_at_risk) AS species_name
+    FROM alerts,
+         LATERAL jsonb_array_elements_text(
+           COALESCE(enrichment_data->'species_at_risk', '[]'::jsonb)
+         ) AS species_name
     WHERE created_at > NOW() - INTERVAL '7 days'
     GROUP BY species_name
     ORDER BY COUNT(*) DESC

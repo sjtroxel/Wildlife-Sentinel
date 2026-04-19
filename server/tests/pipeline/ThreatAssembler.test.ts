@@ -6,6 +6,7 @@ const mockRedis = vi.hoisted(() => ({
   hgetall: vi.fn(),
   xadd: vi.fn().mockResolvedValue('1234-0'),
   del: vi.fn().mockResolvedValue(1),
+  set: vi.fn().mockResolvedValue('OK'), // claim lock: 'OK' = claimed, null = already taken
 }));
 
 vi.mock('../../src/redis/client.js', () => ({ redis: mockRedis }));
@@ -137,7 +138,10 @@ describe('partial assembly', () => {
 });
 
 describe('full assembly — species arrives last', () => {
-  beforeEach(() => vi.resetAllMocks());
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mockRedis.set.mockResolvedValue('OK');
+  });
 
   it('publishes FullyEnrichedEvent to alerts:assessed when all three parts present', async () => {
     // storeHabitatResult → tryAssemble → partial (no species yet)
@@ -205,7 +209,10 @@ describe('full assembly — species arrives last', () => {
 });
 
 describe('full assembly — habitat arrives last', () => {
-  beforeEach(() => vi.resetAllMocks());
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mockRedis.set.mockResolvedValue('OK');
+  });
 
   it('publishes when habitat is the final piece to arrive', async () => {
     // species stored first — partial
@@ -228,5 +235,30 @@ describe('full assembly — habitat arrives last', () => {
 
     expect(mockRedis.xadd).toHaveBeenCalledOnce();
     expect(mockRedis.del).toHaveBeenCalledWith('assembly:event-1');
+  });
+});
+
+describe('race condition — concurrent habitat+species arrival', () => {
+  beforeEach(() => vi.resetAllMocks());
+
+  it('publishes exactly once when the claim lock is taken on the second concurrent call', async () => {
+    const fullHash = {
+      event: JSON.stringify(BASE_EVENT),
+      habitat: JSON.stringify(HABITAT_RESULT),
+      species: JSON.stringify(SPECIES_RESULT),
+    };
+
+    // Both concurrent calls see a complete hash
+    mockRedis.hgetall.mockResolvedValue(fullHash);
+
+    // First call wins the SETNX lock ('OK'), second call loses (null)
+    mockRedis.set.mockResolvedValueOnce('OK').mockResolvedValueOnce(null);
+
+    await Promise.all([
+      storeHabitatResult('event-race', HABITAT_RESULT),
+      storeSpeciesResult('event-race', SPECIES_RESULT),
+    ]);
+
+    expect(mockRedis.xadd).toHaveBeenCalledOnce();
   });
 });

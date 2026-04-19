@@ -50,6 +50,25 @@ interface GfwEventsResponse {
 }
 
 /**
+ * Builds a GeoJSON Polygon bounding box for a circular MPA region.
+ * GFW Events API supports `geometry` (GeoJSON) but not `public-mpa-all` as a region dataset.
+ */
+function buildBbox(lat: number, lng: number, radiusKm: number): { type: 'Polygon'; coordinates: number[][][] } {
+  const latDeg = radiusKm / 111;
+  const lngDeg = radiusKm / (111 * Math.cos(lat * Math.PI / 180));
+  return {
+    type: 'Polygon',
+    coordinates: [[
+      [lng - lngDeg, lat - latDeg],
+      [lng + lngDeg, lat - latDeg],
+      [lng + lngDeg, lat + latDeg],
+      [lng - lngDeg, lat + latDeg],
+      [lng - lngDeg, lat - latDeg],
+    ]],
+  };
+}
+
+/**
  * Returns the Monday of the ISO week containing `date` as a compact YYYYMMDD string.
  * Events fired during the same week for the same MPA share the same dedup key —
  * prevents daily spam when vessels persistently fish in an area all week.
@@ -84,23 +103,23 @@ export class GfwFishingScout extends BaseScout {
     const events: RawDisasterEvent[] = [];
 
     for (const mpa of MPA_REGIONS.mpas) {
-      // GFW Events API v3 requires POST for region-based spatial filtering.
-      // GET params (lat/lng/radius, regions[mpa][], region-id) all return 422.
+      // GFW Events API v3:
+      // - limit/offset must be query params (body params → 422)
+      // - dataset must be a specific version, not :latest (→ 422 "unsupported schema")
+      // - public-mpa-all is a context-layer type, unsupported as a region filter (→ 422)
+      //   Use geometry (GeoJSON bbox from centroid + radius) instead.
+      const url = `${GFW_EVENTS_BASE}?limit=200&offset=0`;
+
       const postBody = JSON.stringify({
-        datasets: ['public-global-fishing-events:latest'],
+        datasets: ['public-global-fishing-events:v4.0'],
         startDate: yesterday,
         endDate: today,
-        region: {
-          dataset: 'public-mpa-all:latest',
-          id: mpa.wdpa_id,  // must be string — GFW rejects integer WDPA IDs
-        },
-        limit: 200,
-        offset: 0,
+        geometry: buildBbox(mpa.centroid.lat, mpa.centroid.lng, mpa.radius_km),
       });
 
       let body: GfwEventsResponse;
       try {
-        const res = await fetchWithRetry(GFW_EVENTS_BASE, {
+        const res = await fetchWithRetry(url, {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${config.fishingWatchApiKey}`,
