@@ -4,6 +4,7 @@ import { BaseScout, fetchWithRetry } from './BaseScout.js';
 // NOAA NCEI Climate at a Glance — global land+ocean annual temperature anomaly.
 // No API key required. Baseline: 1901–2000 average.
 // URL format: /cag/global/time-series/{area}/{variable}/{period}/{month}/{begin}-{end}.json
+// Annual data is only published after the year completes — always request the prior year.
 const NCEI_CAG_URL = (endYear: number) =>
   `https://www.ncei.noaa.gov/cag/global/time-series/globe/land_ocean/ann/12/1880-${endYear}.json`;
 
@@ -100,8 +101,9 @@ export class NoaaGtaScout extends BaseScout {
   }
 
   protected async fetchEvents(): Promise<RawDisasterEvent[]> {
-    const currentYear = new Date().getUTCFullYear();
-    const url = NCEI_CAG_URL(currentYear);
+    // Use prior year — NCEI only publishes annual data after the year completes.
+    const priorYear = new Date().getUTCFullYear() - 1;
+    const url = NCEI_CAG_URL(priorYear);
 
     const res = await fetchWithRetry(url, undefined, 3, 15_000);
     const body = await res.json() as NceiResponse;
