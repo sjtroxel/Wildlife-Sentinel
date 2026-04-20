@@ -10,6 +10,7 @@ import { GladDeforestationScout } from './GladDeforestationScout.js';
 import { NsidcSeaIceScout } from './NsidcSeaIceScout.js';
 import { NoaaCpcEnsoScout } from './NoaaCpcEnsoScout.js';
 import { GfwFishingScout } from './GfwFishingScout.js';
+import { NoaaGtaScout } from './NoaaGtaScout.js';
 
 const scouts = {
   firms:         new FirmsScout(),
@@ -23,6 +24,7 @@ const scouts = {
   seaIce:        new NsidcSeaIceScout(),
   enso:          new NoaaCpcEnsoScout(),
   fishing:       new GfwFishingScout(),
+  gta:           new NoaaGtaScout(),
 };
 
 export function startScouts(): void {
@@ -81,7 +83,12 @@ export function startScouts(): void {
     scouts.fishing.run().catch(err => console.error('[scouts] GfwFishingScout error:', err));
   });
 
-  console.log('[scouts] All 11 scouts scheduled');
+  // NOAA NCEI Global Temperature Anomaly — every 24 hours at 10:30 UTC (monthly data, checked daily)
+  cron.schedule('30 10 * * *', () => {
+    scouts.gta.run().catch(err => console.error('[scouts] NoaaGtaScout error:', err));
+  });
+
+  console.log('[scouts] All 12 scouts scheduled');
 
   // Run each immediately on startup so the pipeline has data without waiting.
   // Drought Scout is omitted — it only produces valid data on Thursdays after 10:30 AM CT.
@@ -95,6 +102,7 @@ export function startScouts(): void {
   scouts.seaIce.run().catch(err => console.error('[scouts] NsidcSeaIceScout startup error:', err));
   scouts.enso.run().catch(err => console.error('[scouts] NoaaCpcEnsoScout startup error:', err));
   scouts.fishing.run().catch(err => console.error('[scouts] GfwFishingScout startup error:', err));
+  scouts.gta.run().catch(err => console.error('[scouts] NoaaGtaScout startup error:', err));
 }
 
 /**
@@ -109,4 +117,5 @@ export function runDailyScoutsNow(): void {
   scouts.seaIce.run().catch(err => console.error('[scouts] NsidcSeaIceScout resume error:', err));
   scouts.enso.run().catch(err => console.error('[scouts] NoaaCpcEnsoScout resume error:', err));
   scouts.fishing.run().catch(err => console.error('[scouts] GfwFishingScout resume error:', err));
+  scouts.gta.run().catch(err => console.error('[scouts] NoaaGtaScout resume error:', err));
 }

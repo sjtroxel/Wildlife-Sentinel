@@ -13,8 +13,8 @@ const GFW_BASE_URL =
   '/gadm__integrated_alerts__adm1_daily_alerts/latest/query';
 
 // Minimum alert count per ADM1 region per day to generate an event.
-// Below this threshold the signal is too weak to warrant a pipeline event.
-const MIN_ALERT_COUNT = 50;
+// 20 = roughly 100ha of confirmed loss in one region per day, a meaningful signal.
+const MIN_ALERT_COUNT = 20;
 
 // Look back 48h to catch alerts from yesterday that may have published after our last run.
 const LOOKBACK_HOURS = 48;
@@ -71,7 +71,6 @@ function buildSql(lookbackDate: string): string {
     'FROM data',
     `WHERE gfw_integrated_alerts__date >= '${lookbackDate}'`,
     "AND gfw_integrated_alerts__confidence IN ('high', 'highest')",
-    'AND is__umd_regional_primary_forest_2001 = true',
     `AND alert__count >= ${MIN_ALERT_COUNT}`,
     'ORDER BY alert__count DESC',
     'LIMIT 500',

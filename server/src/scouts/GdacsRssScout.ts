@@ -129,8 +129,9 @@ export class GdacsRssScout extends BaseScout {
       const alertlevel = item['gdacs:alertlevel'] ?? 'Green';
       const alertscore = parseScore(item['gdacs:alertscore']);
 
-      // Volcanic eruptions: Orange/Red only — Green means unrest/watch, not an eruption
-      if (code === 'VO' && alertlevel.toLowerCase() === 'green') continue;
+      // Volcanic eruptions: include all alert levels.
+      // GDACS Green = confirmed low-level eruption activity (not just monitoring).
+      // Green events near IUCN habitats still warrant ash fall / acid rain assessment.
 
       // Coordinates: georss:point is "lat lng" (lat first — opposite of GeoJSON [lng, lat])
       const pointStr = item['georss:point'] ?? '';

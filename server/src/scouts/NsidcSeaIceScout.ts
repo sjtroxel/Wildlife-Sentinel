@@ -14,7 +14,9 @@ const NSIDC_BASE =
 const NSIDC_FILE_VERSION = 'v4.0';
 
 // Only alert when extent is this many standard deviations below the 1981–2010 median.
-const SIGMA_THRESHOLD = -1.0;
+// -0.75σ ≈ bottom 22% historically — catches meaningful anomalies while avoiding noise.
+// Recent Antarctic seasons have reached -3 to -4σ; this fires well before those extremes.
+const SIGMA_THRESHOLD = -0.75;
 
 // Coordinates representative of key species habitat in each polar region.
 // EnrichmentAgent ST_DWithin queries will pick up polar species ranges from here.

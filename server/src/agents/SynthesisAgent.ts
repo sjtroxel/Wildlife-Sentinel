@@ -39,6 +39,8 @@ const SOURCE_LABELS: Record<string, string> = {
   usgs_nwis:        'USGS NWIS',
   drought_monitor:  'US Drought Monitor',
   coral_reef_watch: 'NOAA Coral Reef Watch',
+  noaa_gta:         'NOAA NCEI',
+  noaa_cpc:         'NOAA CPC',
 };
 
 interface ClaudeSynthesisResponse {

@@ -42,6 +42,7 @@ const SOURCE_QUALITY: Record<DisasterSource, number> = {
   glad_deforestation: 0.88, // GFW Integrated Alerts — Landsat/Sentinel-2/RADD fusion, high confidence filter
   nsidc_sea_ice:      0.92, // NSIDC NRT Sea Ice Index — satellite passive microwave, highly reliable
   noaa_cpc:           0.95, // NOAA CPC ONI — authoritative ENSO index, monthly scientific consensus
+  noaa_gta:           0.92, // NOAA NCEI global temperature anomaly — satellite+station blend, high reliability
   gfw_fishing:        0.85, // Global Fishing Watch — AIS vessel tracking, high confidence in vessel detection
 };
 
@@ -76,12 +77,27 @@ function buildUserMessage(event: FullyEnrichedEvent): string {
     ? `Storm track: ${String(event.raw_data['movement_dir_deg'])}° at ${String(event.raw_data['movement_speed_knots'])} knots`
     : '';
 
+  // Tsunami context — habitats were found via expanded coastal search, not seismic proximity.
+  // Tell the LLM to assess wave surge risk, not just ground-shaking near the epicenter.
+  let tsunamiNote = '';
+  if (event.raw_data['tsunami_warning'] === true) {
+    const mag = typeof event.raw_data['magnitude'] === 'number' ? event.raw_data['magnitude'] as number : 0;
+    const radiusKm = mag >= 8.0 ? 1000 : mag >= 7.0 ? 500 : 200;
+    tsunamiNote = [
+      `⚠️ TSUNAMI WARNING ISSUED (M${mag.toFixed(1)})`,
+      `The threat mechanism is coastal wave surge and inundation, NOT ground-shaking proximity.`,
+      `Habitat search was expanded to ${radiusKm}km to capture coastal species at risk.`,
+      `Assess: wave inundation depth, habitat elevation, species mobility, and shoreline exposure.`,
+    ].join(' ');
+  }
+
   const speciesBriefLines = event.species_briefs
     .map(b => `- ${b.species_name} (${b.iucn_status}): ${b.habitat_description}`)
     .join('\n');
 
   return [
     `Disaster event requiring threat assessment:`,
+    tsunamiNote,
     ``,
     `Type: ${event.event_type} | Source: ${event.source}`,
     `Location: ${event.coordinates.lat}, ${event.coordinates.lng}`,

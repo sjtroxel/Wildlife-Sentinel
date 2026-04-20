@@ -66,9 +66,9 @@ describe('GdacsRssScout', () => {
 
   // ── Coverage ─────────────────────────────────────────────────────────────
 
-  it('publishes 4 events from 7-item fixture (skips VO-green, WF, EQ)', async () => {
+  it('publishes 5 events from 7-item fixture (skips WF, EQ; includes VO-green)', async () => {
     await scout.run();
-    expect(redis.xadd).toHaveBeenCalledTimes(4);
+    expect(redis.xadd).toHaveBeenCalledTimes(5);
   });
 
   it('ignores WF (wildfire) and EQ (earthquake) items', async () => {
@@ -179,11 +179,12 @@ describe('GdacsRssScout', () => {
 
   // ── Filtering ────────────────────────────────────────────────────────────
 
-  it('filters VO Green items (volcanic unrest — not an eruption)', async () => {
+  it('includes VO Green items (low-level eruption activity)', async () => {
     await scout.run();
     const volcanoes = getPublished().filter(e => e.source === 'gdacs_volcano');
-    expect(volcanoes).toHaveLength(1);
-    expect(volcanoes[0]!.raw_data['alert_level']).toBe('Orange');
+    expect(volcanoes).toHaveLength(2);
+    const levels = volcanoes.map(v => v.raw_data['alert_level'] as string).sort();
+    expect(levels).toEqual(['Green', 'Orange']);
   });
 
   it('includes DR Green items (all alert levels are valid for drought)', async () => {

@@ -10,6 +10,18 @@ import { storeEventForAssembly } from '../pipeline/ThreatAssembler.js';
 const HABITAT_RADIUS_METERS = 75_000; // 75 km
 const CORRELATION_TTL_SECONDS = 3_600; // 1 hour — same disaster, 50km radius
 
+// When a USGS earthquake carries a tsunami warning, coastal habitats far from the epicenter
+// are at risk from wave surge — expand the search radius based on magnitude.
+function getTsunamiSearchRadiusMeters(event: RawDisasterEvent): number {
+  if (event.event_type !== 'earthquake' || !event.raw_data['tsunami_warning']) {
+    return HABITAT_RADIUS_METERS;
+  }
+  const mag = typeof event.raw_data['magnitude'] === 'number' ? event.raw_data['magnitude'] : 0;
+  if (mag >= 8.0) return 1_000_000; // 1000 km — major trans-oceanic tsunami
+  if (mag >= 7.0) return   500_000; // 500 km  — regional tsunami
+  return 200_000;                   // 200 km  — local tsunami (M5.5–6.9 with warning)
+}
+
 /**
  * Returns a Redis key that buckets events by type and ~50km geographic cell.
  * 0.45° ≈ 50km at the equator. Events of the same type in the same cell within
@@ -74,6 +86,14 @@ export async function startEnrichmentAgent(): Promise<void> {
 
 export async function processEvent(event: RawDisasterEvent): Promise<void> {
   const { lat, lng } = event.coordinates;
+  const searchRadiusMeters = getTsunamiSearchRadiusMeters(event);
+
+  if (searchRadiusMeters > HABITAT_RADIUS_METERS) {
+    console.log(
+      `[enrichment] ${event.id} — tsunami warning (M${String(event.raw_data['magnitude'])}) ` +
+      `expanding habitat search to ${searchRadiusMeters / 1000}km`
+    );
+  }
 
   // IMPORTANT: ST_Point(lng, lat) — longitude FIRST in PostGIS
   const habitats = await sql<HabitatMatch[]>`
@@ -86,7 +106,7 @@ export async function processEvent(event: RawDisasterEvent): Promise<void> {
     WHERE ST_DWithin(
       geom::geography,
       ST_Point(${lng}, ${lat})::geography,
-      ${HABITAT_RADIUS_METERS}
+      ${searchRadiusMeters}
     )
     ORDER BY distance_km ASC
   `;
@@ -185,7 +205,7 @@ export async function processEvent(event: RawDisasterEvent): Promise<void> {
     stage: 'enriched',
     status: 'published',
     reason: habitats.length > 0
-      ? `${habitats.length} habitats within ${HABITAT_RADIUS_METERS / 1000}km`
+      ? `${habitats.length} habitats within ${searchRadiusMeters / 1000}km`
       : `scout-provided species: ${speciesOverride?.join(', ')}`,
   });
 

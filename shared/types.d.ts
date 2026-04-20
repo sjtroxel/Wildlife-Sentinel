@@ -14,7 +14,8 @@ export type DisasterSource =
   | 'glad_deforestation'
   | 'nsidc_sea_ice'
   | 'noaa_cpc'
-  | 'gfw_fishing';
+  | 'gfw_fishing'
+  | 'noaa_gta';
 
 export type EventType =
   | 'wildfire'
