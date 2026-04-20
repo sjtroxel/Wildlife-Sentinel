@@ -101,10 +101,10 @@ export class GfwFishingScout extends BaseScout {
     const today = new Date().toISOString().slice(0, 10);
     const weekKey = weekStartKey(new Date());
     const events: RawDisasterEvent[] = [];
-    // If 3 consecutive MPAs time out the GFW API is down for the run.
-    // Throwing here lets BaseScout increment its failure counter and open the circuit.
-    let consecutiveFailures = 0;
-    const CONSECUTIVE_FAILURE_ABORT = 3;
+    // Abort if >40% of MPAs fail — GFW is selectively flaky, so consecutive-failure
+    // tracking resets on any success and never fires. Total rate is more reliable.
+    let totalFailures = 0;
+    const FAILURE_ABORT_THRESHOLD = Math.ceil(MPA_REGIONS.mpas.length * 0.4);
 
     for (const mpa of MPA_REGIONS.mpas) {
       // GFW Events API v3:
@@ -133,12 +133,11 @@ export class GfwFishingScout extends BaseScout {
           body: postBody,
         }, 2, 20_000);
         body = await res.json() as GfwEventsResponse;
-        consecutiveFailures = 0;
       } catch (err) {
-        consecutiveFailures++;
+        totalFailures++;
         console.error(`[gfw_fishing] Fetch failed for ${mpa.id} (wdpa:${mpa.wdpa_id}):`, err);
-        if (consecutiveFailures >= CONSECUTIVE_FAILURE_ABORT) {
-          throw new Error(`GFW API appears down — ${consecutiveFailures} consecutive MPA failures`);
+        if (totalFailures >= FAILURE_ABORT_THRESHOLD) {
+          throw new Error(`GFW API degraded — ${totalFailures}/${MPA_REGIONS.mpas.length} MPAs failed this run`);
         }
         continue;
       }

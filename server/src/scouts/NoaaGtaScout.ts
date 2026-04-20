@@ -1,12 +1,13 @@
 import type { RawDisasterEvent } from '@wildlife-sentinel/shared/types';
 import { BaseScout, fetchWithRetry } from './BaseScout.js';
 
-// NOAA NCEI Climate at a Glance — global land+ocean annual temperature anomaly.
+// NOAA NCEI Climate at a Glance — global land+ocean 12-month rolling temperature anomaly.
 // No API key required. Baseline: 1901–2000 average.
-// URL format: /cag/global/time-series/{area}/{variable}/{period}/{month}/{begin}-{end}.json
-// Annual data is only published after the year completes — always request the prior year.
+// New URL format (2025+): /access/monitoring/climate-at-a-glance/global/time-series/{area}/tavg/{variable}/{timescale}/{month}/{begin}-{end}.json
+// timescale=12, month=0 → 12-month rolling average; December entry (key ending in '12') = annual average.
+// Always request the prior year — annual data is only published after the year completes.
 const NCEI_CAG_URL = (endYear: number) =>
-  `https://www.ncei.noaa.gov/cag/global/time-series/globe/land_ocean/ann/12/1880-${endYear}.json`;
+  `https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/global/time-series/globe/tavg/land_ocean/12/0/1880-${endYear}.json`;
 
 // Thresholds in °C above the 1901–2000 baseline.
 // The Paris Agreement target is +1.5°C. We're currently above it.
@@ -62,16 +63,18 @@ const THERMAL_IMPACT_ZONES = [
 
 interface NceiResponse {
   description: { title: string; units: string; base_period: string };
-  data: Record<string, string>;
+  // Keys are YYYYMM strings; values are plain number strings in the new API.
+  data: Record<string, string | number>;
 }
 
 /**
- * Parse the most recent complete year's anomaly from the NCEI time-series JSON.
- * Returns { year, anomaly } or null if unparseable.
+ * Parse the most recent annual anomaly from the NCEI 12-month rolling JSON.
+ * Keys are YYYYMM — filter to December (MM=12) to get the annual average per year.
  */
 function parseMostRecentAnomaly(body: NceiResponse): { year: number; anomaly: number } | null {
   const entries = Object.entries(body.data ?? {})
-    .map(([k, v]) => ({ year: parseInt(k, 10), anomaly: parseFloat(v) }))
+    .filter(([k]) => k.length === 6 && k.endsWith('12'))
+    .map(([k, v]) => ({ year: parseInt(k.substring(0, 4), 10), anomaly: parseFloat(String(v)) }))
     .filter(e => !isNaN(e.year) && !isNaN(e.anomaly) && e.year >= 1970 && Math.abs(e.anomaly) < 5)
     .sort((a, b) => b.year - a.year);
 
