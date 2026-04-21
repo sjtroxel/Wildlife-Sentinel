@@ -142,9 +142,21 @@ export class GfwFishingScout extends BaseScout {
         continue;
       }
 
+      // Warn if the API reports events exist but entries is empty — indicates a response
+      // format mismatch (wrong key name). Log the raw body so we can inspect the shape.
+      if (body.entries === undefined || body.entries === null) {
+        console.warn(
+          `[gfw_fishing] ${mpa.id}: entries field missing from response (total=${body.total}) — raw keys: ${Object.keys(body as unknown as Record<string, unknown>).join(', ')}`
+        );
+      }
+
       const entries = body.entries ?? [];
       const uniqueVessels = new Set(entries.map(e => e.vessel.id));
       const vesselCount = uniqueVessels.size;
+
+      if (vesselCount === 0 && typeof body.total === 'number' && body.total > 0) {
+        console.warn(`[gfw_fishing] ${mpa.id}: API reports total=${body.total} events but entries parsed as empty — possible response schema mismatch`);
+      }
 
       if (vesselCount < MIN_VESSEL_COUNT) continue;
 
@@ -173,6 +185,11 @@ export class GfwFishingScout extends BaseScout {
       });
     }
 
+    console.log(
+      `[gfw_fishing] Run complete: ${MPA_REGIONS.mpas.length} MPAs checked, ` +
+      `${totalFailures} fetch failures, ` +
+      `${events.length} fishing event(s) found`
+    );
     return events;
   }
 }
