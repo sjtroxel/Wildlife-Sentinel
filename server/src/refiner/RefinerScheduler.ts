@@ -35,6 +35,17 @@ export function startRefinerScheduler(): void {
       console.warn('[refiner] Stale-item cleanup failed (non-fatal):', err);
     });
 
+    // Log queue depth every tick so the scheduler is always visible in Railway logs.
+    const statsRows = await sql<{ pending: string; due_now: string }[]>`
+      SELECT
+        COUNT(*) FILTER (WHERE completed_at IS NULL)::text              AS pending,
+        COUNT(*) FILTER (WHERE completed_at IS NULL AND run_at <= NOW())::text AS due_now
+      FROM refiner_queue
+    `.catch(() => [{ pending: '?', due_now: '?' }]);
+
+    const stats = statsRows[0] ?? { pending: '?', due_now: '?' };
+    console.log(`[refiner] Hourly tick — ${stats.pending} pending, ${stats.due_now} due now`);
+
     let due: QueueItem[];
 
     try {

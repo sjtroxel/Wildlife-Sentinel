@@ -48,7 +48,7 @@ export class UsgsScout extends BaseScout {
   constructor() {
     super({
       name: 'usgs_nwis',
-      dedupTtlSeconds: 3_600, // 1h — flood conditions change fast, each reading is timestamped
+      dedupTtlSeconds: 86_400, // 24h — event IDs are date-scoped, so one fire per gauge per day is correct
       maxConsecutiveFailures: 5,
       circuitOpenMinutes: 30,
     });

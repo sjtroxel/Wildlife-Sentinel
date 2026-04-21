@@ -16,7 +16,7 @@ import {
   getSpeciesCentroid,
   autocompleteSpecies,
 } from '../db/speciesQueries.js';
-import { getAlertTrends } from '../db/statsQueries.js';
+import { getAlertTrends, getRefinerStats } from '../db/statsQueries.js';
 import { SLASH_COMMANDS } from './helpContent.js';
 import { runDailyScoutsNow } from '../scouts/index.js';
 import type { IUCNStatus } from '../../../shared/types.js';
@@ -78,6 +78,9 @@ const commands = [
           { name: '90 days', value: 90 },
         )
     ),
+  new SlashCommandBuilder()
+    .setName('refiner')
+    .setDescription('Show Refiner prediction accuracy scores and queue status'),
   new SlashCommandBuilder()
     .setName('help')
     .setDescription('Learn what Wildlife Sentinel does and how to use this bot'),
@@ -166,6 +169,9 @@ export async function startBot(): Promise<void> {
 
       } else if (interaction.commandName === 'trends') {
         await handleTrendsCommand(interaction);
+
+      } else if (interaction.commandName === 'refiner') {
+        await handleRefinerCommand(interaction);
 
       } else if (interaction.commandName === 'help') {
         await handleHelpCommand(interaction);
@@ -305,6 +311,88 @@ async function handleTrendsCommand(
     embed.setURL(config.frontendUrl);
   }
 
+  await interaction.editReply({ embeds: [embed] });
+}
+
+const REFINER_EVENT_EMOJIS: Record<string, string> = {
+  wildfire:          '🔥',
+  tropical_storm:    '🌀',
+  flood:             '🌊',
+  drought:           '🌵',
+  coral_bleaching:   '🪸',
+  earthquake:        '🌍',
+  volcanic_eruption: '🌋',
+  deforestation:     '🌲',
+  sea_ice_loss:      '🧊',
+  climate_anomaly:   '🌡️',
+  illegal_fishing:   '🐟',
+};
+
+function formatScoreAge(date: Date): string {
+  const diffH = Math.floor((Date.now() - date.getTime()) / 3_600_000);
+  if (diffH < 24) return `${diffH}h ago`;
+  return `${Math.floor(diffH / 24)}d ago`;
+}
+
+export async function buildRefinerEmbed(
+  stats: Awaited<ReturnType<typeof getRefinerStats>>
+): Promise<EmbedBuilder> {
+  const { scores, queue } = stats;
+
+  let queueLine: string;
+  if (queue.pending === 0) {
+    queueLine = 'Queue empty — first scores appear 24–48h after alerts are processed.';
+  } else {
+    const parts = [`**${queue.pending}** pending`];
+    if (queue.dueNow > 0) {
+      parts.push(`**${queue.dueNow}** due now`);
+    } else if (queue.nextDueAt) {
+      const hoursUntil = Math.max(1, Math.round((queue.nextDueAt.getTime() - Date.now()) / 3_600_000));
+      parts.push(`next due in **${hoursUntil}h**`);
+    }
+    queueLine = parts.join(' · ');
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor(0x8b5cf6)
+    .setTitle('🔬 Refiner — Prediction Accuracy')
+    .addFields({ name: 'Queue', value: queueLine });
+
+  if (scores.length === 0) {
+    embed.addFields({
+      name: 'Recent Evaluations',
+      value: 'No evaluations completed yet.\nScores appear 24–48h after each alert is processed.',
+    });
+  } else {
+    const scoreLines = scores.map(s => {
+      const emoji = REFINER_EVENT_EMOJIS[s.eventType] ?? '📋';
+      const score = s.compositeScore.toFixed(2);
+      const correction = s.correctionGenerated ? ' ⚠️ corrected' : '';
+      return `${emoji} **${s.eventType}** / ${s.evaluationTime} — **${score}**${correction} — ${formatScoreAge(s.evaluatedAt)}`;
+    });
+
+    embed.addFields({
+      name: `Recent Evaluations (last ${scores.length})`,
+      value: scoreLines.join('\n'),
+    });
+
+    const avg = scores.reduce((sum, s) => sum + s.compositeScore, 0) / scores.length;
+    embed.addFields({
+      name: 'Average Score',
+      value: `**${avg.toFixed(2)}** / 1.00 · correction threshold: < 0.60`,
+      inline: true,
+    });
+  }
+
+  embed.setFooter({ text: 'Wildlife Sentinel · Refiner evaluates predictions 24h and 48h post-event' });
+  return embed;
+}
+
+async function handleRefinerCommand(
+  interaction: ChatInputCommandInteraction
+): Promise<void> {
+  const stats = await getRefinerStats();
+  const embed = await buildRefinerEmbed(stats);
   await interaction.editReply({ embeds: [embed] });
 }
 

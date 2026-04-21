@@ -1,6 +1,74 @@
 import { sql } from './client.js';
 import type { TrendPoint } from '../../../shared/types.js';
 
+// ── Refiner stats ─────────────────────────────────────────────────────────────
+
+interface RefinerScoreRow {
+  composite_score: string;
+  evaluation_time: string;
+  evaluated_at: Date;
+  event_type: string;
+  correction_generated: boolean;
+}
+
+interface RefinerQueueRow {
+  pending: string;
+  due_now: string;
+  next_due_at: Date | null;
+}
+
+export interface RefinerStats {
+  scores: Array<{
+    compositeScore: number;
+    evaluationTime: string;
+    evaluatedAt: Date;
+    eventType: string;
+    correctionGenerated: boolean;
+  }>;
+  queue: {
+    pending: number;
+    dueNow: number;
+    nextDueAt: Date | null;
+  };
+}
+
+export async function getRefinerStats(): Promise<RefinerStats> {
+  const [scores, queueRows] = await Promise.all([
+    sql<RefinerScoreRow[]>`
+      SELECT rs.composite_score, rs.evaluation_time, rs.evaluated_at,
+             rs.correction_generated, a.event_type
+      FROM refiner_scores rs
+      JOIN alerts a ON a.id = rs.alert_id
+      ORDER BY rs.evaluated_at DESC
+      LIMIT 10
+    `,
+    sql<RefinerQueueRow[]>`
+      SELECT
+        COUNT(*) FILTER (WHERE completed_at IS NULL)::text                    AS pending,
+        COUNT(*) FILTER (WHERE completed_at IS NULL AND run_at <= NOW())::text AS due_now,
+        MIN(run_at) FILTER (WHERE completed_at IS NULL AND run_at > NOW())     AS next_due_at
+      FROM refiner_queue
+    `,
+  ]);
+
+  const q = queueRows[0] ?? { pending: '0', due_now: '0', next_due_at: null };
+
+  return {
+    scores: scores.map(r => ({
+      compositeScore:      parseFloat(String(r.composite_score)),
+      evaluationTime:      String(r.evaluation_time),
+      evaluatedAt:         new Date(r.evaluated_at),
+      eventType:           String(r.event_type),
+      correctionGenerated: Boolean(r.correction_generated),
+    })),
+    queue: {
+      pending:   parseInt(String(q.pending),  10),
+      dueNow:    parseInt(String(q.due_now),  10),
+      nextDueAt: q.next_due_at ? new Date(q.next_due_at) : null,
+    },
+  };
+}
+
 export async function getAlertTrends(days: number): Promise<TrendPoint[]> {
   const rows = await sql`
     SELECT

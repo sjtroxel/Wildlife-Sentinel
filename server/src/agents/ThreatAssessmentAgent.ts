@@ -242,20 +242,39 @@ export async function processEvent(event: FullyEnrichedEvent): Promise<void> {
     db_alert_id: dbAlertId,
   };
 
-  // Queue Refiner evaluations — drought uses weekly cadence (Drought Monitor is Thursday-only)
+  // Queue Refiner evaluations — idempotent (WHERE NOT EXISTS prevents duplicates when the
+  // same alert is re-processed, e.g. a flood gauge that stays above stage for multiple days).
   if (event.event_type === 'drought') {
     await sql`
       INSERT INTO refiner_queue (alert_id, evaluation_time, run_at)
-      SELECT id, 'weekly', ${getNextThursday()} FROM alerts WHERE raw_event_id = ${event.id}
+      SELECT a.id, 'weekly', ${getNextThursday()}
+      FROM alerts a
+      WHERE a.raw_event_id = ${event.id}
+        AND NOT EXISTS (
+          SELECT 1 FROM refiner_queue rq
+          WHERE rq.alert_id = a.id AND rq.evaluation_time = 'weekly' AND rq.completed_at IS NULL
+        )
     `;
   } else {
     await sql`
       INSERT INTO refiner_queue (alert_id, evaluation_time, run_at)
-      SELECT id, '24h', NOW() + INTERVAL '24 hours' FROM alerts WHERE raw_event_id = ${event.id}
+      SELECT a.id, '24h', NOW() + INTERVAL '24 hours'
+      FROM alerts a
+      WHERE a.raw_event_id = ${event.id}
+        AND NOT EXISTS (
+          SELECT 1 FROM refiner_queue rq
+          WHERE rq.alert_id = a.id AND rq.evaluation_time = '24h' AND rq.completed_at IS NULL
+        )
     `;
     await sql`
       INSERT INTO refiner_queue (alert_id, evaluation_time, run_at)
-      SELECT id, '48h', NOW() + INTERVAL '48 hours' FROM alerts WHERE raw_event_id = ${event.id}
+      SELECT a.id, '48h', NOW() + INTERVAL '48 hours'
+      FROM alerts a
+      WHERE a.raw_event_id = ${event.id}
+        AND NOT EXISTS (
+          SELECT 1 FROM refiner_queue rq
+          WHERE rq.alert_id = a.id AND rq.evaluation_time = '48h' AND rq.completed_at IS NULL
+        )
     `;
   }
 
