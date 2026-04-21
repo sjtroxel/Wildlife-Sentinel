@@ -97,7 +97,11 @@ export class GfwFishingScout extends BaseScout {
       return [];
     }
 
-    const yesterday = new Date(Date.now() - 24 * 3_600_000).toISOString().slice(0, 10);
+    // Query the last 7 days — GFW fishing events have a 1–3 day processing lag from
+    // AIS satellite relay. A 24h window consistently returns empty. The dedup key is
+    // already weekly (weekStartKey), so each MPA fires at most once per week regardless
+    // of how many days of data contain a match.
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 3_600_000).toISOString().slice(0, 10);
     const today = new Date().toISOString().slice(0, 10);
     const weekKey = weekStartKey(new Date());
     const events: RawDisasterEvent[] = [];
@@ -116,7 +120,7 @@ export class GfwFishingScout extends BaseScout {
 
       const postBody = JSON.stringify({
         datasets: ['public-global-fishing-events:v4.0'],
-        startDate: yesterday,
+        startDate: sevenDaysAgo,
         endDate: today,
         geometry: buildBbox(mpa.centroid.lat, mpa.centroid.lng, mpa.radius_km),
       });
@@ -169,7 +173,7 @@ export class GfwFishingScout extends BaseScout {
         event_type: 'illegal_fishing',
         coordinates: { lat: mpa.centroid.lat, lng: mpa.centroid.lng },
         severity,
-        timestamp: new Date(`${yesterday}T12:00:00Z`).toISOString(),
+        timestamp: new Date().toISOString(),
         raw_data: {
           mpa_id: mpa.id,
           mpa_name: mpa.name,
@@ -178,7 +182,7 @@ export class GfwFishingScout extends BaseScout {
           vessel_count: vesselCount,
           vessel_flags: [...new Set(entries.map(e => e.vessel.flag))],
           key_species: mpa.key_species,
-          query_date: yesterday,
+          query_window: `${sevenDaysAgo} to ${today}`,
           radius_km: mpa.radius_km,
           data_source: 'Global Fishing Watch Events API v3',
         },

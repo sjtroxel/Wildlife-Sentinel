@@ -63,8 +63,8 @@ const THERMAL_IMPACT_ZONES = [
 
 interface NceiResponse {
   description: { title: string; units: string; base_period: string };
-  // Keys are YYYYMM strings; values are plain number strings in the new API.
-  data: Record<string, string | number>;
+  // Keys are YYYYMM strings; values are objects { anomaly: number } in the access/ API.
+  data: Record<string, string | number | { anomaly: number }>;
 }
 
 /**
@@ -74,7 +74,13 @@ interface NceiResponse {
 function parseMostRecentAnomaly(body: NceiResponse): { year: number; anomaly: number } | null {
   const entries = Object.entries(body.data ?? {})
     .filter(([k]) => k.length === 6 && k.endsWith('12'))
-    .map(([k, v]) => ({ year: parseInt(k.substring(0, 4), 10), anomaly: parseFloat(String(v)) }))
+    .map(([k, v]) => ({
+      year: parseInt(k.substring(0, 4), 10),
+      // New access/ API returns { anomaly: number }; old /cag/ API returned plain strings.
+      anomaly: typeof v === 'object' && v !== null && 'anomaly' in v
+        ? (v as { anomaly: number }).anomaly
+        : parseFloat(String(v)),
+    }))
     .filter(e => !isNaN(e.year) && !isNaN(e.anomaly) && e.year >= 1970 && Math.abs(e.anomaly) < 5)
     .sort((a, b) => b.year - a.year);
 
