@@ -17,10 +17,10 @@ interface QueueItem {
 
 export function startRefinerScheduler(): void {
   cron.schedule('0 * * * *', async () => {
-    // Silently retire any queue items for alerts with null/invalid coordinates.
+    // Retire any queue items for alerts with null/invalid coordinates.
     // These are stale records from before the pipeline stored coordinates correctly.
     // They can never be scored — retiring them prevents them from consuming queue slots.
-    await sql`
+    const retiredRows = await sql<{ retired: string }[]>`
       UPDATE refiner_queue rq
       SET completed_at = NOW()
       FROM alerts a
@@ -31,9 +31,14 @@ export function startRefinerScheduler(): void {
           OR (a.coordinates->>'lat') IS NULL
           OR (a.coordinates->>'lng') IS NULL
         )
+      RETURNING rq.id
     `.catch((err: unknown) => {
       console.warn('[refiner] Stale-item cleanup failed (non-fatal):', err);
+      return [] as { retired: string }[];
     });
+    if (retiredRows.length > 0) {
+      console.warn(`[refiner] Retired ${retiredRows.length} queue item(s) with null coordinates — check alerts table for missing coordinate data`);
+    }
 
     // Log queue depth every tick so the scheduler is always visible in Railway logs.
     const statsRows = await sql<{ pending: string; due_now: string }[]>`

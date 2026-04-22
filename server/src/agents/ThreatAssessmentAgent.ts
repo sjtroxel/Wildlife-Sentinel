@@ -222,6 +222,7 @@ export async function processEvent(event: FullyEnrichedEvent): Promise<void> {
       ${JSON.stringify(event.raw_data)}
     )
     ON CONFLICT (raw_event_id) DO UPDATE SET
+      coordinates      = EXCLUDED.coordinates,
       threat_level     = EXCLUDED.threat_level,
       confidence_score = EXCLUDED.confidence_score,
       prediction_data  = EXCLUDED.prediction_data,
