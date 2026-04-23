@@ -10,7 +10,11 @@ const threatFixture = JSON.parse(
 ) as unknown;
 
 // vi.hoisted ensures mockSql is available at vi.mock() hoist time
-const mockSql = vi.hoisted(() => vi.fn());
+const mockSql = vi.hoisted(() => {
+  const fn = vi.fn();
+  (fn as unknown as { json: ReturnType<typeof vi.fn> }).json = vi.fn().mockReturnValue({});
+  return fn;
+});
 
 vi.mock('../../src/db/client.js', () => ({ sql: mockSql }));
 
