@@ -195,14 +195,16 @@ export async function processEvent(event: FullyEnrichedEvent): Promise<void> {
 
   const confidence = computeConfidence(event);
 
-  // Upsert alert record — store prediction + original raw_data for Refiner to compare against actuals later
+  // Upsert alert record — store prediction + original raw_data for Refiner to compare against actuals later.
+  // Explicit ::jsonb casts are required: postgres.js sends JSON.stringify() results as text (OID 25),
+  // and the prepared-statement type cache can mismatch the JSONB column, silently storing null.
   const alertRows = await sql<{ id: string }[]>`
     INSERT INTO alerts (raw_event_id, source, event_type, coordinates, severity, enrichment_data, threat_level, confidence_score, prediction_data, raw_data)
     VALUES (
       ${event.id},
       ${event.source},
       ${event.event_type},
-      ${JSON.stringify(event.coordinates)},
+      ${JSON.stringify(event.coordinates)}::jsonb,
       ${event.severity},
       ${JSON.stringify({
         weather: event.weather_summary,
@@ -210,7 +212,7 @@ export async function processEvent(event: FullyEnrichedEvent): Promise<void> {
         species_at_risk: event.species_at_risk,
         habitat_distance_km: event.habitat_distance_km,
         species_status: event.species_briefs[0]?.iucn_status ?? null,
-      })},
+      })}::jsonb,
       ${threatLevel},
       ${confidence},
       ${JSON.stringify({
@@ -218,8 +220,8 @@ export async function processEvent(event: FullyEnrichedEvent): Promise<void> {
         reasoning: parsed.reasoning,
         compounding_factors: Array.isArray(parsed.compounding_factors) ? parsed.compounding_factors : [],
         recommended_action: parsed.recommended_action ?? null,
-      })},
-      ${JSON.stringify(event.raw_data)}
+      })}::jsonb,
+      ${JSON.stringify(event.raw_data)}::jsonb
     )
     ON CONFLICT (raw_event_id) DO UPDATE SET
       coordinates      = EXCLUDED.coordinates,
