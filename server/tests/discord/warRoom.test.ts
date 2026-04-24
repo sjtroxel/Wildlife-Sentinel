@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const mockSend = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
-const mockPublish = vi.hoisted(() => vi.fn().mockResolvedValue(1));
+const mockXadd = vi.hoisted(() => vi.fn().mockResolvedValue('1234-0'));
 
 vi.mock('../../src/discord/bot.js', () => ({
   getSentinelOpsChannel: vi.fn().mockReturnValue({ send: mockSend }),
@@ -9,7 +9,7 @@ vi.mock('../../src/discord/bot.js', () => ({
 }));
 
 vi.mock('../../src/redis/client.js', () => ({
-  redis: { publish: mockPublish },
+  redis: { xadd: mockXadd },
 }));
 
 import { logToWarRoom } from '../../src/discord/warRoom.js';
@@ -59,16 +59,20 @@ describe('message formatting', () => {
   });
 });
 
-describe('redis publish', () => {
-  it('publishes a JSON payload to agent:activity', async () => {
+describe('redis stream append', () => {
+  it('appends a JSON payload to the agent:activity stream', async () => {
     const p = logToWarRoom({ agent: 'habitat', action: 'sighting found', detail: 'Pongo abelii' });
     await vi.runAllTimersAsync();
     await p;
 
-    expect(mockPublish).toHaveBeenCalledOnce();
-    expect(mockPublish.mock.calls[0]?.[0]).toBe('agent:activity');
+    expect(mockXadd).toHaveBeenCalledOnce();
+    const args = mockXadd.mock.calls[0] as string[];
+    expect(args[0]).toBe('agent:activity');
 
-    const payload = JSON.parse(mockPublish.mock.calls[0]?.[1] as string) as Record<string, unknown>;
+    // Find the 'data' field value in the flat xadd argument list
+    const dataIdx = args.indexOf('data');
+    expect(dataIdx).toBeGreaterThan(-1);
+    const payload = JSON.parse(args[dataIdx + 1] ?? '{}') as Record<string, unknown>;
     expect(payload['agent']).toBe('habitat');
     expect(payload['action']).toBe('sighting found');
     expect(payload['detail']).toBe('Pongo abelii');
@@ -86,8 +90,8 @@ describe('error swallowing', () => {
     await expect(p).resolves.toBeUndefined();
   });
 
-  it('does not throw when redis.publish fails', async () => {
-    mockPublish.mockRejectedValueOnce(new Error('Redis connection lost'));
+  it('does not throw when redis.xadd fails', async () => {
+    mockXadd.mockRejectedValueOnce(new Error('Redis connection lost'));
 
     const p = logToWarRoom({ agent: 'scout', action: 'error', detail: 'test' });
     await vi.runAllTimersAsync();

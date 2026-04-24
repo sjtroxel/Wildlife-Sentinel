@@ -5,8 +5,8 @@ const CRW_VS_POLYGONS_URL =
   'https://coralreefwatch.noaa.gov/product/vs/vs_polygons.json';
 
 // 0=no stress, 1=watch, 2=warning, 3=alert1, 4=alert2
-// Only publish warning and above
-const MIN_ALERT_LEVEL = 2;
+// Only publish confirmed bleaching alerts (level 3+); warnings are precursors only
+const MIN_ALERT_LEVEL = 3;
 
 const ALERT_LABELS: Record<number, string> = {
   0: 'No Stress',

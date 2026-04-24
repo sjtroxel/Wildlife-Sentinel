@@ -7,6 +7,7 @@
  * When composite score < 0.60, Claude generates a correction note that is
  * prepended to the Threat Assessment Agent's system prompt.
  */
+import { XMLParser } from 'fast-xml-parser';
 import { MODELS } from '@wildlife-sentinel/shared/models';
 import type { RefinerScore } from '@wildlife-sentinel/shared/types';
 import { sql } from '../db/client.js';
@@ -31,11 +32,27 @@ import {
 
 interface AlertRecord {
   id: string;
+  raw_event_id: string;
   event_type: string;
   source: string;
+  created_at: string;
   coordinates: { lat: number; lng: number };
   prediction_data: { predicted_impact: string; reasoning?: string } | null;
   raw_data: Record<string, unknown> | null;
+}
+
+// ── GDACS RSS response types ──────────────────────────────────────────────────
+
+interface GdacsRssItem {
+  'gdacs:eventid'?:    number | string;
+  'gdacs:alertlevel'?: string;
+  'gdacs:alertscore'?: number | string;
+}
+
+// ── USGS aftershock response type ─────────────────────────────────────────────
+
+interface USGSAftershockResponse {
+  features?: Array<{ properties: { mag: number } }>;
 }
 
 // ── NHC response types ────────────────────────────────────────────────────────
@@ -341,6 +358,125 @@ async function scoreCoralPrediction(alert: AlertRecord): Promise<RefinerScore | 
   return toComposite(directionAccuracy, magnitudeAccuracy);
 }
 
+// ── GDACS flood / drought scoring (GDACS RSS re-query) ───────────────────────
+
+const GDACS_LEVEL_RANK: Record<string, number> = { green: 1, orange: 2, red: 3 };
+
+const gdacsXmlParser = new XMLParser({
+  ignoreAttributes: false,
+  attributeNamePrefix: '@_',
+  isArray: (name: string) => name === 'item',
+});
+
+async function scoreGdacsPrediction(
+  alert: AlertRecord,
+  _evaluationHours: number,
+): Promise<RefinerScore | null> {
+  // raw_event_id format: "gdacs_fl_1103846_ep1" or "gdacs_dr_1018406_ep3"
+  const match = alert.raw_event_id.match(/^gdacs_(?:fl|dr)_(\d+)_ep\d+/);
+  if (!match) {
+    console.warn(`[refiner] Cannot parse GDACS event ID from "${alert.raw_event_id}"`);
+    return null;
+  }
+  const gdacsEventId = match[1]!;
+
+  const originalLevel = (alert.raw_data?.['alert_level'] as string | undefined)?.toLowerCase() ?? 'green';
+  const originalScore = parseFloat(String(alert.raw_data?.['alert_score'] ?? '0')) || 0;
+
+  let rssText: string;
+  try {
+    const res = await fetchWithRetry('https://www.gdacs.org/xml/rss.xml');
+    rssText = await res.text();
+  } catch (err) {
+    console.error(`[refiner] GDACS RSS fetch failed (${alert.raw_event_id}):`, err);
+    return null;
+  }
+
+  // Quick check: is this event still reported in the active feed?
+  if (!rssText.includes(`<gdacs:eventid>${gdacsEventId}</gdacs:eventid>`)) {
+    // Event resolved within the evaluation window.
+    // Conservative score: direction ambiguous without knowing what was predicted.
+    return toComposite(0.5, 0.3);
+  }
+
+  // Parse current alert level and score for this specific event.
+  let currentLevel = originalLevel;
+  let currentScore = originalScore;
+
+  try {
+    const parsed = gdacsXmlParser.parse(rssText) as {
+      rss?: { channel?: { item?: GdacsRssItem[] } };
+    };
+    const items: GdacsRssItem[] = parsed?.rss?.channel?.item ?? [];
+    const item = items.find(it => String(it['gdacs:eventid'] ?? '') === gdacsEventId);
+    if (item) {
+      currentLevel = String(item['gdacs:alertlevel'] ?? originalLevel).toLowerCase();
+      currentScore = parseFloat(String(item['gdacs:alertscore'] ?? originalScore)) || originalScore;
+    }
+  } catch {
+    // XML parse failure — fall back to original values (conservative scoring)
+  }
+
+  const origRank = GDACS_LEVEL_RANK[originalLevel] ?? 1;
+  const currRank = GDACS_LEVEL_RANK[currentLevel] ?? 1;
+
+  // Wildlife threat predictions for active GDACS events assume ongoing threat.
+  // Severity held or increased → prediction was correct.
+  const directionAccuracy = currRank >= origRank ? 1.0 : 0.4;
+
+  const magnitudeAccuracy =
+    originalScore > 0 && currentScore > 0
+      ? Math.min(currentScore, originalScore) / Math.max(currentScore, originalScore)
+      : 0.5;
+
+  return toComposite(directionAccuracy, magnitudeAccuracy);
+}
+
+// ── Earthquake scoring (USGS aftershock query) ────────────────────────────────
+
+async function scoreEarthquakePrediction(
+  alert: AlertRecord,
+  evaluationHours: number,
+): Promise<RefinerScore | null> {
+  const { lat, lng } = alert.coordinates;
+
+  // Use created_at as the approximate earthquake origin time.
+  const originMs  = new Date(alert.created_at).getTime();
+  // Start 1 min after origin to exclude the main shock itself.
+  const startTime = new Date(originMs + 60_000).toISOString().slice(0, 19);
+  const endTime   = new Date(originMs + evaluationHours * 3_600_000).toISOString().slice(0, 19);
+
+  const url =
+    `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson` +
+    `&latitude=${lat}&longitude=${lng}&maxradiuskm=150` +
+    `&minmagnitude=5.0&starttime=${startTime}&endtime=${endTime}`;
+
+  let data: USGSAftershockResponse;
+  try {
+    const res = await fetchWithRetry(url);
+    data = await res.json() as USGSAftershockResponse;
+  } catch (err) {
+    console.error(`[refiner] USGS aftershock fetch failed (${alert.raw_event_id}):`, err);
+    return null;
+  }
+
+  const aftershocks = data.features ?? [];
+  const originalMag = parseFloat(String(alert.raw_data?.['magnitude'] ?? '5.5')) || 5.5;
+
+  const predictedText = alert.prediction_data?.predicted_impact ?? '';
+  const predictedOngoing = /aftershock|sequence|ongoing|continu|seismic|further|tremor/i.test(predictedText);
+  const actuallyOngoing  = aftershocks.length > 0;
+
+  // Direction: did seismic activity continue in line with the prediction?
+  const directionAccuracy = predictedOngoing === actuallyOngoing ? 1.0 : 0.3;
+
+  // Magnitude proxy: original earthquake M5.5–M8 normalized to 0.17–1.0.
+  // Reflects confidence that the alert was warranted, not aftershock magnitude.
+  const magnitudeAccuracy = Math.min(Math.max((originalMag - 5.0) / 3.0, 0.1), 1.0);
+
+  return toComposite(directionAccuracy, magnitudeAccuracy);
+}
+
 // ── Correction note generation ────────────────────────────────────────────────
 
 async function generateCorrectionNote(
@@ -403,7 +539,7 @@ export async function runRefinerEvaluation(
   evaluationTime: '24h' | '48h' | 'weekly'
 ): Promise<void> {
   const rows = await sql<AlertRecord[]>`
-    SELECT id, event_type, source, coordinates, prediction_data, raw_data
+    SELECT id, raw_event_id, event_type, source, created_at, coordinates, prediction_data, raw_data
     FROM alerts
     WHERE id = ${alertId}
   `;
@@ -416,7 +552,9 @@ export async function runRefinerEvaluation(
 
   const evaluationHours = evaluationTime === '48h' ? 48 : 24;
 
-  // Route to event-type-specific scorer
+  // Route to event-type-specific scorer.
+  // Flood and drought branch on source: GDACS events lack USGS/FIPS gauge data,
+  // so they use the GDACS RSS re-query scorer instead.
   let score: RefinerScore | null;
   switch (alert.event_type) {
     case 'wildfire':
@@ -426,10 +564,17 @@ export async function runRefinerEvaluation(
       score = await scoreStormPrediction(alert);
       break;
     case 'flood':
-      score = await scoreFloodPrediction(alert);
+      score = alert.source.startsWith('gdacs')
+        ? await scoreGdacsPrediction(alert, evaluationHours)
+        : await scoreFloodPrediction(alert);
       break;
     case 'drought':
-      score = await scoreDroughtPrediction(alert);
+      score = alert.source.startsWith('gdacs')
+        ? await scoreGdacsPrediction(alert, evaluationHours)
+        : await scoreDroughtPrediction(alert);
+      break;
+    case 'earthquake':
+      score = await scoreEarthquakePrediction(alert, evaluationHours);
       break;
     case 'coral_bleaching':
       score = await scoreCoralPrediction(alert);

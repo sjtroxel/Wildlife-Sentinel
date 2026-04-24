@@ -32,14 +32,19 @@ export async function logToWarRoom(entry: WarRoomEntry): Promise<void> {
 
     await getSentinelOpsChannel().send(msg);
 
-    // Also publish to Redis for the SSE agent-activity stream
+    // Also append to the Redis stream for the SSE agent-activity panel.
+    // Streams persist entries (unlike pub/sub), so new page loads get recent history.
+    // MAXLEN ~ 200 keeps memory usage bounded.
     try {
-      await redis.publish('agent:activity', JSON.stringify({
-        agent: entry.agent,
-        action: entry.action,
-        detail: entry.detail,
-        timestamp: new Date().toISOString(),
-      }));
+      await redis.xadd(
+        'agent:activity', 'MAXLEN', '~', '200', '*',
+        'data', JSON.stringify({
+          agent: entry.agent,
+          action: entry.action,
+          detail: entry.detail,
+          timestamp: new Date().toISOString(),
+        }),
+      );
     } catch { /* swallow — observability must never crash the pipeline */ }
   } catch (err) {
     // War room failures must never crash the pipeline

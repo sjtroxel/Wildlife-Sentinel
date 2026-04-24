@@ -50,12 +50,12 @@ describe('CoralScout', () => {
     vi.unstubAllGlobals();
   });
 
-  it('filters out alert_level < 2 (watch only)', async () => {
+  it('filters out alert_level < 3 (watch and warning)', async () => {
     await scout.run();
 
-    // Fixture has 3 features: level 3, level 1 (filtered), level 2
-    // Level 1 (watch) must not be published
-    expect(redis.xadd).toHaveBeenCalledTimes(2);
+    // Fixture has 3 features: level 3, level 1 (filtered), level 2 (filtered)
+    // Only confirmed bleaching alerts (level 3+) are published
+    expect(redis.xadd).toHaveBeenCalledTimes(1);
   });
 
   it('sets source to coral_reef_watch and event_type to coral_bleaching', async () => {
@@ -83,10 +83,9 @@ describe('CoralScout', () => {
     expect(alertLevel3).toBeDefined();
     expect(alertLevel3!.severity).toBeCloseTo(0.75, 3);
 
-    // Alert level 2 → severity = 0.5
+    // Alert level 2 is now filtered (below MIN_ALERT_LEVEL = 3)
     const alertLevel2 = published.find(e => e.raw_data.alert_level === 2);
-    expect(alertLevel2).toBeDefined();
-    expect(alertLevel2!.severity).toBeCloseTo(0.5, 3);
+    expect(alertLevel2).toBeUndefined();
   });
 
   it('uses Point geometry coordinates directly', async () => {
