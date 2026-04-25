@@ -70,12 +70,13 @@ export default function DisasterMapInner({ activeLayers }: DisasterMapInnerProps
     if (!containerRef.current) return;
     const container = containerRef.current;
     const m = L.map(container, {
-      zoomControl: true,
+      zoomControl: false,
       worldCopyJump: true,
       maxBounds: L.latLngBounds(L.latLng(-85, -180), L.latLng(85, 180)),
       maxBoundsViscosity: 1.0,
       minZoom: 2,
     });
+    L.control.zoom({ position: 'bottomright' }).addTo(m);
     const { url, attribution } = TILE_LAYERS.light;
     tileLayerRef.current = L.tileLayer(url, {
       attribution,
@@ -173,7 +174,7 @@ export default function DisasterMapInner({ activeLayers }: DisasterMapInnerProps
       <div ref={containerRef} className="w-full h-full" />
       <button
         onClick={() => setIsDark((d) => !d)}
-        className="absolute bottom-8 right-2 z-1000 flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium shadow-md transition-colors bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+        className="absolute bottom-24 right-2 z-1000 flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium shadow-md transition-colors bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
         aria-label="Toggle map theme"
         title="Toggle map theme"
       >

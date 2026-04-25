@@ -358,6 +358,15 @@ export async function buildRefinerEmbed(
     .setTitle('🔬 Refiner — Prediction Accuracy')
     .addFields({ name: 'Queue', value: queueLine });
 
+  const ph = stats.promptHealth;
+  if (ph) {
+    const bar = '█'.repeat(ph.activeCorrections) + '░'.repeat(3 - ph.activeCorrections);
+    embed.addFields({
+      name: 'Threat Assessment Prompt',
+      value: `**${ph.approxTokens}** tokens (${ph.chars.toLocaleString()} chars) · corrections [${bar}] **${ph.activeCorrections}/3** · v${ph.version} · updated ${formatScoreAge(ph.updatedAt)} · **${ph.corrections7d}** generated last 7d`,
+    });
+  }
+
   if (scores.length === 0) {
     embed.addFields({
       name: 'Recent Evaluations',

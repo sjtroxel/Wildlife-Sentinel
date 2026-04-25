@@ -17,6 +17,15 @@ interface RefinerQueueRow {
   next_due_at: Date | null;
 }
 
+interface PromptHealthRow {
+  chars: string;
+  approx_tokens: string;
+  active_corrections: string;
+  version: string;
+  updated_at: Date;
+  corrections_7d: string;
+}
+
 export interface RefinerStats {
   scores: Array<{
     compositeScore: number;
@@ -30,10 +39,18 @@ export interface RefinerStats {
     dueNow: number;
     nextDueAt: Date | null;
   };
+  promptHealth: {
+    chars: number;
+    approxTokens: number;
+    activeCorrections: number;
+    version: number;
+    updatedAt: Date;
+    corrections7d: number;
+  } | null;
 }
 
 export async function getRefinerStats(): Promise<RefinerStats> {
-  const [scores, queueRows] = await Promise.all([
+  const [scores, queueRows, promptHealthRows] = await Promise.all([
     sql<RefinerScoreRow[]>`
       SELECT rs.composite_score, rs.evaluation_time, rs.evaluated_at,
              rs.correction_generated, a.event_type
@@ -49,9 +66,24 @@ export async function getRefinerStats(): Promise<RefinerStats> {
         MIN(run_at) FILTER (WHERE completed_at IS NULL AND run_at > NOW())     AS next_due_at
       FROM refiner_queue
     `,
+    sql<PromptHealthRow[]>`
+      SELECT
+        length(system_prompt)::text                                                              AS chars,
+        (length(system_prompt) / 4)::text                                                        AS approx_tokens,
+        ((length(system_prompt) - length(replace(system_prompt,
+          chr(10)||chr(10)||'---'||chr(10)||chr(10), ''))) / 7)::text                            AS active_corrections,
+        version::text,
+        updated_at,
+        (SELECT COUNT(*)::text FROM refiner_scores
+         WHERE correction_generated = true
+           AND evaluated_at > NOW() - INTERVAL '7 days')                                         AS corrections_7d
+      FROM agent_prompts
+      WHERE agent_name = 'threat_assessment'
+    `,
   ]);
 
-  const q = queueRows[0] ?? { pending: '0', due_now: '0', next_due_at: null };
+  const q  = queueRows[0]       ?? { pending: '0', due_now: '0', next_due_at: null };
+  const ph = promptHealthRows[0] ?? null;
 
   return {
     scores: scores.map(r => ({
@@ -66,6 +98,14 @@ export async function getRefinerStats(): Promise<RefinerStats> {
       dueNow:    parseInt(String(q.due_now),  10),
       nextDueAt: q.next_due_at ? new Date(q.next_due_at) : null,
     },
+    promptHealth: ph ? {
+      chars:             parseInt(ph.chars,              10),
+      approxTokens:      parseInt(ph.approx_tokens,      10),
+      activeCorrections: parseInt(ph.active_corrections, 10),
+      version:           parseInt(ph.version,            10),
+      updatedAt:         new Date(ph.updated_at),
+      corrections7d:     parseInt(ph.corrections_7d,     10),
+    } : null,
   };
 }
 
