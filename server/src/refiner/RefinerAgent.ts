@@ -19,7 +19,6 @@ import { config } from '../config.js';
 import {
   haversineDistance,
   haversineBearing,
-  computePolygonCentroid,
   parseCSV,
   parseNHCLatLng,
   extractPredictedBearing,
@@ -82,8 +81,8 @@ interface USGSResponse {
 // ── CRW response types ────────────────────────────────────────────────────────
 
 interface CRWFeature {
-  geometry: { coordinates: number[][][] };
-  properties: { alert_level: number };
+  geometry: { coordinates: [number, number] }; // [lng, lat] Point
+  properties: { alert: string };               // "0"–"4" as string
 }
 
 interface CRWResponse {
@@ -322,7 +321,7 @@ async function scoreCoralPrediction(alert: AlertRecord): Promise<RefinerScore | 
   let data: CRWResponse;
   try {
     const res = await fetchWithRetry(
-      'https://coralreefwatch.noaa.gov/vs/gauges/crw_vs_alert_areas.json'
+      'https://coralreefwatch.noaa.gov/product/vs/vs_polygons.json'
     );
     data = await res.json() as CRWResponse;
   } catch (err) {
@@ -332,18 +331,17 @@ async function scoreCoralPrediction(alert: AlertRecord): Promise<RefinerScore | 
 
   const features: CRWFeature[] = data.features ?? [];
 
-  // Find the alert area closest to original coordinates (within 200 km)
+  // Find the monitoring station closest to original coordinates (within 200 km)
   let currentLevel = 0;
   let closestDist = Infinity;
 
   for (const feature of features) {
-    const ring = feature.geometry.coordinates[0];
-    if (!ring || ring.length === 0) continue;
-    const centroid = computePolygonCentroid(ring);
-    const dist = haversineDistance(centroid, alert.coordinates);
+    const [lng, lat] = feature.geometry.coordinates;
+    if (lng === undefined || lat === undefined || isNaN(lat) || isNaN(lng)) continue;
+    const dist = haversineDistance({ lat, lng }, alert.coordinates);
     if (dist < 200 && dist < closestDist) {
       closestDist = dist;
-      currentLevel = feature.properties.alert_level;
+      currentLevel = parseInt(feature.properties.alert, 10) || 0;
     }
   }
 
