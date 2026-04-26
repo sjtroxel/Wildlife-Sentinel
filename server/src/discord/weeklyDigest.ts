@@ -32,7 +32,7 @@ interface WeeklyCost {
   total: string;
 }
 
-export async function runWeeklyDigest(): Promise<void> {
+export async function buildWeeklyDigestEmbed(): Promise<EmbedBuilder> {
   // 1. Alert counts by threat level
   const threatCounts = await sql<ThreatCount[]>`
     SELECT threat_level, COUNT(*)::text AS count
@@ -89,7 +89,7 @@ export async function runWeeklyDigest(): Promise<void> {
   const costResult = await sql<WeeklyCost[]>`
     SELECT COALESCE(SUM(estimated_cost_usd), 0)::numeric(6,4)::text AS total
     FROM model_usage
-    WHERE created_at > NOW() - INTERVAL '7 days'
+    WHERE called_at > NOW() - INTERVAL '7 days'
   `;
   const weeklyCost = parseFloat(costResult[0]?.total ?? '0').toFixed(2);
 
@@ -97,7 +97,7 @@ export async function runWeeklyDigest(): Promise<void> {
   const high = byLevel['high'] ?? 0;
   const medium = byLevel['medium'] ?? 0;
 
-  const embed = new EmbedBuilder()
+  return new EmbedBuilder()
     .setColor(0x14b8a6)
     .setTitle('📊 Weekly Wildlife Sentinel Report')
     .setDescription(`Summary for the past 7 days ending <t:${Math.floor(Date.now() / 1000)}:D>.`)
@@ -107,30 +107,17 @@ export async function runWeeklyDigest(): Promise<void> {
         value: `**${totalAlerts}** total — ${critical} critical, ${high} high, ${medium} medium`,
         inline: false,
       },
-      {
-        name: 'Most Active Event Type',
-        value: topEventType,
-        inline: true,
-      },
-      {
-        name: 'Avg Prediction Accuracy',
-        value: accuracyDisplay,
-        inline: true,
-      },
-      {
-        name: 'AI Cost This Week',
-        value: `$${weeklyCost}`,
-        inline: true,
-      },
-      {
-        name: 'Species Most at Risk',
-        value: topSpecies,
-        inline: false,
-      },
+      { name: 'Most Active Event Type', value: topEventType,    inline: true },
+      { name: 'Avg Prediction Accuracy', value: accuracyDisplay, inline: true },
+      { name: 'AI Cost This Week',       value: `$${weeklyCost}`, inline: true },
+      { name: 'Species Most at Risk',    value: topSpecies,      inline: false },
     )
     .setFooter({ text: 'Wildlife Sentinel • Weekly Digest' })
     .setTimestamp();
+}
 
+export async function runWeeklyDigest(): Promise<void> {
+  const embed = await buildWeeklyDigestEmbed();
   await getWildlifeAlertsChannel().send({ embeds: [embed] });
   console.log('[weekly-digest] Posted weekly summary to #wildlife-alerts');
 }

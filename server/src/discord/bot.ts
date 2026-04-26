@@ -19,6 +19,7 @@ import {
 import { getAlertTrends, getRefinerStats } from '../db/statsQueries.js';
 import { SLASH_COMMANDS } from './helpContent.js';
 import { runDailyScoutsNow } from '../scouts/index.js';
+import { buildWeeklyDigestEmbed } from './weeklyDigest.js';
 import type { IUCNStatus } from '../../../shared/types.js';
 
 const PAUSE_KEY = 'pipeline:paused';
@@ -81,6 +82,9 @@ const commands = [
   new SlashCommandBuilder()
     .setName('refiner')
     .setDescription('Show Refiner prediction accuracy scores and queue status'),
+  new SlashCommandBuilder()
+    .setName('digest')
+    .setDescription('Preview the weekly summary report right now (posts here, not to #wildlife-alerts)'),
   new SlashCommandBuilder()
     .setName('help')
     .setDescription('Learn what Wildlife Sentinel does and how to use this bot'),
@@ -172,6 +176,10 @@ export async function startBot(): Promise<void> {
 
       } else if (interaction.commandName === 'refiner') {
         await handleRefinerCommand(interaction);
+
+      } else if (interaction.commandName === 'digest') {
+        const embed = await buildWeeklyDigestEmbed();
+        await interaction.editReply({ embeds: [embed] });
 
       } else if (interaction.commandName === 'help') {
         await handleHelpCommand(interaction);

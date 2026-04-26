@@ -378,9 +378,10 @@ describe('EnrichmentAgent.processEvent', () => {
       ok: true,
       json: async () => weatherFixture,
     }));
-    // First get = correlation key (null) + subsequent gets = enso keys
+    // corr key → weather cache miss → enso keys
     vi.mocked(redis.get)
       .mockResolvedValueOnce(null)           // corr key — no match
+      .mockResolvedValueOnce(null)           // weather cache — miss (triggers live fetch)
       .mockResolvedValueOnce('el_nino')      // enso:current_phase
       .mockResolvedValueOnce('1.40');        // enso:oni_anomaly
 

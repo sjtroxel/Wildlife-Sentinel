@@ -248,10 +248,20 @@ async function generateWeatherSummary(
   }
 }
 
+const WEATHER_CACHE_TTL_SECONDS = 7_200; // 2 hours — weather doesn't change faster than this
+
 async function fetchWeather(lat: number, lng: number): Promise<OpenMeteoHourly> {
+  // Round to 1 decimal place (~11km) to maximise cache hits across nearby events.
+  const roundedLat = Math.round(lat * 10) / 10;
+  const roundedLng = Math.round(lng * 10) / 10;
+  const cacheKey = `weather:${roundedLat}:${roundedLng}`;
+
+  const cached = await redis.get(cacheKey);
+  if (cached) return JSON.parse(cached) as OpenMeteoHourly;
+
   const url = new URL('https://api.open-meteo.com/v1/forecast');
-  url.searchParams.set('latitude', String(lat));
-  url.searchParams.set('longitude', String(lng));
+  url.searchParams.set('latitude', String(roundedLat));
+  url.searchParams.set('longitude', String(roundedLng));
   url.searchParams.set('hourly', 'wind_speed_10m,wind_direction_10m,precipitation_probability');
   url.searchParams.set('forecast_days', '1');
   url.searchParams.set('wind_speed_unit', 'kmh');
@@ -260,6 +270,7 @@ async function fetchWeather(lat: number, lng: number): Promise<OpenMeteoHourly> 
   if (!res.ok) throw new Error(`Open-Meteo ${res.status}: ${await res.text()}`);
 
   const data = await res.json() as { hourly: OpenMeteoHourly };
+  await redis.setex(cacheKey, WEATHER_CACHE_TTL_SECONDS, JSON.stringify(data.hourly));
   return data.hourly;
 }
 
