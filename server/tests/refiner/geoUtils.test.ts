@@ -144,8 +144,8 @@ describe('extractPredictedBearing', () => {
     expect(extractPredictedBearing('tracking NNW')).toBe(337.5);
   });
 
-  it('defaults to 0° when no direction found', () => {
-    expect(extractPredictedBearing('fire will intensify')).toBe(0);
+  it('returns null when no direction found', () => {
+    expect(extractPredictedBearing('fire will intensify')).toBeNull();
   });
 });
 
@@ -162,8 +162,8 @@ describe('extractPredictedDistance', () => {
     expect(extractPredictedDistance('advance 50 kilometers')).toBe(50);
   });
 
-  it('defaults to 25 when no distance found', () => {
-    expect(extractPredictedDistance('fire will intensify and spread')).toBe(25);
+  it('returns null when no distance found', () => {
+    expect(extractPredictedDistance('fire will intensify and spread')).toBeNull();
   });
 });
 

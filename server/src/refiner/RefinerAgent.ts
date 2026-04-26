@@ -115,8 +115,9 @@ async function scoreFirePrediction(
     .toISOString()
     .slice(0, 10);
 
-  // 1° × 1° bounding box — roughly 100×100 km at equator
-  const bbox = `${lng - 0.5},${lat - 0.5},${lng + 0.5},${lat + 0.5}`;
+  // Wider box for 48h evaluations — fire can spread >100km from origin in 2 days
+  const halfDeg = evaluationHours >= 48 ? 1.0 : 0.75;
+  const bbox = `${lng - halfDeg},${lat - halfDeg},${lng + halfDeg},${lat + halfDeg}`;
   const firmsUrl =
     `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${config.nasaFirmsKey}` +
     `/VIIRS_SNPP_NRT/${bbox}/2/${lookbackDate}`;
@@ -145,28 +146,46 @@ async function scoreFirePrediction(
 
   if (actualPoints.length === 0) return toComposite(0.5, 0.2);
 
-  // Centroid of actual fire detections
-  const sumLat = actualPoints.reduce((s, p) => s + p.lat, 0);
-  const sumLng = actualPoints.reduce((s, p) => s + p.lng, 0);
-  const centroid = { lat: sumLat / actualPoints.length, lng: sumLng / actualPoints.length };
-
   const predictedText = alert.prediction_data?.predicted_impact ?? '';
-
-  // Direction accuracy: how close is actual bearing to predicted bearing?
-  const actualBearing = haversineBearing(alert.coordinates, centroid);
   const predictedBearing = extractPredictedBearing(predictedText);
-  const angleDiff = Math.abs(actualBearing - predictedBearing);
-  const normalizedAngle = Math.min(angleDiff, 360 - angleDiff); // 0–180
-  const directionAccuracy = Math.max(0, 1 - normalizedAngle / 90);
-
-  // Magnitude accuracy: actual spread distance vs predicted
-  const actualDistanceKm = haversineDistance(alert.coordinates, centroid);
   const predictedDistanceKm = extractPredictedDistance(predictedText);
+
+  // Separate detections by proximity: "proximal" = still at original burn site,
+  // "distal" = active spread front (the part we actually want to score direction against).
+  const SPREAD_MIN_KM = 5;
+  const distalPoints = actualPoints.filter(
+    p => haversineDistance(alert.coordinates, p) > SPREAD_MIN_KM
+  );
+
+  // Direction: use centroid of spread-front detections only.
+  // If no direction keyword in prediction, or fire didn't spread > 5km → neutral score.
+  let directionAccuracy: number;
+  if (predictedBearing === null || distalPoints.length === 0) {
+    directionAccuracy = 0.5;
+  } else {
+    const spreadLat = distalPoints.reduce((s, p) => s + p.lat, 0) / distalPoints.length;
+    const spreadLng = distalPoints.reduce((s, p) => s + p.lng, 0) / distalPoints.length;
+    const actualBearing = haversineBearing(alert.coordinates, { lat: spreadLat, lng: spreadLng });
+    const angleDiff = Math.abs(actualBearing - predictedBearing);
+    const normalizedAngle = Math.min(angleDiff, 360 - angleDiff); // 0–180
+    // Gentler decay: 0°→1.0, 45°→0.67, 90°→0.33, 135°→0
+    directionAccuracy = Math.max(0, 1 - normalizedAngle / 135);
+  }
+
+  // Magnitude: use 90th-percentile distance to capture the fire front extent.
+  // The centroid would be pulled back toward the original burn site cluster,
+  // systematically underestimating how far the fire actually spread.
+  const distances = actualPoints
+    .map(p => haversineDistance(alert.coordinates, p))
+    .sort((a, b) => a - b);
+  const p90idx = Math.floor(distances.length * 0.9);
+  const actualSpreadKm = distances[p90idx] ?? distances[distances.length - 1] ?? 0;
+
   const magnitudeAccuracy =
-    predictedDistanceKm > 0 && actualDistanceKm > 0
-      ? Math.min(actualDistanceKm, predictedDistanceKm) /
-        Math.max(actualDistanceKm, predictedDistanceKm)
-      : 0.5;
+    predictedDistanceKm !== null && actualSpreadKm > 0
+      ? Math.min(actualSpreadKm, predictedDistanceKm) /
+        Math.max(actualSpreadKm, predictedDistanceKm)
+      : 0.5; // no distance prediction → neutral
 
   return toComposite(directionAccuracy, magnitudeAccuracy);
 }
@@ -475,6 +494,73 @@ async function scoreEarthquakePrediction(
   return toComposite(directionAccuracy, magnitudeAccuracy);
 }
 
+// ── Illegal fishing scoring (GFW re-query) ────────────────────────────────────
+
+interface GfwVerifyEntry { vessel: { id: string } }
+interface GfwVerifyResponse { entries: GfwVerifyEntry[]; total: number }
+
+async function scoreIllegalFishingPrediction(
+  alert: AlertRecord,
+): Promise<RefinerScore | null> {
+  if (!config.fishingWatchApiKey) return null;
+
+  const { lat, lng } = alert.coordinates ?? {};
+  if (!lat || !lng || isNaN(lat) || isNaN(lng)) return null;
+
+  const radiusKm = (alert.raw_data?.['radius_km'] as number | undefined) ?? 50;
+  const latDeg = radiusKm / 111;
+  const lngDeg = radiusKm / (111 * Math.cos(lat * Math.PI / 180));
+
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 3_600_000).toISOString().slice(0, 10);
+  const today = new Date().toISOString().slice(0, 10);
+
+  let data: GfwVerifyResponse;
+  try {
+    const res = await fetchWithRetry(
+      'https://gateway.api.globalfishingwatch.org/v3/events?limit=200&offset=0',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${config.fishingWatchApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          datasets: ['public-global-fishing-events:v4.0'],
+          startDate: sevenDaysAgo,
+          endDate: today,
+          geometry: {
+            type: 'Polygon',
+            coordinates: [[
+              [lng - lngDeg, lat - latDeg],
+              [lng + lngDeg, lat - latDeg],
+              [lng + lngDeg, lat + latDeg],
+              [lng - lngDeg, lat + latDeg],
+              [lng - lngDeg, lat - latDeg],
+            ]],
+          },
+        }),
+      },
+      2, 15_000,
+    );
+    data = await res.json() as GfwVerifyResponse;
+  } catch (err) {
+    console.warn(`[refiner] GFW re-query failed for ${alert.id} — skipping score:`, err);
+    return null;
+  }
+
+  const currentVessels = new Set((data.entries ?? []).map(e => e.vessel.id)).size;
+  const originalVessels = (alert.raw_data?.['vessel_count'] as number | undefined) ?? 0;
+
+  // Persistent vessel presence → the alert's wildlife risk prediction was correct
+  const directionAccuracy = currentVessels > 0 ? 0.8 : 0.4;
+  const magnitudeAccuracy =
+    originalVessels > 0 && currentVessels > 0
+      ? Math.min(currentVessels, originalVessels) / Math.max(currentVessels, originalVessels)
+      : 0.5;
+
+  return toComposite(directionAccuracy, magnitudeAccuracy);
+}
+
 // ── Correction note generation ────────────────────────────────────────────────
 
 async function generateCorrectionNote(
@@ -512,10 +598,11 @@ async function applySystemPromptCorrection(
   const correctionNote = await generateCorrectionNote(alert, score, evaluationTime);
   const existing = await getAgentPrompt('threat_assessment');
 
-  // Cap at 2 prior corrections + 1 new = 3 total. Prevents unbounded input token growth.
+  // Cap at 4 prior corrections + 1 new = 5 total. Enough context for the agent to
+  // see a pattern without bloating the prompt unboundedly.
   const parts = existing.split('\n\n---\n\n');
   const base = parts[parts.length - 1]!;
-  const recentCorrections = parts.slice(0, -1).slice(-2);
+  const recentCorrections = parts.slice(0, -1).slice(-4);
   const updated = [correctionNote, ...recentCorrections, base].join('\n\n---\n\n');
 
   await sql`
@@ -576,6 +663,9 @@ export async function runRefinerEvaluation(
       break;
     case 'coral_bleaching':
       score = await scoreCoralPrediction(alert);
+      break;
+    case 'illegal_fishing':
+      score = await scoreIllegalFishingPrediction(alert);
       break;
     default:
       console.warn(`[refiner] Unknown event_type '${alert.event_type}' for alert ${alertId}`);

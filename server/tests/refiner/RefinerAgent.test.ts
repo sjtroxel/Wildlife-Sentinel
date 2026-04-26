@@ -21,7 +21,7 @@ vi.mock('../../src/router/ModelRouter.js', () => ({ modelRouter: { complete: moc
 vi.mock('../../src/db/agentPrompts.js', () => ({ getAgentPrompt: mockGetAgentPrompt }));
 vi.mock('../../src/discord/warRoom.js', () => ({ logToWarRoom: mockLogToWarRoom }));
 vi.mock('../../src/scouts/BaseScout.js', () => ({ fetchWithRetry: mockFetchWithRetry }));
-vi.mock('../../src/config.js', () => ({ config: { nasaFirmsKey: 'test-firms-key' } }));
+vi.mock('../../src/config.js', () => ({ config: { nasaFirmsKey: 'test-firms-key', fishingWatchApiKey: 'test-gfw-key' } }));
 
 // ── Imports after mocks ───────────────────────────────────────────────────────
 
@@ -309,10 +309,10 @@ describe('correction note + system prompt update', () => {
     mockSql.mockImplementation(async (strings: string[]) => {
       const query = strings.join('').toLowerCase();
       if (query.includes('select') && query.includes('from alerts')) {
-        // Fixture centroid ~(lat=-3.40, lng=104.35) from origin (-3.5, 104.0)
-        // Predicted NE (45°), actual bearing ~90°, angleDiff=45° → dir=0.5
-        // Predicted 40km, actual ~33km → ratio 33/40=0.825
-        // Composite: 0.6*0.5 + 0.4*0.825 = 0.63 ≥ 0.60 → no correction
+        // Fixture points from origin (-3.5, 104.0): all 3 are distal (>5km), centroid ~(-3.40, 104.35)
+        // Predicted NE (45°), actual bearing ≈74° (ENE), angleDiff≈29° → dir = 1-29/135 ≈ 0.785
+        // 90th-percentile spread distance ≈ 47.3km, predicted 40km → ratio 40/47.3 ≈ 0.846
+        // Composite: 0.6*0.785 + 0.4*0.846 ≈ 0.809 ≥ 0.60 → no correction
         return makeAlertRows({
           coordinates: { lat: -3.5, lng: 104.0 },
           prediction_data: { predicted_impact: 'Fire will spread NE approximately 40km in 24h.' },
@@ -357,6 +357,60 @@ describe('war room success log on score > 0.85', () => {
     expect(mockLogToWarRoom).toHaveBeenCalledWith(
       expect.objectContaining({ level: 'info' })
     );
+  });
+});
+
+// ── Illegal fishing scoring ───────────────────────────────────────────────────
+
+describe('runRefinerEvaluation — illegal_fishing', () => {
+  const gfwResponse = JSON.stringify({
+    entries: [{ vessel: { id: 'v1' } }, { vessel: { id: 'v2' } }],
+    total: 2,
+  });
+
+  it('scores an illegal fishing alert when GFW returns current vessel data', async () => {
+    mockSql.mockImplementation(async (strings: string[]) => {
+      const query = strings.join('').toLowerCase();
+      if (query.includes('select') && query.includes('from alerts')) {
+        return makeAlertRows({
+          event_type: 'illegal_fishing',
+          source: 'gfw_fishing',
+          coordinates: { lat: -0.6, lng: -91.2 },
+          raw_data: { mpa_id: 'galapagos_marine_reserve', vessel_count: 3, radius_km: 100 },
+          prediction_data: { predicted_impact: 'Continued illegal fishing threatens Galapagos species.' },
+        });
+      }
+      return [];
+    });
+
+    mockFetchWithRetry.mockResolvedValue(mockResponse(gfwResponse));
+
+    await runRefinerEvaluation('alert-uuid-001', '24h');
+
+    expect(sqlCallContains('insert into refiner_scores')).toBe(true);
+  });
+
+  it('skips scoring when GFW API throws', async () => {
+    mockSql.mockImplementation(async (strings: string[]) => {
+      const query = strings.join('').toLowerCase();
+      if (query.includes('select') && query.includes('from alerts')) {
+        return makeAlertRows({
+          event_type: 'illegal_fishing',
+          source: 'gfw_fishing',
+          coordinates: { lat: -0.6, lng: -91.2 },
+          raw_data: { mpa_id: 'galapagos_marine_reserve', vessel_count: 3, radius_km: 100 },
+          prediction_data: { predicted_impact: 'Continued fishing pressure detected.' },
+        });
+      }
+      return [];
+    });
+
+    mockFetchWithRetry.mockRejectedValue(new Error('GFW timeout'));
+
+    await runRefinerEvaluation('alert-uuid-001', '24h');
+
+    // GFW unavailable → score = null → no score inserted
+    expect(sqlCallContains('insert into refiner_scores')).toBe(false);
   });
 });
 

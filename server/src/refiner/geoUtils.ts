@@ -138,28 +138,30 @@ const DIRECTION_BEARINGS: [string, number][] = [
 /**
  * Extracts a bearing (0–360°) from free-form prediction text.
  * Matches cardinal and ordinal direction keywords.
- * Defaults to 0° (north) if no direction found.
+ * Returns null if no direction keyword is found — callers must handle null
+ * rather than assuming 0° (north), which would corrupt direction scoring.
  */
-export function extractPredictedBearing(text: string): number {
+export function extractPredictedBearing(text: string): number | null {
   const lower = text.toLowerCase();
   for (const [keyword, bearing] of DIRECTION_BEARINGS) {
     if (lower.includes(keyword)) return bearing;
   }
-  return 0;
+  return null;
 }
 
 /**
  * Extracts a predicted spread distance (km) from free-form prediction text.
  * Matches patterns like "35km", "35 km", "40 kilometers".
- * Defaults to 25km if no numeric distance found.
+ * Returns null if no numeric distance is found — callers must handle null
+ * rather than assuming 25km, which would corrupt magnitude scoring.
  */
-export function extractPredictedDistance(text: string): number {
+export function extractPredictedDistance(text: string): number | null {
   const match = text.match(/(\d+(?:\.\d+)?)\s*(?:km|kilometers?)/i);
   if (match) {
     const val = parseFloat(match[1] ?? '');
     if (!isNaN(val)) return val;
   }
-  return 25;
+  return null;
 }
 
 /**
