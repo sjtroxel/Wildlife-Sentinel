@@ -240,6 +240,7 @@ describe('GdacsRssScout', () => {
   });
 
   it('opens circuit breaker after 5 consecutive fetch failures', async () => {
+    vi.useFakeTimers();
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('connection refused')));
 
     // Drive 5 failures
@@ -249,7 +250,13 @@ describe('GdacsRssScout', () => {
       .mockResolvedValueOnce(4)
       .mockResolvedValueOnce(5);
 
-    for (let i = 0; i < 5; i++) await scout.run();
+    for (let i = 0; i < 5; i++) {
+      const p = scout.run();
+      await vi.runAllTimersAsync();
+      await p;
+    }
+
+    vi.useRealTimers();
 
     // 5th failure triggers setex for circuit:open_until:gdacs
     const openUntilCall = vi.mocked(redis.setex).mock.calls.find(

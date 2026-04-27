@@ -222,7 +222,8 @@ describe('GfwFishingScout', () => {
     let callCount = 0;
     vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => {
       callCount++;
-      if (callCount === 1) throw new Error('network error');
+      // GfwFishingScout uses maxAttempts=2 — fail both attempts for MPA 1
+      if (callCount <= 2) throw new Error('network error');
       return { ok: true, json: async () => fixtureWith3Vessels };
     }));
 
