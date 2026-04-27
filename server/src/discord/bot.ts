@@ -368,10 +368,11 @@ export async function buildRefinerEmbed(
 
   const ph = stats.promptHealth;
   if (ph) {
-    const bar = '█'.repeat(ph.activeCorrections) + '░'.repeat(3 - ph.activeCorrections);
+    const MAX_CORRECTIONS = 5;
+    const bar = '█'.repeat(ph.activeCorrections) + '░'.repeat(MAX_CORRECTIONS - ph.activeCorrections);
     embed.addFields({
       name: 'Threat Assessment Prompt',
-      value: `**${ph.approxTokens}** tokens (${ph.chars.toLocaleString()} chars) · corrections [${bar}] **${ph.activeCorrections}/3** · v${ph.version} · updated ${formatScoreAge(ph.updatedAt)} · **${ph.corrections7d}** generated last 7d`,
+      value: `**${ph.approxTokens}** tokens (${ph.chars.toLocaleString()} chars) · corrections [${bar}] **${ph.activeCorrections}/${MAX_CORRECTIONS}** · v${ph.version} · updated ${formatScoreAge(ph.updatedAt)} · **${ph.corrections7d}** generated last 7d`,
     });
   }
 
