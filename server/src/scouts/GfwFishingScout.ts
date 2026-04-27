@@ -105,10 +105,12 @@ export class GfwFishingScout extends BaseScout {
     const today = new Date().toISOString().slice(0, 10);
     const weekKey = weekStartKey(new Date());
     const events: RawDisasterEvent[] = [];
-    // Abort if >40% of MPAs fail — GFW is selectively flaky, so consecutive-failure
+    // Abort if >50% of MPAs fail — GFW is selectively flaky, so consecutive-failure
     // tracking resets on any success and never fires. Total rate is more reliable.
+    // Raised from 40% to 50% on 2026-04-27: ~10/25 MPAs consistently timeout from
+    // Railway's egress IPs, hitting the 40% threshold every run.
     let totalFailures = 0;
-    const FAILURE_ABORT_THRESHOLD = Math.ceil(MPA_REGIONS.mpas.length * 0.4);
+    const FAILURE_ABORT_THRESHOLD = Math.ceil(MPA_REGIONS.mpas.length * 0.5);
 
     for (const mpa of MPA_REGIONS.mpas) {
       // GFW Events API v3:
