@@ -95,13 +95,15 @@ export async function fetchWithRetry(
       res = await fetch(url, { ...options, signal: controller.signal });
     } catch (err) {
       clearTimeout(timeoutId);
-      if (err instanceof Error && err.name === 'AbortError') {
-        if (attempt < maxAttempts) {
-          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10_000);
-          console.warn(`[fetchWithRetry] Timeout after ${timeoutMs}ms, retrying in ${delay}ms (attempt ${attempt}/${maxAttempts})`);
-          await new Promise(r => setTimeout(r, delay));
-          continue;
-        }
+      const isAbort = err instanceof Error && err.name === 'AbortError';
+      const label = isAbort ? `Timeout after ${timeoutMs}ms` : `Network error`;
+      if (attempt < maxAttempts) {
+        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10_000);
+        console.warn(`[fetchWithRetry] ${label}, retrying in ${delay}ms (attempt ${attempt}/${maxAttempts})`);
+        await new Promise(r => setTimeout(r, delay));
+        continue;
+      }
+      if (isAbort) {
         throw new Error(`Timeout after ${timeoutMs}ms from ${url} after ${maxAttempts} attempts`);
       }
       throw err;
