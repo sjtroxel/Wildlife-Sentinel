@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   haversineDistance,
   haversineBearing,
+  computeDestination,
   computePolygonCentroid,
   parseCSV,
   parseNHCLatLng,
@@ -32,6 +33,33 @@ describe('haversineDistance', () => {
     const a = { lat: 35.0, lng: 139.0 };
     const b = { lat: -33.8, lng: 151.2 };
     expect(haversineDistance(a, b)).toBeCloseTo(haversineDistance(b, a), 3);
+  });
+});
+
+describe('computeDestination', () => {
+  it('returns a point ~distanceKm from origin', () => {
+    const origin = { lat: -3.5, lng: 104.0 };
+    const dest = computeDestination(origin, 315, 40); // NW 40 km
+    expect(haversineDistance(origin, dest)).toBeCloseTo(40, 0);
+  });
+
+  it('moves north correctly (~111 km per degree at equator)', () => {
+    const dest = computeDestination({ lat: 0, lng: 0 }, 0, 111);
+    expect(dest.lat).toBeCloseTo(1, 0);
+    expect(dest.lng).toBeCloseTo(0, 1);
+  });
+
+  it('moves east correctly (~111 km per degree at equator)', () => {
+    const dest = computeDestination({ lat: 0, lng: 0 }, 90, 111);
+    expect(dest.lat).toBeCloseTo(0, 1);
+    expect(dest.lng).toBeCloseTo(1, 0);
+  });
+
+  it('moving opposite directions from same origin yields ~2× distance apart', () => {
+    const origin = { lat: 0, lng: 0 };
+    const north = computeDestination(origin, 0, 50);
+    const south = computeDestination(origin, 180, 50);
+    expect(haversineDistance(north, south)).toBeCloseTo(100, 0);
   });
 });
 

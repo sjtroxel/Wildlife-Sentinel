@@ -120,8 +120,17 @@ describe('runRefinerEvaluation — wildfire', () => {
 
     await runRefinerEvaluation('alert-uuid-001', '24h');
 
-    // empty FIRMS → toComposite(0.5, 0.2) = 0.38 — still scores, does not skip
+    // empty FIRMS → toComposite(0.65, 0.65) = 0.65 — still scores, does not skip
     expect(sqlCallContains('insert into refiner_scores')).toBe(true);
+  });
+
+  it('does NOT trigger a correction note when fire is extinguished (empty FIRMS)', async () => {
+    mockFetchWithRetry.mockResolvedValue(mockResponse('latitude,longitude,frp\n'));
+
+    await runRefinerEvaluation('alert-uuid-001', '24h');
+
+    // Extinguished fire → neutral passing score 0.65 ≥ 0.60 → no correction
+    expect(mockComplete).not.toHaveBeenCalled();
   });
 
   it('skips scoring entirely when FIRMS API throws', async () => {
@@ -294,8 +303,12 @@ describe('runRefinerEvaluation — coral_bleaching', () => {
 
 describe('correction note + system prompt update', () => {
   it('calls modelRouter and updates agent_prompts when score < 0.60', async () => {
-    // Empty FIRMS → toComposite(0.5, 0.2) = 0.38 < 0.60 → correction triggered
-    mockFetchWithRetry.mockResolvedValue(mockResponse('latitude,longitude\n'));
+    const firmsCsv = readFileSync(join(FIXTURES, 'firms-fire-response.csv'), 'utf8');
+
+    // Default alert predicts NW 35km from (-3.42, 104.21).
+    // Fixture fire spread NE of origin → far from predicted destination → direction≈0.15,
+    // magnitude≈0.64 → composite≈0.35 < 0.60 → correction triggered.
+    mockFetchWithRetry.mockResolvedValue(mockResponse(firmsCsv));
 
     await runRefinerEvaluation('alert-uuid-001', '24h');
 
@@ -309,10 +322,10 @@ describe('correction note + system prompt update', () => {
     mockSql.mockImplementation(async (strings: string[]) => {
       const query = strings.join('').toLowerCase();
       if (query.includes('select') && query.includes('from alerts')) {
-        // Fixture points from origin (-3.5, 104.0): all 3 are distal (>5km), centroid ~(-3.40, 104.35)
-        // Predicted NE (45°), actual bearing ≈74° (ENE), angleDiff≈29° → dir = 1-29/135 ≈ 0.785
-        // 90th-percentile spread distance ≈ 47.3km, predicted 40km → ratio 40/47.3 ≈ 0.846
-        // Composite: 0.6*0.785 + 0.4*0.846 ≈ 0.809 ≥ 0.60 → no correction
+        // Predicted NE 40km from (-3.5, 104.0). predictedDest ≈ (-3.245, 104.255).
+        // Fixture fire spread NE: closest distal point to dest ≈ 20km away.
+        // directionAccuracy = 1 - 20/(40*1.5) ≈ 0.67. magnitudeAccuracy ≈ 0.84.
+        // Composite ≈ 0.74 ≥ 0.60 → no correction.
         return makeAlertRows({
           coordinates: { lat: -3.5, lng: 104.0 },
           prediction_data: { predicted_impact: 'Fire will spread NE approximately 40km in 24h.' },

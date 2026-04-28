@@ -22,6 +22,37 @@ export function haversineDistance(
   return R * c;
 }
 
+/**
+ * Returns the destination point reached by travelling `distanceKm` along
+ * `bearingDeg` (0–360°, clockwise from north) from `origin`.
+ * Uses the spherical earth (Haversine) formula.
+ */
+export function computeDestination(
+  origin: { lat: number; lng: number },
+  bearingDeg: number,
+  distanceKm: number
+): { lat: number; lng: number } {
+  const R = 6371;
+  const δ = distanceKm / R;
+  const θ = (bearingDeg * Math.PI) / 180;
+  const φ1 = (origin.lat * Math.PI) / 180;
+  const λ1 = (origin.lng * Math.PI) / 180;
+  const φ2 = Math.asin(
+    Math.sin(φ1) * Math.cos(δ) +
+    Math.cos(φ1) * Math.sin(δ) * Math.cos(θ)
+  );
+  const λ2 =
+    λ1 +
+    Math.atan2(
+      Math.sin(θ) * Math.sin(δ) * Math.cos(φ1),
+      Math.cos(δ) - Math.sin(φ1) * Math.sin(φ2)
+    );
+  return {
+    lat: (φ2 * 180) / Math.PI,
+    lng: (((λ2 * 180) / Math.PI + 540) % 360) - 180,
+  };
+}
+
 /** Returns the initial bearing (0–360°, clockwise from north) from `from` to `to`. */
 export function haversineBearing(
   from: { lat: number; lng: number },
