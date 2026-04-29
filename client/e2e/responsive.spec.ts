@@ -27,6 +27,10 @@ test.describe('Responsive layout', () => {
     const firstPanel = panels.first();
     const lastPanel = panels.last();
 
+    // Wait for React hydration to complete before reading layout positions
+    await expect(firstPanel).toBeVisible();
+    await expect(lastPanel).toBeVisible();
+
     const firstBox = await firstPanel.boundingBox();
     const lastBox = await lastPanel.boundingBox();
 

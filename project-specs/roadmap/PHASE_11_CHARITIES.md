@@ -2,9 +2,26 @@
 
 **Goal:** At the exact moment a real-time disaster alert fires, surface targeted, pre-vetted charity donation links so users can take immediate action to help the species being threatened right now.
 
-**Status:** 📋 PLANNED — Implementation not yet started.
+**Status:** 🚧 IN PROGRESS — Backend complete; frontend in progress (2026-04-29).
 **Depends on:** Phase 10 complete (all expansions shipped 2026-04-16). System live on Railway + Vercel.
 **No new env vars required.** Fully internal to the existing stack.
+
+### Completed ✅
+- Migration 0009 applied: `charities` (30 rows), `charity_species_links` (90 rows), `charity_event_type_links` (44 rows)
+- `shared/types.d.ts` — `Charity` + `CharitySummary` types
+- `server/src/db/charityQueries.ts` — three-tier priority cascade query functions
+- `server/src/routes/charities.ts` — `GET /charities`, `GET /charities/:slug`
+- `server/src/app.ts` — `charitiesRouter` registered
+- `server/src/agents/SynthesisAgent.ts` — `💛 How You Can Help` embed field
+- `server/src/discord/bot.ts` — `/donate` slash command + autocomplete
+- `server/src/discord/helpContent.ts` — `/donate` listed
+- 28 server-side tests (charityQueries, routes/charities, SynthesisAgent, donateCommand)
+
+### Remaining 🔲
+- Frontend: `client/lib/api.ts`, `CharityCard.tsx`, `/charities` page, alert detail section, species detail section, nav link
+- Species name verification query
+- Railway + Vercel deploy
+- Discord `/donate` command registration on guild
 
 ---
 

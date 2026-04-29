@@ -1,12 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function ThemeToggle() {
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof document === 'undefined') return true;
-    return document.documentElement.classList.contains('dark');
-  });
+  // Always initialize to true (dark) on both server and client to avoid hydration
+  // mismatch. A useEffect then syncs to the actual DOM theme after mount.
+  const [isDark, setIsDark] = useState(true);
+
+  useEffect(() => {
+    setIsDark(document.documentElement.classList.contains('dark'));
+  }, []);
 
   function toggle() {
     const next = !isDark;

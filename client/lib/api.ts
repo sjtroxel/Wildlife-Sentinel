@@ -1,4 +1,4 @@
-import type { AlertRow, AlertDetail, RefinerScoreRow, BboxQuery, EventType, ThreatLevel, SpeciesListItem, SpeciesDetail, TrendPoint } from '@wildlife-sentinel/shared/types';
+import type { AlertRow, AlertDetail, RefinerScoreRow, BboxQuery, EventType, ThreatLevel, SpeciesListItem, SpeciesDetail, TrendPoint, Charity } from '@wildlife-sentinel/shared/types';
 
 export interface AlertFilters {
   event_type?: EventType;
@@ -57,4 +57,26 @@ export const api = {
     });
     return fetch(`${BASE}/habitats?${params}`).then((r) => r.json());
   },
+
+  getCharitiesForAlert: (species: string[], eventType: string, limit = 3): Promise<Charity[]> => {
+    const params = new URLSearchParams();
+    if (species.length > 0) params.set('species', species.join(','));
+    if (eventType) params.set('event_type', eventType);
+    params.set('limit', String(limit));
+    return fetch(`${BASE}/charities?${params}`).then((r) => r.json());
+  },
+
+  getCharitiesForSpecies: (speciesName: string, limit = 5): Promise<Charity[]> => {
+    const params = new URLSearchParams({ species: speciesName, limit: String(limit) });
+    return fetch(`${BASE}/charities?${params}`).then((r) => r.json());
+  },
+
+  getAllCharities: (): Promise<Charity[]> =>
+    fetch(`${BASE}/charities`).then((r) => r.json()),
+
+  getCharity: (slug: string): Promise<Charity> =>
+    fetch(`${BASE}/charities/${slug}`).then((r) => {
+      if (!r.ok) throw new Error('Not found');
+      return r.json();
+    }),
 };

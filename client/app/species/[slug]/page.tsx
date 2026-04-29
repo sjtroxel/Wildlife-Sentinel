@@ -6,8 +6,9 @@ import Link from 'next/link';
 import { api } from '@/lib/api';
 import { formatRelativeTime } from '@/lib/utils';
 import SpeciesRangeMap from '@/components/SpeciesRangeMap';
+import CharityCard from '@/components/CharityCard';
 import Copyright from '@/components/Copyright';
-import type { SpeciesDetail, ThreatLevel, IUCNStatus } from '@wildlife-sentinel/shared/types';
+import type { SpeciesDetail, ThreatLevel, IUCNStatus, Charity } from '@wildlife-sentinel/shared/types';
 
 const IUCN_BADGE: Record<IUCNStatus, string> = {
   EX: 'bg-zinc-800 text-zinc-300 border border-zinc-600',
@@ -53,6 +54,7 @@ export default function SpeciesDetailPage() {
   const [species, setSpecies] = useState<SpeciesDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [charities, setCharities] = useState<Charity[]>([]);
 
   useEffect(() => {
     if (!slug) return;
@@ -61,6 +63,13 @@ export default function SpeciesDetailPage() {
       .catch(() => setError('Species not found or unavailable.'))
       .finally(() => setLoading(false));
   }, [slug]);
+
+  useEffect(() => {
+    if (!species) return;
+    api.getCharitiesForSpecies(species.species_name, 3)
+      .then(setCharities)
+      .catch(() => setCharities([]));
+  }, [species]);
 
   if (loading) {
     return (
@@ -198,6 +207,25 @@ export default function SpeciesDetailPage() {
             </div>
           )}
         </div>
+
+        {/* Conservation Organizations */}
+        {charities.length > 0 && (
+          <div className="mt-6 space-y-3">
+            <h2 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+              Conservation Organizations
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {charities.map((c) => (
+                <CharityCard key={c.id} charity={c} />
+              ))}
+            </div>
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-600">
+              <Link href="/charities" className="hover:text-zinc-400 dark:hover:text-zinc-500 transition-colors">
+                Browse all conservation partners →
+              </Link>
+            </p>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="mt-8 pt-4 border-t border-zinc-200 dark:border-zinc-800 space-y-1">

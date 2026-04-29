@@ -34,13 +34,13 @@ function VResizeHandle() {
 }
 
 export default function Home() {
-  const [isDesktop, setIsDesktop] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia('(min-width: 1024px)').matches;
-  });
+  // Start false (mobile) on both server and client to avoid hydration mismatch.
+  // The effect below sets the real value and listens for resize.
+  const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 1024px)');
+    setIsDesktop(mq.matches);
     const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
@@ -77,6 +77,9 @@ export default function Home() {
           </Link>
           <Link href="/species" className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">
             Species
+          </Link>
+          <Link href="/charities" className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">
+            Charities
           </Link>
         </nav>
         <ThemeToggle />

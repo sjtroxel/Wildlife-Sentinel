@@ -5,8 +5,9 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { formatRelativeTime } from '@/lib/utils';
+import CharityCard from '@/components/CharityCard';
 import Copyright from '@/components/Copyright';
-import type { AlertDetail, ThreatLevel } from '@wildlife-sentinel/shared/types';
+import type { AlertDetail, ThreatLevel, Charity } from '@wildlife-sentinel/shared/types';
 
 const THREAT_COLORS: Record<ThreatLevel, string> = {
   critical: 'bg-red-600 text-white',
@@ -64,6 +65,7 @@ export default function AlertDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [charities, setCharities] = useState<Charity[]>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -72,6 +74,14 @@ export default function AlertDetailPage() {
       .catch(() => setError('Alert not found or unavailable.'))
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!alert) return;
+    const species = alert.enrichment_data?.species_at_risk ?? [];
+    api.getCharitiesForAlert(species, alert.event_type, 3)
+      .then(setCharities)
+      .catch(() => setCharities([]));
+  }, [alert]);
 
   function copyCoords() {
     if (!alert?.coordinates) return;
@@ -288,6 +298,26 @@ export default function AlertDetailPage() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* How You Can Help */}
+        {charities.length > 0 && (
+          <div className="mt-4 space-y-3">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+              💛 How You Can Help
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {charities.map((c) => (
+                <CharityCard key={c.id} charity={c} compact />
+              ))}
+            </div>
+            <p className="text-[10px] text-zinc-600">
+              All organizations are vetted conservation nonprofits.{' '}
+              <Link href="/charities" className="text-zinc-500 hover:text-zinc-400">
+                Browse all conservation partners →
+              </Link>
+            </p>
           </div>
         )}
 

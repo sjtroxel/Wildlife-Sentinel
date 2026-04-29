@@ -19,7 +19,7 @@
 | 8 | Frontend | ✅ Complete | Next.js 16.2.1, Leaflet map, alerts feed, SSE, refiner chart, logos/favicon. 139 tests pass. |
 | 9 | Hardening + Deploy | ✅ Complete | 295 tests, 91.4% coverage, Railway + Vercel live, pipeline end-to-end verified 2026-04-05 |
 | 10 | Expansions & Enhancements | ✅ Complete | All expansions 0A–5B shipped 2026-04-16. 424 Vitest + 43 Playwright E2E tests. |
-| 11 | Conservation Charity Integration | 📋 Planned | Targeted donation links in Discord alerts, alert detail page, species profiles, /charities directory, /donate Discord command. No new env vars. |
+| 11 | Conservation Charity Integration | ✅ Complete | 30 vetted charities seeded, charity embed in Discord alerts, /charities directory, /donate command, alert + species detail pages. 470 Vitest tests. |
 
 ---
 
@@ -257,15 +257,16 @@
 - [x] `server/src/db/charityQueries.ts` — `getCharitiesForAlert()` with species → event-type → global fallback priority
 - [x] `server/src/routes/charities.ts` — REST endpoints registered in `app.ts`
 - [x] `shared/types.d.ts` — add `Charity` and `CharitySummary` types
-- [ ] `SynthesisAgent.ts` — query charities + add `💛 How You Can Help` field to Discord embed (no pipeline changes needed)
-- [ ] Discord `/donate [species] [event_type]` slash command + autocomplete
-- [ ] `helpContent.ts` — add `/donate` to `SLASH_COMMANDS`
-- [ ] `client/components/CharityCard.tsx` — reusable charity card component
-- [ ] Alert detail page `/alerts/[id]` — "How You Can Help" section with CharityCards
-- [ ] Species profile `/species/[slug]` — "Conservation Organizations" section
-- [ ] `client/app/charities/page.tsx` — full charity directory page
-- [ ] `client/app/page.tsx` — "Charities" nav link added to header
-- [ ] Tests: charityQueries (~8), routes/charities (~6), SynthesisAgent updates (~2), donateCommand (~5)
-- [ ] Post-migration species name verification (match charity_species_links against species_ranges)
+- [x] `SynthesisAgent.ts` — query charities + add `💛 How You Can Help` field to Discord embed (no pipeline changes needed)
+- [x] Discord `/donate [species] [event_type]` slash command + autocomplete
+- [x] `helpContent.ts` — add `/donate` to `SLASH_COMMANDS`
+- [x] `client/components/CharityCard.tsx` — reusable charity card component
+- [x] Alert detail page `/alerts/[id]` — "How You Can Help" section with CharityCards
+- [x] Species profile `/species/[slug]` — "Conservation Organizations" section
+- [x] `client/app/charities/page.tsx` — full charity directory page
+- [x] `client/app/page.tsx` — "Charities" nav link added to header
+- [x] `client/lib/api.ts` — 4 charity API call functions
+- [x] Tests: charityQueries (8), routes/charities (6), SynthesisAgent updates (2), donateCommand (5+autocomplete) — 470 Vitest total
+- [ ] Post-migration species name verification (match charity_species_links against species_ranges) — run in Neon console after deploy
 
 → See [PHASE_11_CHARITIES.md](roadmap/PHASE_11_CHARITIES.md)
