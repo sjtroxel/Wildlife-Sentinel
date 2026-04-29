@@ -60,6 +60,7 @@ describe('GfwFishingScout', () => {
   it('publishes one event per MPA when vessels detected', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
+      headers: { get: (_h: string) => null },
       json: async () => fixtureWith3Vessels,
     }));
 
@@ -71,6 +72,7 @@ describe('GfwFishingScout', () => {
   it('sets source=gfw_fishing and event_type=illegal_fishing on all events', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
+      headers: { get: (_h: string) => null },
       json: async () => fixtureWith3Vessels,
     }));
 
@@ -89,6 +91,7 @@ describe('GfwFishingScout', () => {
   it('calculates severity as vesselCount / 10, clamped to 1.0', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
+      headers: { get: (_h: string) => null },
       json: async () => fixtureWith3Vessels,  // 3 unique vessels
     }));
 
@@ -121,6 +124,7 @@ describe('GfwFishingScout', () => {
 
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
+      headers: { get: (_h: string) => null },
       json: async () => fixtureMany,
     }));
 
@@ -138,6 +142,7 @@ describe('GfwFishingScout', () => {
   it('skips MPAs with 0 vessels — no events published', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
+      headers: { get: (_h: string) => null },
       json: async () => fixtureEmpty,
     }));
 
@@ -149,6 +154,7 @@ describe('GfwFishingScout', () => {
   it('deduplicates the same MPA within the same week', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
+      headers: { get: (_h: string) => null },
       json: async () => fixtureWith3Vessels,
     }));
 
@@ -167,6 +173,7 @@ describe('GfwFishingScout', () => {
   it('populates raw_data.key_species from mpaRegions.json', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
+      headers: { get: (_h: string) => null },
       json: async () => fixtureWith3Vessels,
     }));
 
@@ -184,6 +191,7 @@ describe('GfwFishingScout', () => {
   it('populates raw_data.vessel_count and vessel_flags', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
+      headers: { get: (_h: string) => null },
       json: async () => fixtureWith3Vessels,
     }));
 
@@ -224,7 +232,7 @@ describe('GfwFishingScout', () => {
       callCount++;
       // GfwFishingScout uses maxAttempts=2 — fail both attempts for MPA 1
       if (callCount <= 2) throw new Error('network error');
-      return { ok: true, json: async () => fixtureWith3Vessels };
+      return { ok: true, headers: { get: (_h: string) => null }, json: async () => fixtureWith3Vessels };
     }));
 
     await scout.run();

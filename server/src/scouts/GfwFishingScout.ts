@@ -111,6 +111,12 @@ export class GfwFishingScout extends BaseScout {
     // Railway's egress IPs, hitting the 40% threshold every run.
     let totalFailures = 0;
     const FAILURE_ABORT_THRESHOLD = Math.ceil(MPA_REGIONS.mpas.length * 0.5);
+    // GFW API rate limit headers (added 2026-04-29 per GFW API update from Gisela Morinigo).
+    // Captured from the most recent successful response — reflects quota state after the run.
+    let quotaLimit: string | null = null;
+    let quotaUsed: string | null = null;
+    let quotaRemaining: string | null = null;
+    let quotaResetIn: string | null = null;
 
     for (const mpa of MPA_REGIONS.mpas) {
       // GFW Events API v3:
@@ -138,6 +144,14 @@ export class GfwFishingScout extends BaseScout {
           },
           body: postBody,
         }, 2, 20_000);
+        // Capture quota headers from every successful response; the last value reflects
+        // end-of-run state (remaining decreases with each request).
+        quotaLimit = res.headers.get('x-ratelimit-daily-limit-requests');
+        quotaUsed = res.headers.get('x-ratelimit-daily-current-usage');
+        quotaRemaining = res.headers.get('x-ratelimit-daily-remaining-requests');
+        const resetHours = res.headers.get('x-ratelimit-daily-reset-hours');
+        const resetDays = res.headers.get('x-ratelimit-daily-reset-days');
+        quotaResetIn = resetHours !== null ? `${resetHours}h` : resetDays !== null ? `${resetDays}d` : null;
         body = await res.json() as GfwEventsResponse;
       } catch (err) {
         totalFailures++;
@@ -191,10 +205,15 @@ export class GfwFishingScout extends BaseScout {
       });
     }
 
+    const quotaStr = quotaLimit !== null
+      ? ` | quota: ${quotaUsed ?? '?'}/${quotaLimit} used, ${quotaRemaining ?? '?'} remaining` +
+        (quotaResetIn !== null ? ` (resets in ${quotaResetIn})` : '')
+      : '';
     console.log(
       `[gfw_fishing] Run complete: ${MPA_REGIONS.mpas.length} MPAs checked, ` +
       `${totalFailures} fetch failures, ` +
-      `${events.length} fishing event(s) found`
+      `${events.length} fishing event(s) found` +
+      quotaStr
     );
     return events;
   }
