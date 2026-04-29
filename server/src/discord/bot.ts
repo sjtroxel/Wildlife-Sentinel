@@ -17,6 +17,7 @@ import {
   autocompleteSpecies,
 } from '../db/speciesQueries.js';
 import { getAlertTrends, getRefinerStats } from '../db/statsQueries.js';
+import { getCharitiesForAlert } from '../db/charityQueries.js';
 import { SLASH_COMMANDS } from './helpContent.js';
 import { runDailyScoutsNow } from '../scouts/index.js';
 import { buildWeeklyDigestEmbed } from './weeklyDigest.js';
@@ -88,6 +89,34 @@ const commands = [
   new SlashCommandBuilder()
     .setName('help')
     .setDescription('Learn what Wildlife Sentinel does and how to use this bot'),
+  new SlashCommandBuilder()
+    .setName('donate')
+    .setDescription('Find vetted conservation charities for a species or disaster type')
+    .addStringOption(opt =>
+      opt
+        .setName('species')
+        .setDescription('Species name (autocomplete supported)')
+        .setRequired(false)
+        .setAutocomplete(true)
+    )
+    .addStringOption(opt =>
+      opt
+        .setName('event_type')
+        .setDescription('Disaster type')
+        .setRequired(false)
+        .addChoices(
+          { name: 'Wildfire',        value: 'wildfire' },
+          { name: 'Deforestation',   value: 'deforestation' },
+          { name: 'Coral Bleaching', value: 'coral_bleaching' },
+          { name: 'Flood',           value: 'flood' },
+          { name: 'Drought',         value: 'drought' },
+          { name: 'Tropical Storm',  value: 'tropical_storm' },
+          { name: 'Sea Ice Loss',    value: 'sea_ice_loss' },
+          { name: 'Illegal Fishing', value: 'illegal_fishing' },
+          { name: 'Earthquake',      value: 'earthquake' },
+          { name: 'Climate Anomaly', value: 'climate_anomaly' },
+        )
+    ),
 ].map(cmd => cmd.toJSON());
 
 const client = new Client({
@@ -125,21 +154,23 @@ export async function startBot(): Promise<void> {
 
   client.on('interactionCreate', async (interaction) => {
     // --- Autocomplete ---
-    if (interaction.isAutocomplete() && interaction.commandName === 'species') {
-      const input = interaction.options.getFocused();
-      if (!input || input.length < 2) {
-        await interaction.respond([]);
-        return;
-      }
-      try {
-        const rows = await autocompleteSpecies(input);
-        await interaction.respond(
-          rows.map(r => ({
-            name: r.common_name ?? r.species_name,
-            value: (r.common_name ?? r.species_name).toLowerCase(),
-          }))
-        );
-      } catch {
+    if (interaction.isAutocomplete()) {
+      const cmd = interaction.commandName;
+      if (cmd === 'species' || (cmd === 'donate' && interaction.options.getFocused(true).name === 'species')) {
+        const input = interaction.options.getFocused();
+        if (!input || input.length < 2) { await interaction.respond([]); return; }
+        try {
+          const rows = await autocompleteSpecies(input);
+          await interaction.respond(
+            rows.map(r => ({
+              name: r.common_name ?? r.species_name,
+              value: (r.common_name ?? r.species_name).toLowerCase(),
+            }))
+          );
+        } catch {
+          await interaction.respond([]);
+        }
+      } else {
         await interaction.respond([]);
       }
       return;
@@ -183,6 +214,9 @@ export async function startBot(): Promise<void> {
 
       } else if (interaction.commandName === 'help') {
         await handleHelpCommand(interaction);
+
+      } else if (interaction.commandName === 'donate') {
+        await handleDonateCommand(interaction);
       }
     } catch (err) {
       console.error('[discord] Slash command error:', err);
@@ -455,6 +489,59 @@ async function handleHelpCommand(
     embed.addFields({
       name: '🌐 Web Dashboard',
       value: `[wildlife-sentinel.vercel.app](${config.frontendUrl}) — Live map, alert archive, species profiles, and prediction accuracy charts.`,
+    });
+  }
+
+  await interaction.editReply({ embeds: [embed] });
+}
+
+async function handleDonateCommand(
+  interaction: ChatInputCommandInteraction
+): Promise<void> {
+  const speciesInput = interaction.options.getString('species');
+  const eventType = interaction.options.getString('event_type') ?? '';
+
+  const speciesNames = speciesInput ? [speciesInput] : [];
+  const charities = await getCharitiesForAlert(speciesNames, eventType, 5);
+
+  if (charities.length === 0) {
+    await interaction.editReply(
+      'No conservation charities found for that combination. Try `/donate` without filters for general recommendations.'
+    );
+    return;
+  }
+
+  const label = speciesInput
+    ? `Supporting **${speciesInput}**`
+    : eventType
+      ? `Responding to **${eventType.replace(/_/g, ' ')}** threats`
+      : 'Supporting Wildlife Conservation';
+
+  const embed = new EmbedBuilder()
+    .setColor(0x16a34a)
+    .setTitle('💛 Conservation Organizations')
+    .setDescription(
+      `${label} — here are vetted organizations where your donation makes a real difference.`
+    );
+
+  for (const charity of charities) {
+    const stars = charity.charity_navigator_rating
+      ? '⭐'.repeat(charity.charity_navigator_rating) + ` (${charity.charity_navigator_rating}/4 Charity Navigator)`
+      : '';
+    embed.addFields({
+      name: charity.name,
+      value: `${charity.description}${stars ? '\n' + stars : ''}\n[Donate →](${charity.donation_url})`,
+      inline: false,
+    });
+  }
+
+  embed.setFooter({ text: 'Wildlife Sentinel · Conservation Action · All charities are vetted' });
+
+  if (config.frontendUrl) {
+    embed.addFields({
+      name: '🌐 Browse All Partners',
+      value: `[View all conservation partners](${config.frontendUrl}/charities)`,
+      inline: false,
     });
   }
 

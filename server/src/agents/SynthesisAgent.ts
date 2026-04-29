@@ -16,6 +16,7 @@ import { modelRouter } from '../router/ModelRouter.js';
 import { getAgentPrompt } from '../db/agentPrompts.js';
 import { logToWarRoom } from '../discord/warRoom.js';
 import { retrieveConservationContext } from '../rag/retrieve.js';
+import { getCharitiesForAlert } from '../db/charityQueries.js';
 import { config } from '../config.js';
 
 const THREAT_COLORS: Record<ThreatLevel, number> = {
@@ -122,6 +123,12 @@ export async function processAlert(assessed: AssessedAlert): Promise<void> {
       `\nSource: ${conservationCtx[0].source_document}`;
   }
 
+  const alertCharities = await getCharitiesForAlert(
+    assessed.species_at_risk,
+    assessed.event_type,
+    3
+  );
+
   const speciesBriefLines = assessed.species_briefs
     .slice(0, 3)
     .map(b => `${b.species_name} (${b.iucn_status}${b.population_estimate ? `, pop ~${b.population_estimate}` : ''}): ${b.habitat_description}`)
@@ -168,7 +175,16 @@ export async function processAlert(assessed: AssessedAlert): Promise<void> {
       { name: 'Species at Risk', value: assessed.species_at_risk.slice(0, 3).join(', ') || 'Unknown', inline: false },
       { name: 'IUCN Status', value: assessed.species_briefs[0]?.iucn_status ?? 'Unknown', inline: true },
       { name: 'Confidence', value: `${(assessed.confidence_score * 100).toFixed(0)}%`, inline: true },
-    )
+    );
+
+  if (alertCharities.length > 0) {
+    const donateLinks = alertCharities
+      .map(c => `[${c.name}](${c.donation_url})`)
+      .join(' · ');
+    embed.addFields({ name: '💛 How You Can Help', value: donateLinks, inline: false });
+  }
+
+  embed
     .setFooter({ text: `Wildlife Sentinel • Data: ${SOURCE_LABELS[assessed.source] ?? assessed.source} • ${synthesis.footer_note}` })
     .setTimestamp();
 

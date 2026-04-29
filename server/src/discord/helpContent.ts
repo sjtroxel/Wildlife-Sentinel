@@ -6,5 +6,6 @@ export const SLASH_COMMANDS = [
   { name: '/status',         description: 'Show pipeline health and whether monitoring is active.' },
   { name: '/pause',          description: 'Pause the pipeline (admin only).' },
   { name: '/resume',         description: 'Resume the pipeline (admin only).' },
+  { name: '/donate [species] [event_type]', description: 'Find vetted conservation charities for a species or disaster type.' },
   { name: '/help',           description: 'Show this message.' },
 ] as const;
