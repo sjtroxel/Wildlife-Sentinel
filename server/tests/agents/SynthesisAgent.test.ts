@@ -10,6 +10,7 @@ const synthesisFixture = JSON.parse(
 ) as unknown;
 
 const mockSql = vi.hoisted(() => vi.fn());
+const mockGetCharitiesForAlert = vi.hoisted(() => vi.fn());
 
 vi.mock('../../src/db/client.js', () => ({ sql: mockSql }));
 
@@ -45,16 +46,21 @@ vi.mock('../../src/discord/warRoom.js', () => ({
   logToWarRoom: vi.fn().mockResolvedValue(undefined),
 }));
 
-// Mock discord.js EmbedBuilder with a plain class so vi.resetAllMocks() doesn't strip it
+// Mock discord.js EmbedBuilder — tracks addFields calls so tests can inspect embed content
 vi.mock('discord.js', () => ({
   EmbedBuilder: class {
+    _fields: Array<{ name: string; value: string; inline?: boolean }> = [];
     setColor() { return this; }
     setTitle() { return this; }
     setDescription() { return this; }
-    addFields() { return this; }
+    addFields(...fields: Array<{ name: string; value: string; inline?: boolean }>) {
+      this._fields.push(...fields);
+      return this;
+    }
     setFooter() { return this; }
     setTimestamp() { return this; }
-    toJSON() { return { type: 'rich', title: 'Test embed' }; }
+    setURL() { return this; }
+    toJSON() { return { type: 'rich', title: 'Test embed', fields: this._fields }; }
   },
 }));
 
@@ -68,6 +74,10 @@ vi.mock('../../src/router/ModelRouter.js', () => ({
 vi.mock('../../src/rag/retrieve.js', () => ({
   retrieveConservationContext: vi.fn().mockResolvedValue([]),
   retrieveSpeciesFacts: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock('../../src/db/charityQueries.js', () => ({
+  getCharitiesForAlert: mockGetCharitiesForAlert,
 }));
 
 import { redis } from '../../src/redis/client.js';
@@ -126,6 +136,9 @@ describe('SynthesisAgent.processAlert', () => {
     vi.mocked(redis.xadd).mockResolvedValue('1234-0');
     mockSql.mockResolvedValue([]);
     vi.mocked(retrieveConservationContext).mockResolvedValue([]);
+    mockGetCharitiesForAlert.mockResolvedValue([
+      { name: 'WWF', donation_url: 'https://wwf.org/donate', slug: 'wwf' },
+    ]);
     vi.mocked(modelRouter.complete).mockResolvedValue({
       content: JSON.stringify(synthesisFixture),
       model: 'claude-haiku-4-5-20251001',
@@ -257,6 +270,35 @@ describe('SynthesisAgent.processAlert', () => {
     expect(modelRouter.complete).toHaveBeenCalledWith(
       expect.objectContaining({ model: 'claude-haiku-4-5-20251001' })
     );
+  });
+
+  it('embed includes "💛 How You Can Help" field when charities are returned', async () => {
+    mockGetCharitiesForAlert.mockResolvedValueOnce([
+      { name: 'Orangutan Foundation International', donation_url: 'https://orangutan.org/donate-2', slug: 'ofi' },
+      { name: 'WWF', donation_url: 'https://wwf.org/donate', slug: 'wwf' },
+    ]);
+
+    await processAlert(makeAlert({ threat_level: 'high' }));
+
+    const payload = JSON.parse(
+      vi.mocked(redis.xadd).mock.calls[0]?.[3] as string
+    ) as { embed: { fields: Array<{ name: string; value: string }> } };
+    const charityField = payload.embed.fields.find(f => f.name === '💛 How You Can Help');
+    expect(charityField).toBeDefined();
+    expect(charityField!.value).toContain('[Orangutan Foundation International](https://orangutan.org/donate-2)');
+    expect(charityField!.value).toContain('[WWF](https://wwf.org/donate)');
+  });
+
+  it('embed omits "💛 How You Can Help" field when getCharitiesForAlert returns empty', async () => {
+    mockGetCharitiesForAlert.mockResolvedValueOnce([]);
+
+    await processAlert(makeAlert({ threat_level: 'high' }));
+
+    const payload = JSON.parse(
+      vi.mocked(redis.xadd).mock.calls[0]?.[3] as string
+    ) as { embed: { fields: Array<{ name: string }> } };
+    const charityField = payload.embed.fields.find(f => f.name === '💛 How You Can Help');
+    expect(charityField).toBeUndefined();
   });
 
   it('malformed LLM JSON → processAlert throws (caught by outer loop)', async () => {
