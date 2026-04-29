@@ -19,6 +19,7 @@
 | 8 | Frontend | ✅ Complete | Next.js 16.2.1, Leaflet map, alerts feed, SSE, refiner chart, logos/favicon. 139 tests pass. |
 | 9 | Hardening + Deploy | ✅ Complete | 295 tests, 91.4% coverage, Railway + Vercel live, pipeline end-to-end verified 2026-04-05 |
 | 10 | Expansions & Enhancements | ✅ Complete | All expansions 0A–5B shipped 2026-04-16. 424 Vitest + 43 Playwright E2E tests. |
+| 11 | Conservation Charity Integration | 📋 Planned | Targeted donation links in Discord alerts, alert detail page, species profiles, /charities directory, /donate Discord command. No new env vars. |
 
 ---
 
@@ -245,3 +246,26 @@
 - [x] **E2E test expansion** — 11 Playwright specs covering all Phase 10 frontend additions; 43 tests passing (2026-04-16)
 
 → See [PHASE_10_EXPANSIONS.md](roadmap/PHASE_10_EXPANSIONS.md)
+
+---
+
+## Phase 11 — Conservation Charity Integration
+**Goal:** Surface targeted, pre-vetted charity donation links at the exact moment a disaster alert fires — in the Discord embed, on alert detail pages, on species profiles, and in a full `/charities` directory.
+
+- [ ] Migration 0009 — `charities` table + `charity_species_links` + `charity_event_type_links` tables
+- [ ] Seed ~30 vetted charities with species and event-type mappings
+- [ ] `server/src/db/charityQueries.ts` — `getCharitiesForAlert()` with species → event-type → global fallback priority
+- [ ] `server/src/routes/charities.ts` — REST endpoints registered in `app.ts`
+- [ ] `SynthesisAgent.ts` — query charities + add `💛 How You Can Help` field to Discord embed (no pipeline changes needed)
+- [ ] Discord `/donate [species] [event_type]` slash command + autocomplete
+- [ ] `helpContent.ts` — add `/donate` to `SLASH_COMMANDS`
+- [ ] `shared/types.d.ts` — add `Charity` and `CharitySummary` types
+- [ ] `client/components/CharityCard.tsx` — reusable charity card component
+- [ ] Alert detail page `/alerts/[id]` — "How You Can Help" section with CharityCards
+- [ ] Species profile `/species/[slug]` — "Conservation Organizations" section
+- [ ] `client/app/charities/page.tsx` — full charity directory page
+- [ ] `client/app/page.tsx` — "Charities" nav link added to header
+- [ ] Tests: charityQueries (~8), routes/charities (~6), SynthesisAgent updates (~2), donateCommand (~5)
+- [ ] Post-migration species name verification (match charity_species_links against species_ranges)
+
+→ See [PHASE_11_CHARITIES.md](roadmap/PHASE_11_CHARITIES.md)
