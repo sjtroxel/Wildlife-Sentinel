@@ -252,14 +252,14 @@
 ## Phase 11 — Conservation Charity Integration
 **Goal:** Surface targeted, pre-vetted charity donation links at the exact moment a disaster alert fires — in the Discord embed, on alert detail pages, on species profiles, and in a full `/charities` directory.
 
-- [ ] Migration 0009 — `charities` table + `charity_species_links` + `charity_event_type_links` tables
-- [ ] Seed ~30 vetted charities with species and event-type mappings
-- [ ] `server/src/db/charityQueries.ts` — `getCharitiesForAlert()` with species → event-type → global fallback priority
-- [ ] `server/src/routes/charities.ts` — REST endpoints registered in `app.ts`
+- [x] Migration 0009 — `charities` table + `charity_species_links` + `charity_event_type_links` tables (applied 2026-04-29; 30 charities / 90 species links / 44 event-type links)
+- [x] Seed ~30 vetted charities with species and event-type mappings
+- [x] `server/src/db/charityQueries.ts` — `getCharitiesForAlert()` with species → event-type → global fallback priority
+- [x] `server/src/routes/charities.ts` — REST endpoints registered in `app.ts`
+- [x] `shared/types.d.ts` — add `Charity` and `CharitySummary` types
 - [ ] `SynthesisAgent.ts` — query charities + add `💛 How You Can Help` field to Discord embed (no pipeline changes needed)
 - [ ] Discord `/donate [species] [event_type]` slash command + autocomplete
 - [ ] `helpContent.ts` — add `/donate` to `SLASH_COMMANDS`
-- [ ] `shared/types.d.ts` — add `Charity` and `CharitySummary` types
 - [ ] `client/components/CharityCard.tsx` — reusable charity card component
 - [ ] Alert detail page `/alerts/[id]` — "How You Can Help" section with CharityCards
 - [ ] Species profile `/species/[slug]` — "Conservation Organizations" section

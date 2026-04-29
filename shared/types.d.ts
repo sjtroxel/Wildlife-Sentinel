@@ -256,3 +256,26 @@ export interface AlertDetail {
   created_at: string;
   refiner_scores: AlertDetailRefinerScore[];
 }
+
+// Phase 11 — Conservation charities
+
+export interface Charity {
+  id: string;
+  name: string;
+  slug: string;
+  url: string;
+  donation_url: string;
+  description: string;
+  logo_url: string | null;
+  charity_navigator_rating: number | null;
+  headquarters_country: string | null;
+  focus_regions: string[];
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface CharitySummary {
+  name: string;
+  donation_url: string;
+  slug: string;
+}
