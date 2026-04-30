@@ -157,7 +157,13 @@ export class GfwFishingScout extends BaseScout {
         totalFailures++;
         console.error(`[gfw_fishing] Fetch failed for ${mpa.id} (wdpa:${mpa.wdpa_id}):`, err);
         if (totalFailures >= FAILURE_ABORT_THRESHOLD) {
-          throw new Error(`GFW API degraded — ${totalFailures}/${MPA_REGIONS.mpas.length} MPAs failed this run`);
+          // Don't throw — return events already collected from successful MPAs.
+          // Throwing would discard all partial results and trigger the circuit breaker.
+          console.error(
+            `[gfw_fishing] Degraded — ${totalFailures}/${MPA_REGIONS.mpas.length} MPAs failed. ` +
+            `Returning ${events.length} event(s) from successful MPAs.`
+          );
+          break;
         }
         continue;
       }
